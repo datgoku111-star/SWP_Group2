@@ -1,0 +1,65 @@
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { getUserByEmail } from "@/lib/db/users";
+import { signToken } from "@/lib/auth";
+import { createAuthCookie } from "@/lib/auth-server";
+
+export async function POST(request: Request) {
+  try {
+    const { email, password } = await request.json();
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    const user = await getUserByEmail(email);
+
+    // Use dummy hash to prevent timing attacks if user not found
+    const dummyHash = "$2a$12$LJ3MFgFJJgSx1YhSKS1SXOzFvOQHkUMQcJqnhuS2q5fZpbpVMwKi6";
+    const hashToCompare = user ? user.password_hash : dummyHash;
+
+    const isValid = await bcrypt.compare(password, hashToCompare);
+
+    if (!user || !isValid) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    if (!user.is_active) {
+      return NextResponse.json(
+        { error: "Account is disabled" },
+        { status: 403 }
+      );
+    }
+
+    // Create JWT
+    const token = await signToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.full_name,
+    });
+
+    // Set HTTP-only cookie
+    await createAuthCookie(token);
+
+    // Return user info (without password hash)
+    const { password_hash, ...safeUser } = user;
+
+    return NextResponse.json({
+      message: "Login successful",
+      user: safeUser,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
