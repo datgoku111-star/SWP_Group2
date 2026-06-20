@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import GallerySlider from "@/components/GallerySlider";
 import { DEMO_EXPERIENCES_LISTINGS } from "@/data/listings";
@@ -8,6 +10,7 @@ import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
 import Avatar from "@/shared/Avatar";
 import Link from "next/link";
+import { useCurrency } from "@/lib/currency-context";
 
 export interface ExperiencesCardHProps {
   className?: string;
@@ -36,8 +39,20 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
     listingCategory,
   } = data;
 
-  const imgUrl = typeof galleryImgs[0] === "string" ? galleryImgs[0] : (galleryImgs[0] as any).src || "";
-  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(listingCategory?.name || "")}&address=${encodeURIComponent(address)}` as any;
+  const { formatPrice } = useCurrency();
+
+  const imgUrl =
+    typeof galleryImgs[0] === "string"
+      ? galleryImgs[0]
+      : (galleryImgs[0] as any).src || "";
+
+  const dynamicHref = `${href}?title=${encodeURIComponent(
+    title
+  )}&price=${encodeURIComponent(
+    price.toString().replace("$", "").split(" ")[0]
+  )}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(
+    listingCategory?.name || ""
+  )}&address=${encodeURIComponent(address)}&baseCurrency=USD` as any;
 
   const renderSliderGallery = () => {
     return (
@@ -48,7 +63,9 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
           uniqueID={`ExperiencesCardH_${id}`}
           href={dynamicHref}
         />
+
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3" />
+
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
     );
@@ -60,21 +77,26 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             {isAds && <Badge name="ADS" color="green" />}
+
             <h2 className="text-lg font-medium capitalize">
               <span className="line-clamp-1">{title}</span>
             </h2>
           </div>
+
           <div className="flex items-center space-x-4 text-sm text-neutral-500 dark:text-neutral-400">
             <StartRating reviewCount={reviewCount} point={reviewStart} />
+
             <span>· </span>
+
             <div className="flex items-center">
-              <span className="hidden sm:inline-block  text-base">
+              <span className="hidden sm:inline-block text-base">
                 <i className="las la-map-marked"></i>
               </span>
-              <span className="sm:ml-2"> {address}</span>
+              <span className="sm:ml-2">{address}</span>
             </div>
           </div>
         </div>
+
         <div className="hidden sm:block text-sm text-neutral-500 dark:text-neutral-400 mt-4">
           <span className="line-clamp-2">
             {`Making a cup of coffee in Vietnam is a whole process that you barely
@@ -82,13 +104,15 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
             task to start the day with`}
           </span>
         </div>
-        <div className="flex items-center space-x-8 mt-4  ">
+
+        <div className="flex items-center space-x-8 mt-4">
           <div className="flex items-center space-x-2">
             <i className="las la-clock text-lg"></i>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
               3 hours
             </span>
           </div>
+
           <div className="flex items-center space-x-2">
             <i className="las la-user text-lg"></i>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -96,17 +120,21 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
             </span>
           </div>
         </div>
+
         <div className="w-14 border-b border-neutral-100 dark:border-neutral-800 my-4"></div>
+
         <div className="flex justify-between items-end">
-          <div className="flex items-center space-x-3 text-sm text-neutral-700  dark:text-neutral-300">
+          <div className="flex items-center space-x-3 text-sm text-neutral-700 dark:text-neutral-300">
             <Avatar imgUrl={author.avatar} userName={author.displayName} />
+
             <span className="hidden sm:inline-block">
               <span className="hidden sm:inline">Hosted by</span>{" "}
               {author.displayName}
             </span>
           </div>
+
           <span className="text-base font-semibold text-secondary-700">
-            {price}
+            {formatPrice(price, "USD")}
             {` `}
             <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
               /person
@@ -122,6 +150,7 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
       className={`nc-ExperiencesCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden ${className}`}
     >
       <Link href={dynamicHref} className="absolute inset-0" />
+
       <div className="md:flex md:flex-row">
         {renderSliderGallery()}
         {renderContent()}

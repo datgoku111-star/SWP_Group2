@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import { DEMO_CAR_LISTINGS } from "@/data/listings";
 import { CarDataType } from "@/data/types";
@@ -8,6 +10,7 @@ import Badge from "@/shared/Badge";
 import Avatar from "@/shared/Avatar";
 import Image from "next/image";
 import Link from "next/link";
+import { useCurrency } from "@/lib/currency-context";
 
 export interface CarCardHProps {
   className?: string;
@@ -29,7 +32,28 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     reviewCount,
     author,
     featuredImage,
+    seats,
+    gearshift,
   } = data;
+
+  const { formatPrice } = useCurrency();
+
+  const imgUrl =
+    typeof featuredImage === "string"
+      ? featuredImage
+      : (featuredImage ? (featuredImage as any).src : "") || "";
+
+  const dynamicHref = `${href}?title=${encodeURIComponent(
+    title
+  )}&price=${encodeURIComponent(
+    price.toString().replace("$", "").split(" ")[0]
+  )}&img=${encodeURIComponent(
+    imgUrl
+  )}&address=${encodeURIComponent(
+    address
+  )}&seats=${seats}&gearshift=${encodeURIComponent(
+    gearshift
+  )}&baseCurrency=USD` as any;
 
   const renderSliderGallery = () => {
     return (
@@ -37,7 +61,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
         <div className="w-full py-5 sm:py-0">
           {featuredImage ? (
             <Image
-              alt=""
+              alt="car"
               className="w-full"
               src={featuredImage}
               sizes="(max-width: 640px) 100vw, 300px"
@@ -48,7 +72,9 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
             </div>
           )}
         </div>
+
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3" />
+
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
     );
@@ -60,47 +86,53 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             {isAds && <Badge name="ADS" color="green" />}
+
             <h2 className="text-xl font-semibold capitalize">
               <span className="line-clamp-1">{title}</span>
             </h2>
           </div>
+
           <div className="flex items-center space-x-4 text-sm text-neutral-500 dark:text-neutral-400">
             <StartRating reviewCount={reviewCount} point={reviewStart} />
+
             <span>· </span>
+
             <div className="flex items-center">
-              <span className="hidden sm:inline-block  text-base">
+              <span className="hidden sm:inline-block text-base">
                 <i className="las la-map-marked"></i>
               </span>
-              <span className="sm:ml-2 line-clamp-1"> {address}</span>
+              <span className="sm:ml-2 line-clamp-1">{address}</span>
             </div>
           </div>
         </div>
+
         <div className="hidden sm:block w-14 border-b border-neutral-200/80 dark:border-neutral-700 my-4"></div>
+
         {/* SHOW MOBILE */}
         <div className="flex sm:hidden items-center text-sm text-neutral-500 dark:text-neutral-400 space-x-2 mt-4 sm:mt-0">
-          <span>4 seats</span>
+          <span>{seats} seats</span>
           <span>· </span>
-          <span>Auto gearbox</span>
+          <span>{gearshift}</span>
           <span>· </span>
-          <span>4 seats</span>
+          <span>2 bags</span>
         </div>
-        {/* SHOW DESK */}
+
+        {/* SHOW DESKTOP */}
         <div className="hidden sm:flex items-center space-x-8">
-          {/* --- */}
           <div className="flex items-center space-x-2">
             <i className="las la-user-friends text-xl"></i>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              4 seats
+              {seats} seats
             </span>
           </div>
-          {/* --- */}
+
           <div className="flex items-center space-x-2">
             <i className="las la-dharmachakra text-xl"></i>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Auto gearbox
+              {gearshift}
             </span>
           </div>
-          {/* --- */}
+
           <div className="flex items-center space-x-2">
             <i className="las la-suitcase text-xl"></i>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -110,16 +142,19 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
         </div>
 
         <div className="w-14 border-b border-neutral-200/80 dark:border-neutral-700 my-4"></div>
+
         <div className="flex justify-between items-end">
-          <div className="flex items-center space-x-3 text-sm text-neutral-700  dark:text-neutral-300">
+          <div className="flex items-center space-x-3 text-sm text-neutral-700 dark:text-neutral-300">
             <Avatar imgUrl={author.avatar} userName={author.displayName} />
+
             <span className="hidden sm:inline-block">
               <span className="hidden sm:inline">Car owner </span>{" "}
               {author.displayName}
             </span>
           </div>
+
           <span className="text-lg font-semibold text-secondary-700">
-            {price}
+            {formatPrice(price, "USD")}
             {` `}
             <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
               /day
@@ -134,7 +169,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     <div
       className={`nc-CarCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden ${className}`}
     >
-      <Link href={href} className="flex flex-col md:flex-row">
+      <Link href={dynamicHref} className="flex flex-col md:flex-row">
         {renderSliderGallery()}
         {renderContent()}
       </Link>

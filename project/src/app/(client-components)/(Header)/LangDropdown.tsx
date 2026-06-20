@@ -1,3 +1,7 @@
+"use client";
+
+import { headerCurrency } from "./CurrencyDropdown";
+import { useCurrency } from "@/lib/currency-context";
 import { Popover, Tab, Transition } from "@headlessui/react";
 import {
   BanknotesIcon,
@@ -5,7 +9,6 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { FC, Fragment } from "react";
-import { headerCurrency } from "./CurrencyDropdown";
 
 export const headerLanguage = [
   {
@@ -60,6 +63,8 @@ const LangDropdown: FC<LangDropdownProps> = ({
   panelClassName = "top-full right-0 max-w-sm w-96",
   className = "hidden md:flex",
 }) => {
+  const { currency, setCurrency } = useCurrency();
+
   const renderLang = (close: () => void) => {
     return (
       <div className="grid gap-8 lg:grid-cols-2">
@@ -72,8 +77,8 @@ const LangDropdown: FC<LangDropdownProps> = ({
               item.active ? "bg-gray-100 dark:bg-gray-700" : "opacity-80"
             }`}
           >
-            <div className="">
-              <p className="text-sm font-medium ">{item.name}</p>
+            <div>
+              <p className="text-sm font-medium">{item.name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {item.description}
               </p>
@@ -86,19 +91,30 @@ const LangDropdown: FC<LangDropdownProps> = ({
 
   const renderCurr = (close: () => void) => {
     return (
-      <div className="grid gap-7 lg:grid-cols-2">
-        {headerCurrency.map((item, index) => (
-          <a
-            key={index}
-            href={item.href}
-            onClick={() => close()}
-            className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
-              item.active ? "bg-gray-100 dark:bg-gray-700" : "opacity-80"
+      <div className="grid gap-3 lg:grid-cols-2">
+        {headerCurrency.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => {
+              setCurrency(item.id);
+              close();
+            }}
+            className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
+              currency === item.id
+                ? "bg-gray-100 dark:bg-gray-700"
+                : "opacity-80"
             }`}
           >
-            <item.icon className="w-[18px] h-[18px] " />
-            <p className="ml-2 text-sm font-medium ">{item.name}</p>
-          </a>
+            <item.icon className="w-[18px] h-[18px]" />
+
+            <div className="ml-2">
+              <p className="text-sm font-medium">{item.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {item.description}
+              </p>
+            </div>
+          </button>
         ))}
       </div>
     );
@@ -112,17 +128,19 @@ const LangDropdown: FC<LangDropdownProps> = ({
             <Popover.Button
               className={`
                 ${open ? "" : "text-opacity-80"}
-             group self-center h-10 sm:h-12 px-3 py-1.5 inline-flex items-center text-sm text-gray-800 dark:text-neutral-200 font-medium hover:text-opacity-100 focus:outline-none `}
+                group self-center h-10 sm:h-12 px-3 py-1.5 inline-flex items-center text-sm text-gray-800 dark:text-neutral-200 font-medium hover:text-opacity-100 focus:outline-none
+              `}
             >
               <GlobeAltIcon className="w-5 h-5 opacity-80" />
               <span className="mx-1">/</span>
               <BanknotesIcon className="w-5 h-5 opacity-80" />
               <ChevronDownIcon
                 className={`${open ? "-rotate-180" : "text-opacity-70"}
-                  ml-1 h-4 w-4  group-hover:text-opacity-80 transition ease-in-out duration-150`}
+                  ml-1 h-4 w-4 group-hover:text-opacity-80 transition ease-in-out duration-150`}
                 aria-hidden="true"
               />
             </Popover.Button>
+
             <Transition
               as={Fragment}
               enter="transition ease-out duration-200"
@@ -132,7 +150,7 @@ const LangDropdown: FC<LangDropdownProps> = ({
               leaveFrom="opacity-100 translate-y-0"
               leaveTo="opacity-0 translate-y-1"
             >
-              <Popover.Panel className={`absolute z-20  ${panelClassName}`}>
+              <Popover.Panel className={`absolute z-20 ${panelClassName}`}>
                 <div className="p-3 sm:p-6 rounded-2xl bg-white dark:bg-neutral-800 shadow-lg ring-1 ring-black ring-opacity-5">
                   <Tab.Group>
                     <Tab.List className="flex space-x-1 rounded-full bg-gray-100 dark:bg-slate-700 p-1">
@@ -153,6 +171,7 @@ const LangDropdown: FC<LangDropdownProps> = ({
                         </Tab>
                       ))}
                     </Tab.List>
+
                     <Tab.Panels className="mt-5">
                       <Tab.Panel
                         className={classNames(
@@ -162,6 +181,7 @@ const LangDropdown: FC<LangDropdownProps> = ({
                       >
                         {renderLang(close)}
                       </Tab.Panel>
+
                       <Tab.Panel
                         className={classNames(
                           "rounded-xl p-3",
@@ -181,4 +201,5 @@ const LangDropdown: FC<LangDropdownProps> = ({
     </>
   );
 };
+
 export default LangDropdown;

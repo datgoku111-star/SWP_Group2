@@ -3,6 +3,8 @@
 import React, { FC, useState, useEffect, Suspense } from "react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/lib/auth-context";
+import { useCurrency } from "@/lib/currency-context";
+import { CurrencyCode, isCurrencyCode } from "@/lib/currency";
 import CommentListing from "@/components/CommentListing";
 import FiveStartIconForRate from "@/components/FiveStartIconForRate";
 import StartRating from "@/components/StartRating";
@@ -22,16 +24,34 @@ import { Route } from "next";
 
 export interface ListingCarDetailPageProps {}
 
-const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
-  // USE STATE
-  const [startDate, setStartDate] = useState<Date | null>(new Date("2023/03/01"));
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/03/16"));
+const ListingCarDetailPage: FC<ListingCarDetailPageProps> = () => {
+  const [startDate, setStartDate] = useState<Date | null>(
+    new Date("2023/03/01")
+  );
+  const [endDate, setEndDate] = useState<Date | null>(
+    new Date("2023/03/16")
+  );
 
   const thisPathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const titleParam = searchParams.get("title") || "BMW 3 Series Sedan";
+  const priceParam = Number(searchParams.get("price")) || 124;
+  const imgParam = searchParams.get("img") || "";
+  const addressParam = searchParams.get("address") || "Tokyo, Jappan";
+  const seatsParam = searchParams.get("seats") || "4";
+  const gearshiftParam = searchParams.get("gearshift") || "Auto gearbox";
+
+  const baseCurrencyParam = searchParams.get("baseCurrency");
+
+  const baseCurrency: CurrencyCode = isCurrencyCode(baseCurrencyParam)
+    ? baseCurrencyParam
+    : "USD";
+
+  const { format } = useCurrency();
+
+  const imageSrc = imgParam || PHOTOS[0];
 
   const { user } = useAuth();
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
@@ -42,7 +62,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const res = await fetch(`/api/feedbacks?title=${encodeURIComponent(titleParam)}`);
+        const res = await fetch(
+          `/api/feedbacks?title=${encodeURIComponent(titleParam)}`
+        );
+
         if (res.ok) {
           const data = await res.json();
           setFeedbacks(data);
@@ -51,6 +74,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         console.error("Failed to fetch feedbacks:", err);
       }
     };
+
     fetchFeedbacks();
   }, [titleParam]);
 
@@ -59,12 +83,14 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
       alert("Vui lòng đăng nhập để gửi nhận xét!");
       return;
     }
+
     if (!commentInput.trim()) {
       alert("Vui lòng nhập nội dung nhận xét!");
       return;
     }
 
     setSubmitLoading(true);
+
     try {
       const res = await fetch("/api/feedbacks", {
         method: "POST",
@@ -90,17 +116,16 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
       setSubmitLoading(false);
     }
   };
-  const priceParam = Number(searchParams.get("price")) || 124;
-  const imgParam = searchParams.get("img") || PHOTOS[0];
-  const seatsParam = searchParams.get("seats") || "4";
-  const gearshiftParam = searchParams.get("gearshift") || "Auto gearbox";
 
   const calculateDays = () => {
     if (!startDate || !endDate) return 1;
+
     const timeDiff = endDate.getTime() - startDate.getTime();
     const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
     return days > 0 ? days : 1;
   };
+
   const daysCount = calculateDays();
 
   const handleOpenModalImageGallery = () => {
@@ -110,28 +135,24 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const renderSection1 = () => {
     return (
       <div className="listingSection__wrap !space-y-6">
-        {/* 1 */}
         <div className="flex justify-between items-center">
           <Badge color="pink" name="Car Rental" />
           <LikeSaveBtns />
         </div>
 
-        {/* 2 */}
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold capitalize">
           {titleParam}
         </h2>
 
-        {/* 3 */}
         <div className="flex items-center space-x-4">
           <StartRating />
           <span>·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
-            <span className="ml-1"> Tokyo, Jappan</span>
+            <span className="ml-1"> {addressParam}</span>
           </span>
         </div>
 
-        {/* 4 */}
         <div className="flex items-center">
           <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
           <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
@@ -142,46 +163,45 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           </span>
         </div>
 
-        {/* 5 */}
         <div className="w-full border-b border-neutral-100 dark:border-neutral-700" />
 
-        {/* 6 */}
         <div className="flex items-center justify-between xl:justify-start space-x-8 xl:space-x-12 text-sm text-neutral-700 dark:text-neutral-300">
-          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 text-center sm:text-left sm:space-x-3 ">
+          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 text-center sm:text-left sm:space-x-3">
             <i className="las la-user-friends text-2xl"></i>
-            <span className="">{seatsParam} seats</span>
+            <span>{seatsParam} seats</span>
           </div>
-          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 text-center sm:text-left sm:space-x-3 ">
+
+          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 text-center sm:text-left sm:space-x-3">
             <i className="las la-dharmachakra text-2xl"></i>
-            <span className=""> {gearshiftParam}</span>
+            <span>{gearshiftParam}</span>
           </div>
-          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 text-center sm:text-left sm:space-x-3 ">
+
+          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 text-center sm:text-left sm:space-x-3">
             <i className="las la-suitcase text-2xl"></i>
-            <span className=""> 2 bags</span>
+            <span>2 bags</span>
           </div>
         </div>
       </div>
     );
   };
 
-  //
   const renderSectionTienIch = () => {
     return (
       <div className="listingSection__wrap">
         <div>
           <h2 className="text-2xl font-semibold">
-            Vehicle parameters & utilities{" "}
+            Vehicle parameters & utilities
           </h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
             Questions are at the heart of making things great.
           </span>
         </div>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-        {/* 6 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-6 gap-x-10 text-sm text-neutral-700 dark:text-neutral-300 ">
-          {/* TIEN ICH 1 */}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-6 gap-x-10 text-sm text-neutral-700 dark:text-neutral-300">
           {Amenities_demos.map((item, index) => (
-            <div key={index} className="flex items-center space-x-4 ">
+            <div key={index} className="flex items-center space-x-4">
               <div className="w-10 flex-shrink-0">
                 <Image src={item.icon} alt="" />
               </div>
@@ -197,7 +217,9 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
     return (
       <div className="listingSection__wrap">
         <h2 className="text-2xl font-semibold">Car descriptions</h2>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+
         <div className="text-neutral-6000 dark:text-neutral-300">
           <p>
             Until the all-new TUCSON hits the dealer showrooms you can check it
@@ -219,14 +241,15 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
     return (
       <div className="listingSection__wrap">
         <div>
-          <h2 className="text-2xl font-semibold">Include </h2>
+          <h2 className="text-2xl font-semibold">Include</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
             Included in the price
           </span>
         </div>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-        {/* 6 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm text-neutral-700 dark:text-neutral-300 ">
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm text-neutral-700 dark:text-neutral-300">
           {includes_demo
             .filter((_, i) => i < 12)
             .map((item) => (
@@ -243,11 +266,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const renderSection5 = () => {
     return (
       <div className="listingSection__wrap">
-        {/* HEADING */}
         <h2 className="text-2xl font-semibold">Car Owner</h2>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
-        {/* host */}
         <div className="flex items-center space-x-4">
           <Avatar
             hasChecked
@@ -255,26 +277,26 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
             sizeClass="h-14 w-14"
             radius="rounded-full"
           />
+
           <div>
             <a className="block text-xl font-medium" href="##">
               Kevin Francis
             </a>
+
             <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
               <StartRating />
               <span className="mx-2">·</span>
-              <span> 12 places</span>
+              <span>12 places</span>
             </div>
           </div>
         </div>
 
-        {/* desc */}
         <span className="block text-neutral-6000 dark:text-neutral-300">
           Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides
           accommodation, an outdoor swimming pool, a bar, a shared lounge, a
           garden and barbecue facilities...
         </span>
 
-        {/* info */}
         <div className="block text-neutral-500 dark:text-neutral-400 space-y-2.5">
           <div className="flex items-center space-x-3">
             <svg
@@ -291,8 +313,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
+
             <span>Joined in March 2016</span>
           </div>
+
           <div className="flex items-center space-x-3">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -308,8 +332,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
                 d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
               />
             </svg>
+
             <span>Response rate - 100%</span>
           </div>
+
           <div className="flex items-center space-x-3">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -330,8 +356,8 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           </div>
         </div>
 
-        {/* == */}
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+
         <div>
           <ButtonSecondary href="/author">See host profile</ButtonSecondary>
         </div>
@@ -342,11 +368,12 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const renderSection6 = () => {
     return (
       <div className="listingSection__wrap">
-        {/* HEADING */}
-        <h2 className="text-2xl font-semibold">Reviews ({feedbacks.length} reviews)</h2>
+        <h2 className="text-2xl font-semibold">
+          Reviews ({feedbacks.length} reviews)
+        </h2>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
-        {/* Content */}
         <div className="space-y-5">
           <FiveStartIconForRate
             iconClass="w-6 h-6"
@@ -354,16 +381,22 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
             defaultPoint={ratingInput}
             onChange={(p) => setRatingInput(p)}
           />
+
           <div className="relative">
             <Input
               fontClass=""
               sizeClass="h-16 px-4 py-3"
               rounded="rounded-3xl"
-              placeholder={user ? "Share your thoughts ..." : "Đăng nhập để viết đánh giá..."}
+              placeholder={
+                user
+                  ? "Share your thoughts ..."
+                  : "Đăng nhập để viết đánh giá..."
+              }
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
               disabled={!user || submitLoading}
             />
+
             <ButtonCircle
               className="absolute right-2 top-1/2 transform -translate-y-1/2"
               size=" w-12 h-12 "
@@ -375,7 +408,6 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           </div>
         </div>
 
-        {/* comment */}
         <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
           {feedbacks.length > 0 ? (
             feedbacks.map((item) => (
@@ -383,12 +415,15 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
                 key={item.id}
                 className="py-8"
                 data={{
-                  name: item.user?.full_name || item.user?.email?.split("@")[0] || "Người dùng",
+                  name:
+                    item.user?.full_name ||
+                    item.user?.email?.split("@")[0] ||
+                    "Người dùng",
                   avatar: "",
                   date: new Date(item.created_at).toLocaleDateString("vi-VN", {
                     day: "numeric",
                     month: "long",
-                    year: "numeric"
+                    year: "numeric",
                   }),
                   comment: item.comment,
                   starPoint: item.rating,
@@ -396,7 +431,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
               />
             ))
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của bạn!</p>
+            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">
+              Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của
+              bạn!
+            </p>
           )}
         </div>
       </div>
@@ -406,16 +444,15 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const renderSection7 = () => {
     return (
       <div className="listingSection__wrap">
-        {/* HEADING */}
         <div>
           <h2 className="text-2xl font-semibold">Location</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
             San Diego, CA, United States of America (SAN-San Diego Intl.)
           </span>
         </div>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
 
-        {/* MAP */}
         <div className="aspect-w-5 aspect-h-5 sm:aspect-h-3 ring-1 ring-black/10 rounded-xl z-0">
           <div className="rounded-xl overflow-hidden z-0">
             <iframe
@@ -435,11 +472,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const renderSection8 = () => {
     return (
       <div className="listingSection__wrap">
-        {/* HEADING */}
         <h2 className="text-2xl font-semibold">Things to know</h2>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
 
-        {/* CONTENT */}
         <div>
           <h4 className="text-lg font-semibold">Cancellation policy</h4>
           <span className="block mt-3 text-neutral-500 dark:text-neutral-400">
@@ -447,9 +483,9 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
             Reserve now and pay at pick-up.
           </span>
         </div>
+
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
 
-        {/* CONTENT */}
         <div>
           <h4 className="text-lg font-semibold">Special Note</h4>
           <span className="block mt-3 text-neutral-500 dark:text-neutral-400">
@@ -464,22 +500,25 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   };
 
   const renderSidebarPrice = () => {
+    const subtotal = priceParam * daysCount;
+    const serviceCharge = 15;
+    const total = subtotal + serviceCharge;
+
     return (
       <div className="listingSectionSidebar__wrap shadow-xl">
-        {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
-            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam)}
+            {format(priceParam, baseCurrency)}
             <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
               /day
             </span>
           </span>
+
           <StartRating />
         </div>
 
-        {/* FORM */}
         <form className="border border-neutral-200 dark:border-neutral-700 rounded-2xl">
-          <RentalCarDatesRangeInput 
+          <RentalCarDatesRangeInput
             startDate={startDate}
             endDate={endDate}
             onChangeDate={(dates) => {
@@ -490,22 +529,45 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           />
         </form>
 
-        {/* SUM */}
-        <div className="flex flex-col space-y-4 ">
+        <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam)} x {daysCount} day</span>
-            <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam * daysCount)}</span>
+            <span>
+              {format(priceParam, baseCurrency)} x {daysCount} day
+              {daysCount > 1 ? "s" : ""}
+            </span>
+            <span>{format(subtotal, baseCurrency)}</span>
+          </div>
+
+          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
+            <span>Service charge</span>
+            <span>{format(serviceCharge, baseCurrency)}</span>
           </div>
 
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
+
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam * daysCount + 15)}</span>
+            <span>{format(total, baseCurrency)}</span>
           </div>
         </div>
 
-        {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${priceParam}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent("Car Rental")}&address=${encodeURIComponent("Tokyo, Jappan")}&beds=${seatsParam}${startDate ? `&checkIn=${startDate.toISOString().split("T")[0]}` : ""}${endDate ? `&checkOut=${endDate.toISOString().split("T")[0]}` : ""}` as any}>Reserve</ButtonPrimary>
+        <ButtonPrimary
+          href={`/checkout?title=${encodeURIComponent(
+            titleParam
+          )}&price=${priceParam}&img=${encodeURIComponent(
+            imgParam
+          )}&category=${encodeURIComponent(
+            "Car Rental"
+          )}&address=${encodeURIComponent(
+            addressParam
+          )}&beds=${seatsParam}${
+            startDate ? `&checkIn=${startDate.toISOString().split("T")[0]}` : ""
+          }${
+            endDate ? `&checkOut=${endDate.toISOString().split("T")[0]}` : ""
+          }&baseCurrency=${baseCurrency}` as any}
+        >
+          Reserve
+        </ButtonPrimary>
       </div>
     );
   };
@@ -516,26 +578,29 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         <span className="text-2xl font-semibold block">
           Pick up and drop off
         </span>
+
         <div className="mt-8 flex">
           <div className="flex-shrink-0 flex flex-col items-center py-2">
             <span className="block w-6 h-6 rounded-full border border-neutral-400"></span>
             <span className="block flex-grow border-l border-neutral-400 border-dashed my-1"></span>
             <span className="block w-6 h-6 rounded-full border border-neutral-400"></span>
           </div>
+
           <div className="ml-4 space-y-14 text-sm">
             <div className="flex flex-col space-y-2">
-              <span className=" text-neutral-500 dark:text-neutral-400">
+              <span className="text-neutral-500 dark:text-neutral-400">
                 Monday, August 12 · 10:00
               </span>
-              <span className=" font-semibold">
+              <span className="font-semibold">
                 Saint Petersburg City Center
               </span>
             </div>
+
             <div className="flex flex-col space-y-2">
-              <span className=" text-neutral-500 dark:text-neutral-400">
+              <span className="text-neutral-500 dark:text-neutral-400">
                 Monday, August 16 · 10:00
               </span>
-              <span className=" font-semibold">
+              <span className="font-semibold">
                 Saint Petersburg City Center
               </span>
             </div>
@@ -546,8 +611,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   };
 
   return (
-    <div className={` nc-ListingCarDetailPage `}>
-      {/* SINGLE HEADER */}
+    <div className="nc-ListingCarDetailPage">
       <header className="rounded-md sm:rounded-xl">
         <div className="relative grid grid-cols-4 gap-1 sm:gap-2">
           <div
@@ -556,15 +620,15 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           >
             <Image
               fill
-              src={imgParam}
+              src={imageSrc}
               alt="photo 0"
               className="object-cover rounded-md sm:rounded-xl"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
             />
+
             <div className="absolute inset-0 bg-neutral-900 bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity"></div>
           </div>
 
-          {/*  */}
           <div
             className="col-span-1 row-span-2 relative rounded-md sm:rounded-xl overflow-hidden cursor-pointer"
             onClick={handleOpenModalImageGallery}
@@ -576,10 +640,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
               alt="photo 1"
               sizes="400px"
             />
+
             <div className="absolute inset-0 bg-neutral-900 bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity"></div>
           </div>
 
-          {/*  */}
           {PHOTOS.filter((_, i) => i >= 2 && i < 4).map((item, index) => (
             <div
               key={index}
@@ -590,14 +654,13 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
               <div className="aspect-w-4 aspect-h-3">
                 <Image
                   fill
-                  className="object-cover w-full h-full rounded-md sm:rounded-xl "
+                  className="object-cover w-full h-full rounded-md sm:rounded-xl"
                   src={item || ""}
                   alt="photos"
                   sizes="400px"
                 />
               </div>
 
-              {/* OVERLAY */}
               <div
                 className="absolute inset-0 bg-neutral-900 bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
                 onClick={handleOpenModalImageGallery}
@@ -618,26 +681,25 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         </div>
       </header>
 
-      {/* MAIn */}
-      <main className=" relative z-10 mt-11 flex flex-col lg:flex-row ">
-        {/* CONTENT */}
+      <main className="relative z-10 mt-11 flex flex-col lg:flex-row">
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-8 lg:pr-10 lg:space-y-10">
           {renderSection1()}
+
           <div className="block lg:hidden">{renderSidebarDetail()}</div>
+
           {renderSectionTienIch()}
           {renderSection2()}
           {renderSection3()}
           <SectionDateRange />
-
           {renderSection5()}
           {renderSection6()}
           {renderSection7()}
           {renderSection8()}
         </div>
 
-        {/* SIDEBAR */}
         <div className="block flex-grow mt-14 lg:mt-0">
           {renderSidebarDetail()}
+
           <div className="hidden lg:block mt-10 sticky top-28">
             {renderSidebarPrice()}
           </div>
@@ -649,7 +711,9 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
 
 const ListingCarDetailPageWithSuspense = () => {
   return (
-    <Suspense fallback={<div className="container py-20 text-center">Loading details...</div>}>
+    <Suspense
+      fallback={<div className="container py-20 text-center">Loading details...</div>}
+    >
       <ListingCarDetailPage />
     </Suspense>
   );

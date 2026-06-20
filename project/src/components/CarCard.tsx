@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import { DEMO_CAR_LISTINGS } from "@/data/listings";
 import { CarDataType } from "@/data/types";
@@ -7,6 +9,7 @@ import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
 import Image from "next/image";
 import Link from "next/link";
+import { useCurrency } from "@/lib/currency-context";
 
 export interface CarCardProps {
   className?: string;
@@ -35,15 +38,27 @@ const CarCard: FC<CarCardProps> = ({
     gearshift,
   } = data;
 
-  const imgUrl = typeof featuredImage === "string" 
-    ? featuredImage 
-    : (featuredImage ? (featuredImage as any).src : "") || "";
-  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&seats=${seats}&gearshift=${encodeURIComponent(gearshift)}` as any;
+  const { formatPrice } = useCurrency();
+
+  const imgUrl =
+    typeof featuredImage === "string"
+      ? featuredImage
+      : (featuredImage ? (featuredImage as any).src : "") || "";
+
+  const dynamicHref = `${href}?title=${encodeURIComponent(
+    title
+  )}&price=${encodeURIComponent(
+    price.toString().replace("$", "").split(" ")[0]
+  )}&img=${encodeURIComponent(
+    imgUrl
+  )}&seats=${seats}&gearshift=${encodeURIComponent(
+    gearshift
+  )}&baseCurrency=USD` as any;
 
   const renderSliderGallery = () => {
     return (
       <div className="relative w-full rounded-2xl overflow-hidden">
-        <div className="aspect-w-16 aspect-h-9 ">
+        <div className="aspect-w-16 aspect-h-9">
           {featuredImage ? (
             <Image
               fill
@@ -57,7 +72,9 @@ const CarCard: FC<CarCardProps> = ({
             </div>
           )}
         </div>
+
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3 z-[1]" />
+
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
     );
@@ -65,12 +82,13 @@ const CarCard: FC<CarCardProps> = ({
 
   const renderContent = () => {
     return (
-      <div className={size === "default" ? "p-5  space-y-4" : "p-3  space-y-2"}>
+      <div className={size === "default" ? "p-5 space-y-4" : "p-3 space-y-2"}>
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             {isAds && <Badge name="ADS" color="green" />}
+
             <h2
-              className={`  capitalize ${
+              className={`capitalize ${
                 size === "default"
                   ? "text-xl font-semibold"
                   : "text-base font-medium"
@@ -79,16 +97,19 @@ const CarCard: FC<CarCardProps> = ({
               <span className="line-clamp-1">{title}</span>
             </h2>
           </div>
+
           <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-2">
-            <span className="">{seats} seats</span>
+            <span>{seats} seats</span>
             <span>-</span>
-            <span className="">{gearshift} </span>
+            <span>{gearshift}</span>
           </div>
         </div>
-        <div className="w-14  border-b border-neutral-100 dark:border-neutral-800"></div>
+
+        <div className="w-14 border-b border-neutral-100 dark:border-neutral-800"></div>
+
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            {formatPrice(price, "USD")}
             {` `}
             {size === "default" && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
@@ -96,6 +117,7 @@ const CarCard: FC<CarCardProps> = ({
               </span>
             )}
           </span>
+
           <StartRating reviewCount={reviewCount} point={reviewStart} />
         </div>
       </div>

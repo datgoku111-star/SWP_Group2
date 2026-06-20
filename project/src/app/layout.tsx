@@ -8,6 +8,7 @@ import "rc-slider/assets/index.css";
 import Footer from "@/components/Footer";
 import FooterNav from "@/components/FooterNav";
 import { AuthProvider } from "@/lib/auth-context";
+import { CurrencyProvider } from "@/lib/currency-context";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -17,23 +18,22 @@ const poppins = Poppins({
 
 export default function RootLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: any;
 }) {
   return (
     <html lang="en" className={poppins.className}>
-      <body className="bg-white text-base dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200">
+      <body className="bg-white text-base text-neutral-900 dark:bg-neutral-900 dark:text-neutral-200">
         <AuthProvider>
-          <ClientCommons />
-          <SiteHeader />
-          {children}
-          <FooterNav />
-          <Footer />
+          <CurrencyProvider>
+            <ClientCommons />
+            <SiteHeader />
+            {children}
+            <FooterNav />
+            <Footer />
+          </CurrencyProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
-

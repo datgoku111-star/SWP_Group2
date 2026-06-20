@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import GallerySlider from "@/components/GallerySlider";
 import { DEMO_STAY_LISTINGS } from "@/data/listings";
@@ -7,6 +9,7 @@ import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
 import Link from "next/link";
+import { useCurrency } from "@/lib/currency-context";
 
 export interface StayCard2Props {
   className?: string;
@@ -38,8 +41,22 @@ const StayCard2: FC<StayCard2Props> = ({
     availableRooms,
   } = data;
 
-  const imgUrl = typeof galleryImgs[0] === "string" ? galleryImgs[0] : (galleryImgs[0] as any).src || "";
-  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(listingCategory.name)}&address=${encodeURIComponent(address)}&beds=${bedrooms}` as any;
+  const { formatPrice } = useCurrency();
+
+  const imgUrl =
+    typeof galleryImgs[0] === "string"
+      ? galleryImgs[0]
+      : (galleryImgs[0] as any).src || "";
+
+  const dynamicHref = `${href}?title=${encodeURIComponent(
+    title
+  )}&price=${encodeURIComponent(
+    price.toString().replace("$", "").split(" ")[0]
+  )}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(
+    listingCategory.name
+  )}&address=${encodeURIComponent(
+    address
+  )}&beds=${bedrooms}&baseCurrency=USD` as any;
 
   const renderSliderGallery = () => {
     return (
@@ -51,7 +68,9 @@ const StayCard2: FC<StayCard2Props> = ({
           imageClass="rounded-lg"
           href={dynamicHref}
         />
+
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3 z-[1]" />
+
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
     );
@@ -65,18 +84,25 @@ const StayCard2: FC<StayCard2Props> = ({
             <span>
               {listingCategory.name} · {bedrooms} beds
             </span>
+
             {availableRooms !== undefined && (
-              <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md ${
-                availableRooms > 0 
-                  ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" 
-                  : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-              }`}>
-                {availableRooms > 0 ? `Còn ${availableRooms} phòng` : "Hết phòng"}
+              <span
+                className={`px-2 py-0.5 text-[11px] font-semibold rounded-md ${
+                  availableRooms > 0
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                    : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
+                }`}
+              >
+                {availableRooms > 0
+                  ? `Còn ${availableRooms} phòng`
+                  : "Hết phòng"}
               </span>
             )}
           </div>
+
           <div className="flex items-center space-x-2">
             {isAds && <Badge name="ADS" color="green" />}
+
             <h2
               className={`font-semibold capitalize text-neutral-900 dark:text-white ${
                 size === "default" ? "text-base" : "text-base"
@@ -85,6 +111,7 @@ const StayCard2: FC<StayCard2Props> = ({
               <span className="line-clamp-1">{title}</span>
             </h2>
           </div>
+
           <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-1.5">
             {size === "default" && (
               <svg
@@ -99,6 +126,7 @@ const StayCard2: FC<StayCard2Props> = ({
                   strokeWidth={1.5}
                   d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
                 />
+
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -107,13 +135,16 @@ const StayCard2: FC<StayCard2Props> = ({
                 />
               </svg>
             )}
-            <span className="">{address}</span>
+
+            <span>{address}</span>
           </div>
         </div>
+
         <div className="w-14 border-b border-neutral-100 dark:border-neutral-800"></div>
+
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            {formatPrice(price, "USD")}
             {` `}
             {size === "default" && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
@@ -121,6 +152,7 @@ const StayCard2: FC<StayCard2Props> = ({
               </span>
             )}
           </span>
+
           {!!reviewStart && (
             <StartRating reviewCount={reviewCount} point={reviewStart} />
           )}
@@ -132,6 +164,7 @@ const StayCard2: FC<StayCard2Props> = ({
   return (
     <div className={`nc-StayCard2 group relative ${className}`}>
       {renderSliderGallery()}
+
       <Link href={dynamicHref}>{renderContent()}</Link>
     </div>
   );

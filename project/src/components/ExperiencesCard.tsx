@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import GallerySlider from "@/components/GallerySlider";
 import { DEMO_EXPERIENCES_LISTINGS } from "@/data/listings";
@@ -8,6 +10,7 @@ import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
 import Link from "next/link";
 import { MapPinIcon } from "@heroicons/react/24/outline";
+import { useCurrency } from "@/lib/currency-context";
 
 export interface ExperiencesCardProps {
   className?: string;
@@ -39,19 +42,33 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
     listingCategory,
   } = data;
 
-  const imgUrl = typeof galleryImgs[0] === "string" ? galleryImgs[0] : (galleryImgs[0] as any).src || "";
-  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(listingCategory?.name || "")}&address=${encodeURIComponent(address)}` as any;
+  const { formatPrice } = useCurrency();
+
+  const imgUrl =
+    typeof galleryImgs[0] === "string"
+      ? galleryImgs[0]
+      : (galleryImgs[0] as any).src || "";
+
+  const dynamicHref = `${href}?title=${encodeURIComponent(
+    title
+  )}&price=${encodeURIComponent(
+    price.toString().replace("$", "").split(" ")[0]
+  )}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(
+    listingCategory?.name || ""
+  )}&address=${encodeURIComponent(address)}&baseCurrency=USD` as any;
 
   const renderSliderGallery = () => {
     return (
-      <div className="relative w-full rounded-2xl overflow-hidden ">
+      <div className="relative w-full rounded-2xl overflow-hidden">
         <GallerySlider
           uniqueID={`ExperiencesCard_${id}`}
           ratioClass={ratioClass}
           galleryImgs={galleryImgs}
           href={dynamicHref}
         />
+
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3" />
+
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
     );
@@ -63,13 +80,14 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
         <div className="space-y-2">
           <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-2">
             {size === "default" && <MapPinIcon className="w-4 h-4" />}
-            <span className="">{address}</span>
+            <span>{address}</span>
           </div>
 
           <div className="flex items-center space-x-2">
             {isAds && <Badge name="ADS" color="green" />}
+
             <h2
-              className={` font-medium capitalize ${
+              className={`font-medium capitalize ${
                 size === "default" ? "text-base" : "text-base"
               }`}
             >
@@ -77,10 +95,12 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
             </h2>
           </div>
         </div>
+
         <div className="border-b border-neutral-100 dark:border-neutral-800"></div>
+
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            {formatPrice(price, "USD")}
             {` `}
             {size === "default" && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
@@ -88,6 +108,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
               </span>
             )}
           </span>
+
           <StartRating reviewCount={reviewCount} point={reviewStart} />
         </div>
       </div>
@@ -97,6 +118,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
   return (
     <div className={`nc-ExperiencesCard group relative ${className}`}>
       {renderSliderGallery()}
+
       <Link href={dynamicHref}>{renderContent()}</Link>
     </div>
   );

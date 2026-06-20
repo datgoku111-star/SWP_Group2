@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import Logo from "@/shared/Logo";
 import Navigation from "@/shared/Navigation/Navigation";
@@ -27,7 +29,7 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
           <Navigation />
         </div>
 
-        <div className="flex lg:hidden flex-[3] max-w-lg !mx-auto md:px-3 ">
+        <div className="flex lg:hidden flex-[3] max-w-lg !mx-auto md:px-3">
           <div className="self-center flex-1">
             <HeroSearchForm2MobileFactory />
           </div>
@@ -37,8 +39,12 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
           <div className="hidden xl:flex items-center space-x-0.5">
             <SwitchDarkMode />
             <SearchDropdown className="flex items-center" />
+
+            {/* Nút đổi ngôn ngữ / tiền tệ */}
+            <LangDropdown />
+
             <div className="px-1" />
-            
+
             {user ? (
               <>
                 <NotifyDropdown />
@@ -53,6 +59,7 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
                 >
                   Sign in
                 </Link>
+
                 <ButtonPrimary className="self-center" href="/signup">
                   Sign up
                 </ButtonPrimary>
@@ -63,6 +70,7 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
           <div className="flex xl:hidden items-center">
             <SwitchDarkMode />
             <div className="px-0.5" />
+
             {user && (
               <>
                 <NotifyDropdown />
@@ -71,6 +79,7 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
                 <div className="px-0.5" />
               </>
             )}
+
             <MenuBar />
           </div>
         </div>
@@ -80,4 +89,3 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
 };
 
 export default MainNav1;
-
