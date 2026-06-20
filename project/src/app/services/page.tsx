@@ -100,6 +100,23 @@ export default function ServicesPage() {
       setError("Please select an active booking room first.");
       return;
     }
+
+    {/*const placeOrder = async () => {
+    if (!selectedBookingId) {
+      setError("Please select an active booking room first.");
+      return;
+    }
+    
+    // Gom các sản phẩm trong giỏ hàng lại
+    const items = Object.entries(cart).map(([service_id, quantity]) => ({ service_id, quantity }));
+    const itemsParam = encodeURIComponent(JSON.stringify(items));
+    // Chuyển hướng tới trang checkout kèm tham số hóa đơn
+    router.push(
+      `/checkout?type=service&bookingId=${selectedBookingId}&items=${itemsParam}&price=${cartTotal}&title=Food+Order&category=Food+Service&img=https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500` as Route
+    );
+  };*/}
+
+  {/* tay them */}
     
     setOrderLoading(true);
     setError("");

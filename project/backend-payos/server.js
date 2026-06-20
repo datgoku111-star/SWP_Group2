@@ -25,7 +25,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const orderMap = new Map();
 
 // API 1: Create payment link
-app.post("/api/payment/create-embedded-link", async (req, res) => {
+{/*app.post("/api/payment/create-embedded-link", async (req, res) => {
   try {
     const { bookingId, roomName, totalPrice } = req.body;
 
@@ -79,10 +79,57 @@ app.post("/api/payment/create-embedded-link", async (req, res) => {
     console.error("Create payment link failed:", error);
     return res.status(500).json({ error: error.message || "Failed to create payment link" });
   }
+});*/}
+
+app.post("/api/payment/create-embedded-link", async (req, res) => {
+  try {
+    const { bookingId, serviceOrderId, type, roomName, totalPrice } = req.body;
+    if (!bookingId || !roomName || !totalPrice) {
+      return res.status(400).json({ error: "Missing bookingId, roomName, or totalPrice" });
+    }
+    const orderCode = Math.floor(100000 + Math.random() * 900000);
+    // Lưu mapping thanh toán dịch vụ hoặc đặt phòng
+    orderMap.set(orderCode, { bookingId, serviceOrderId, type: type || "room", roomName });
+    // Tạo thanh toán PENDING trong database
+    const { error: paymentError } = await supabase
+      .from("payments")
+      .insert({
+        booking_id: bookingId,
+        amount: totalPrice,
+        method: "TRANSFER",
+        status: "PENDING",
+        transaction_ref: orderCode.toString(),
+      });
+    if (paymentError) {
+      console.error("Error creating pending payment in Supabase:", paymentError);
+    }
+    const domain = process.env.FRONTEND_URL || "http://localhost:3000";
+    const amountInVnd = Math.round(Number(totalPrice) * 23000);
+    const paymentLinkData = {
+      orderCode,
+      amount: amountInVnd,
+      description: `Pay ${roomName.slice(0, 15)}`.replace(/[^a-zA-Z0-9 ]/g, ""),
+      returnUrl: `${domain}/pay-done?bookingId=${bookingId}&status=success`,
+      cancelUrl: `${domain}/checkout?bookingId=${bookingId}&status=cancel`,
+    };
+    const paymentLink = await payOS.createPaymentLink(paymentLinkData);
+    return res.status(200).json({
+      orderCode,
+      checkoutUrl: paymentLink.checkoutUrl,
+      qrCode: paymentLink.qrCode || `https://api.vietqr.io/image/970418-00123456789-Q4zS9vP.jpg?accountName=HOTEL&amount=${amountInVnd}&addInfo=${paymentLinkData.description}`,
+      amount: amountInVnd,
+      description: paymentLinkData.description,
+    });
+  } catch (error) {
+    console.error("Create payment link failed:", error);
+    return res.status(500).json({ error: error.message || "Failed to create payment link" });
+  }
 });
 
+{/* tay them */}
+
 // API 2: Webhook callback
-app.post("/api/payment/webhook", async (req, res) => {
+{/*app.post("/api/payment/webhook", async (req, res) => {
   try {
     // Verify Webhook signature
     const webhookData = payOS.verifyPaymentWebhookData(req.body);
@@ -164,7 +211,60 @@ app.post("/api/payment/webhook", async (req, res) => {
     console.error("Webhook verification failed:", error);
     return res.status(400).send("Invalid signature");
   }
+});*/}
+
+app.post("/api/payment/webhook", async (req, res) => {
+  try {
+    const webhookData = payOS.verifyPaymentWebhookData(req.body);
+    console.log("PayOS Webhook received and verified:", webhookData);
+    const { orderCode } = webhookData;
+    const mapping = orderMap.get(orderCode);
+    if (mapping) {
+      const { type, serviceOrderId, bookingId, roomName } = mapping;
+      // 1. Cập nhật bảng payments thành COMPLETED
+      await supabase
+        .from("payments")
+        .update({ status: "COMPLETED" })
+        .eq("transaction_ref", orderCode.toString());
+      if (type === "service" && serviceOrderId) {
+        console.log(`Processing successful payment for food order: ${serviceOrderId}`);
+        // 2a. Nếu là dịch vụ: chuyển trạng thái dịch vụ sang IN_PROGRESS (để bếp làm món)
+        await supabase
+          .from("service_orders")
+          .update({ status: "IN_PROGRESS" })
+          .eq("id", serviceOrderId);
+      } else {
+        console.log(`Processing successful payment for room booking: ${bookingId}`);
+        // 2b. Nếu là đặt phòng: cập nhật booking thành CONFIRMED
+        await supabase
+          .from("bookings")
+          .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
+          .eq("id", bookingId);
+        if (roomName) {
+          const { data: hotelRoom } = await supabase
+            .from("hotel_rooms")
+            .select("id, available_rooms")
+            .eq("title", roomName)
+            .single();
+          if (hotelRoom && hotelRoom.available_rooms > 0) {
+            await supabase
+              .from("hotel_rooms")
+              .update({ available_rooms: hotelRoom.available_rooms - 1 })
+              .eq("id", hotelRoom.id);
+            console.log(`Updated hotel_rooms count for ${roomName}`);
+          }
+        }
+      }
+      orderMap.delete(orderCode);
+    }
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Webhook verification failed:", error);
+    return res.status(400).send("Invalid signature");
+  }
 });
+
+{/* tay them */}
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`PayOS Backend running on port ${PORT}`));

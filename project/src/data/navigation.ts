@@ -152,6 +152,8 @@ const templatesChildrenMenus: NavItemType[] = [
   //
   { id: ncNanoId(), href: "/checkout", name: "Checkout" },
   { id: ncNanoId(), href: "/pay-done", name: "Pay done" },
+  { id: ncNanoId(), href: "/services", name: "Food Services" },
+  //tay them
   //
   { id: ncNanoId(), href: "/author", name: "Author page" },
   { id: ncNanoId(), href: "/account", name: "Account page" },
@@ -307,7 +309,8 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
       },
       { id: ncNanoId(), href: "/listing-stay-detail", name: "Stay detail" },
 
-      //
+      { id: ncNanoId(), href: "/services", name: "Food Services" }, 
+      //tay them
       {
         id: ncNanoId(),
         href: "/listing-experiences",
