@@ -39,7 +39,7 @@ const StayCard2: FC<StayCard2Props> = ({
   } = data;
 
   const imgUrl = typeof galleryImgs[0] === "string" ? galleryImgs[0] : (galleryImgs[0] as any).src || "";
-  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(listingCategory.name)}&address=${encodeURIComponent(address)}&beds=${bedrooms}` as any;
+  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(listingCategory.name)}&address=${encodeURIComponent(address)}&beds=${bedrooms}&gallery=${encodeURIComponent(galleryImgs.join(','))}` as any;
 
   const renderSliderGallery = () => {
     return (
@@ -63,7 +63,7 @@ const StayCard2: FC<StayCard2Props> = ({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-1 text-sm text-neutral-500 dark:text-neutral-400">
             <span>
-              {listingCategory.name} · {bedrooms} beds
+              {listingCategory.name}
             </span>
             {availableRooms !== undefined && (
               <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md ${

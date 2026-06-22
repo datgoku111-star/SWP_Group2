@@ -28,6 +28,11 @@ const DetailtLayout = ({ children }: { children: ReactNode }) => {
 
   const getImageGalleryListing = () => {
     if (thisPathname?.includes("/listing-stay-detail")) {
+      const galleryParam = searchParams?.get("gallery");
+      if (galleryParam) {
+        const urls = galleryParam.split(",");
+        return urls.map((url, index) => ({ id: index, url }));
+      }
       return listingStayImageGallery;
     }
     if (thisPathname?.includes("/listing-car-detail")) {
