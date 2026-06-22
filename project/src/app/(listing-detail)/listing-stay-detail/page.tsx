@@ -33,6 +33,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const categoryParam = searchParams.get("category") || "Wooden house";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "6";
+  const galleryParam = searchParams.get("gallery")?.split(",") || PHOTOS;
 
   const [startDate, setStartDate] = useState<Date | null>(new Date("2023/02/06"));
   const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
@@ -153,16 +154,12 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
         {/* 6 */}
         <div className="flex items-center justify-between xl:justify-start space-x-8 xl:space-x-12 text-sm text-neutral-700 dark:text-neutral-300">
-          <div className="flex items-center space-x-3 ">
-            <i className=" las la-user text-2xl "></i>
-            <span className="">
-              {bedsParam} <span className="hidden sm:inline-block">guests</span>
-            </span>
-          </div>
+
           <div className="flex items-center space-x-3">
-            <i className=" las la-bed text-2xl"></i>
+            <i className=" las la-door-closed text-2xl"></i>
             <span className=" ">
-              {bedsParam} <span className="hidden sm:inline-block">beds</span>
+              <span className="hidden sm:inline-block">{categoryParam}</span>
+              <span className="sm:hidden">{categoryParam}</span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
@@ -670,13 +667,13 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
             <Image
               fill
               className="object-cover rounded-md sm:rounded-xl"
-              src={imgParam || PHOTOS[0]}
+              src={imgParam || galleryParam[0]}
               alt=""
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
             />
             <div className="absolute inset-0 bg-neutral-900 bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity"></div>
           </div>
-          {PHOTOS.filter((_, i) => i >= 1 && i < 5).map((item, index) => (
+          {galleryParam.filter((_, i) => i >= 1 && i < 5).map((item, index) => (
             <div
               key={index}
               className={`relative rounded-md sm:rounded-xl overflow-hidden ${

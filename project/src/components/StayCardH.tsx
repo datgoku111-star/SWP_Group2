@@ -34,6 +34,9 @@ const StayCardH: FC<StayCardHProps> = ({
     id,
   } = data;
 
+  const imgUrl = typeof galleryImgs[0] === "string" ? galleryImgs[0] : (galleryImgs[0] as any).src || "";
+  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&category=${encodeURIComponent(listingCategory.name)}&address=${encodeURIComponent(address)}&gallery=${encodeURIComponent(galleryImgs.join(','))}` as any;
+
   const renderSliderGallery = () => {
     return (
       <div className="relative flex-shrink-0 w-full md:w-72 ">
@@ -41,7 +44,7 @@ const StayCardH: FC<StayCardHProps> = ({
           ratioClass="aspect-w-6 aspect-h-5"
           galleryImgs={galleryImgs}
           uniqueID={`StayCardH_${id}`}
-          href={href}
+          href={dynamicHref}
         />
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3" />
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
@@ -59,12 +62,7 @@ const StayCardH: FC<StayCardHProps> = ({
               6 guests
             </span>
           </div>
-          <div className="flex items-center space-x-3">
-            <i className="las la-bed text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              6 beds
-            </span>
-          </div>
+
         </div>
         <div className="space-y-3">
           <div className="flex items-center space-x-3">

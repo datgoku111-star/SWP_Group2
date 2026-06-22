@@ -13,21 +13,24 @@ import convertNumbThousand from "@/utils/convertNumbThousand";
 // DEMO DATA
 const typeOfPaces = [
   {
-    name: "Entire place",
-    description: "Have a place to yourself",
+    name: "Single Room",
+    description: "A room assigned to one person",
   },
   {
-    name: "Private room",
-    description: "Have your own room and share some common spaces",
+    name: "Double Room",
+    description: "A room assigned to two people",
   },
   {
-    name: "Hotel room",
-    description:
-      "Have a private or shared room in a boutique hotel, hostel, and more",
+    name: "Twin Room",
+    description: "A room with two beds",
   },
   {
-    name: "Shared room",
-    description: "Stay in a shared space, like a common room",
+    name: "Triple Room",
+    description: "A room that can accommodate three persons",
+  },
+  {
+    name: "Family Room",
+    description: "A room that can accommodate a family",
   },
 ];
 
@@ -130,8 +133,8 @@ const TabFilters: FC<TabFiltersProps> = ({
             >
               <span>
                 {localTypeOfPlace.length > 0
-                  ? `Type of place (${localTypeOfPlace.length})`
-                  : "Type of place"}
+                  ? `Type of room (${localTypeOfPlace.length})`
+                  : "Type of room"}
               </span>
               <i className="las la-angle-down ml-2"></i>
             </Popover.Button>
@@ -588,7 +591,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                     <div className="px-4 sm:px-6 divide-y divide-neutral-200 dark:divide-neutral-800">
                       {/* ---- */}
                       <div className="py-7">
-                        <h3 className="text-xl font-medium">Type of place</h3>
+                        <h3 className="text-xl font-medium">Type of room</h3>
                         <div className="mt-6 relative ">
                           {renderMoreFilterItem(typeOfPaces)}
                         </div>
