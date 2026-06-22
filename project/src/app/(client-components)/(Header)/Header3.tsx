@@ -1,6 +1,7 @@
 "use client";
 
 import React, { FC, useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/lib/translate";
 import Logo from "@/shared/Logo";
 import useOutsideAlerter from "@/hooks/useOutsideAlerter";
 import NotifyDropdown from "./NotifyDropdown";
@@ -27,6 +28,7 @@ if (typeof window !== "undefined") {
 
 const Header3: FC<Header3Props> = ({ className = "" }) => {
   const { user } = useAuth();
+  const { t } = useTranslations();
   const headerInnerRef = useRef<HTMLDivElement>(null);
 
   //
@@ -113,14 +115,14 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
             onClick={() => setShowHeroSearch("location")}
             className="block pl-5 pr-4 cursor-pointer py-3"
           >
-            Location
+            {t("Location")}
           </span>
           <span className="h-5 w-[1px] bg-neutral-300 dark:bg-neutral-700"></span>
           <span
             onClick={() => setShowHeroSearch("dates")}
             className="block px-4 cursor-pointer py-3 "
           >
-            Check In
+            {t("Check In")}
           </span>
           <span className="h-5 w-[1px] bg-neutral-300 dark:bg-neutral-700"></span>
           <span
@@ -129,7 +131,7 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
             }}
             className="block px-4 cursor-pointer font-normal py-3"
           >
-            Add guests
+            {t("Add guests")}
           </span>
         </div>
 
@@ -189,7 +191,7 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
                   href={"/add-listing/1"}
                   className="self-center hidden xl:inline-flex px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full items-center text-sm text-gray-700 dark:text-neutral-300 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 mr-2"
                 >
-                  List your property
+                  {t("List your property")}
                 </Link>
 
                 {user ? (
@@ -203,10 +205,10 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
                       href="/login"
                       className="self-center text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 px-3 py-2"
                     >
-                      Sign in
+                      {t("Sign in")}
                     </Link>
                     <ButtonPrimary href="/signup" className="self-center">
-                      Sign up
+                      {t("Sign up")}
                     </ButtonPrimary>
                   </div>
                 )}

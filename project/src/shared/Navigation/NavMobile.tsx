@@ -12,6 +12,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/solid";
 import SwitchDarkMode from "@/shared/SwitchDarkMode";
 import Link from "next/link";
 import LangDropdown from "@/app/(client-components)/(Header)/LangDropdown";
+import { useTranslations } from "@/lib/translate";
 
 export interface NavMobileProps {
   data?: NavItemType[];
@@ -22,6 +23,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
   data = NAVIGATION_DEMO,
   onClickClose,
 }) => {
+  const { t } = useTranslations();
   const _renderMenuChild = (item: NavItemType) => {
     return (
       <ul className="nav-mobile-sub-menu pl-6 pb-1 text-base">
@@ -36,7 +38,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
               <span
                 className={`py-2.5 pr-3 ${!i.children ? "block w-full" : ""}`}
               >
-                {i.name}
+                {t(i.name)}
               </span>
               {i.children && (
                 <span
@@ -80,7 +82,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
           <span
             className={`py-2.5 pr-3 ${!item.children ? "block w-full" : ""}`}
           >
-            {item.name}
+            {t(item.name)}
           </span>
           {item.children && (
             <span className="flex-1 flex" onClick={(e) => e.preventDefault()}>

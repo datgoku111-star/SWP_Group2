@@ -2,6 +2,7 @@
 
 import DatePicker from "react-datepicker";
 import React, { FC, Fragment, useEffect, useState } from "react";
+import { useTranslations } from "@/lib/translate";
 import DatePickerCustomHeaderTwoMonth from "@/components/DatePickerCustomHeaderTwoMonth";
 import DatePickerCustomDay from "@/components/DatePickerCustomDay";
 
@@ -12,6 +13,7 @@ export interface StayDatesRangeInputProps {
 const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
   className = "",
 }) => {
+  const { t } = useTranslations();
   const [startDate, setStartDate] = useState<Date | null>(
     new Date("2023/02/06")
   );
@@ -27,7 +29,7 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
     <div>
       <div className="p-5">
         <span className="block font-semibold text-xl sm:text-2xl">
-          {` When's your trip?`}
+          {t("When's your trip?")}
         </span>
       </div>
       <div

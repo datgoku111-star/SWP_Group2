@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import NotifyDropdown from "./NotifyDropdown";
 import AvatarDropdown from "./AvatarDropdown";
+import { useTranslations } from "@/lib/translate";
 
 export interface MainNav1Props {
   className?: string;
@@ -18,6 +19,7 @@ export interface MainNav1Props {
 
 const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
   const { user } = useAuth();
+  const { t } = useTranslations();
 
   return (
     <div className={`nc-MainNav1 relative z-10 ${className}`}>
@@ -51,10 +53,10 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
                   href="/login"
                   className="self-center text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 px-3 py-2"
                 >
-                  Sign in
+                  {t("Sign in")}
                 </Link>
                 <ButtonPrimary className="self-center" href="/signup">
-                  Sign up
+                  {t("Sign up")}
                 </ButtonPrimary>
               </div>
             )}

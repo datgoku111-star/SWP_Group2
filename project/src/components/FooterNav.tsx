@@ -11,6 +11,7 @@ import MenuBar from "@/shared/MenuBar";
 import isInViewport from "@/utils/isInViewport";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "@/lib/translate";
 
 let WIN_PREV_POSITION = 0;
 if (typeof window !== "undefined") {
@@ -49,6 +50,7 @@ const FooterNav = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const pathname = usePathname();
+  const { t } = useTranslations();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -111,7 +113,7 @@ const FooterNav = () => {
             isActive ? "text-red-600" : ""
           }`}
         >
-          {item.name}
+          {t(item.name)}
         </span>
       </Link>
     ) : (
@@ -122,7 +124,7 @@ const FooterNav = () => {
         }`}
       >
         <item.icon iconClassName="w-6 h-6" className={``} />
-        <span className="text-[11px] leading-none mt-1">{item.name}</span>
+        <span className="text-[11px] leading-none mt-1">{t(item.name)}</span>
       </div>
     );
   };

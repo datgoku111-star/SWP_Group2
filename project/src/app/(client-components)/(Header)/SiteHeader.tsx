@@ -5,6 +5,7 @@ import {
   ShoppingBagIcon as ShoppingCartIcon,
   Cog8ToothIcon as CogIcon,
 } from "@heroicons/react/24/outline";
+import { useTranslations } from "@/lib/translate";
 import { Popover, Transition } from "@headlessui/react";
 import { PathName } from "@/routers/types";
 import Link from "next/link";
@@ -54,6 +55,7 @@ const SiteHeader = () => {
   useThemeMode();
   //
   const pathname = usePathname();
+  const { t } = useTranslations();
 
   const intersectionCallback = (entries: IntersectionObserverEntry[]) => {
     entries.forEach((entry) => {
@@ -78,7 +80,7 @@ const SiteHeader = () => {
   const renderRadioHeaders = () => {
     return (
       <div className="mt-4">
-        <span className="text-sm font-medium">Header Styles</span>
+        <span className="text-sm font-medium">{t("Header Styles")}</span>
         <div className="mt-1.5 flex items-center space-x-2">
           {headers.map((header) => {
             return (
@@ -103,7 +105,7 @@ const SiteHeader = () => {
   const renderRadioHomePages = () => {
     return (
       <div className="mt-4">
-        <span className="text-sm font-medium">Home Demos</span>
+        <span className="text-sm font-medium">{t("Home Demos")}</span>
         <div className="mt-1.5 flex items-center space-x-2">
           {homePages.map((home) => {
             return (
@@ -116,7 +118,7 @@ const SiteHeader = () => {
                     : "border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500"
                 }`}
               >
-                {home.name}
+                {t(home.name)}
               </Link>
             );
           })}
@@ -152,7 +154,7 @@ const SiteHeader = () => {
                   <Popover.Panel className="absolute right-0 z-10 mt-3 w-screen max-w-sm">
                     <div className="rounded-2xl bg-white dark:bg-neutral-800 overflow-hidden nc-custom-shadow-1">
                       <div className="relative p-6">
-                        <span className="text-xl font-semibold">Customize</span>
+                        <span className="text-xl font-semibold">{t("Customize")}</span>
                         <div className="w-full border-b border-neutral-200 dark:border-neutral-700 mt-4"></div>
                         {renderRadioHeaders()}
                         {renderRadioHomePages()}

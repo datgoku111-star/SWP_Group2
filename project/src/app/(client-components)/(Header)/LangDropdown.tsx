@@ -1,49 +1,29 @@
+"use client";
+
 import { Popover, Tab, Transition } from "@headlessui/react";
 import {
   BanknotesIcon,
   GlobeAltIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { FC, Fragment } from "react";
 import { headerCurrency } from "./CurrencyDropdown";
+import { useTranslations } from "@/lib/translate";
 
 export const headerLanguage = [
   {
     id: "English",
     name: "English",
-    description: "United State",
-    href: "##",
-    active: true,
+    description: "United States",
+    locale: "en",
   },
   {
     id: "Vietnamese",
     name: "Vietnamese",
     description: "Vietnamese",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Belgique",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Canada",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Belgique",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Canada",
-    href: "##",
+    locale: "vi",
   },
 ];
 
@@ -60,26 +40,44 @@ const LangDropdown: FC<LangDropdownProps> = ({
   panelClassName = "top-full right-0 max-w-sm w-96",
   className = "hidden md:flex",
 }) => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentSearch = searchParams?.toString();
+  const currentLocale = pathname?.startsWith("/vi") ? "vi" : "en";
+  const { t } = useTranslations();
+  const categories = [t("Language"), t("Currency")];
+
   const renderLang = (close: () => void) => {
     return (
       <div className="grid gap-8 lg:grid-cols-2">
-        {headerLanguage.map((item, index) => (
-          <a
-            key={index}
-            href={item.href}
-            onClick={() => close()}
-            className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
-              item.active ? "bg-gray-100 dark:bg-gray-700" : "opacity-80"
-            }`}
-          >
-            <div className="">
-              <p className="text-sm font-medium ">{item.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {item.description}
-              </p>
-            </div>
-          </a>
-        ))}
+          {headerLanguage.map((item, index) => {
+          const isActive = item.locale === currentLocale;
+          // Build href pathname without existing locale prefix to avoid duplicating locale segments
+          const basePath = (pathname || "/").replace(/^\/(en|vi)(?=\/|$)/, "") || "/";
+          // Build explicit locale-prefixed href (avoid relying on Link `locale` which
+          // can duplicate segments when `pathname` already contains a locale)
+          const pathSuffix = basePath === "/" ? "" : basePath;
+          const href = `${"/" + item.locale}${pathSuffix}${
+            currentSearch ? `?${currentSearch}` : ""
+          }`;
+          return (
+            <Link
+              key={index}
+              href={href}
+              onClick={() => close()}
+              className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
+                isActive ? "bg-gray-100 dark:bg-gray-700" : "opacity-80"
+              }`}
+            >
+              <div className="">
+                <p className="text-sm font-medium ">{t(item.name)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t(item.description)}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     );
   };
@@ -136,7 +134,7 @@ const LangDropdown: FC<LangDropdownProps> = ({
                 <div className="p-3 sm:p-6 rounded-2xl bg-white dark:bg-neutral-800 shadow-lg ring-1 ring-black ring-opacity-5">
                   <Tab.Group>
                     <Tab.List className="flex space-x-1 rounded-full bg-gray-100 dark:bg-slate-700 p-1">
-                      {["Language", "Currency"].map((category) => (
+                      {categories.map((category) => (
                         <Tab
                           key={category}
                           className={({ selected }) =>

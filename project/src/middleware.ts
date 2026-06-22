@@ -43,11 +43,18 @@ const templatePaths = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Allow public paths and template paths
+  // Normalize pathname by stripping locale prefix (e.g. /vi, /en)
+  let pathnameToCheck = pathname;
+  const localePrefixMatch = pathnameToCheck.match(/^\/(en|vi)(\/|$)/);
+  if (localePrefixMatch) {
+    pathnameToCheck = pathnameToCheck.replace(/^\/(en|vi)/, "") || "/";
+  }
+
+  // 1. Allow public paths and template paths (compare against normalized path)
   if (
-    publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
-    templatePaths.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
-    pathname.startsWith("/_next") || // Next.js assets
+    publicPaths.some((p) => pathnameToCheck === p || pathnameToCheck.startsWith(`${p}/`)) ||
+    templatePaths.some((p) => pathnameToCheck === p || pathnameToCheck.startsWith(`${p}/`)) ||
+    pathname.startsWith("/_next") || // Next.js assets (use original pathname)
     pathname.match(/\.(.*)$/) // Static files
   ) {
     return NextResponse.next();
@@ -81,15 +88,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // 4. Role-based access control
-  if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
+  if (pathnameToCheck.startsWith("/admin") && payload.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (pathname.startsWith("/housekeeping") && !["ADMIN", "HOUSEKEEPING"].includes(payload.role)) {
+  if (pathnameToCheck.startsWith("/housekeeping") && !["ADMIN", "HOUSEKEEPING"].includes(payload.role)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (pathname.startsWith("/checkin") && !["ADMIN", "RECEPTIONIST"].includes(payload.role)) {
+  if (pathnameToCheck.startsWith("/checkin") && !["ADMIN", "RECEPTIONIST"].includes(payload.role)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

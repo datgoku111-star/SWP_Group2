@@ -4,6 +4,11 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  i18n: {
+    locales: ["en", "vi"],
+    defaultLocale: "en",
+    localeDetection: false,
+  },
   images: {
     remotePatterns: [
       {

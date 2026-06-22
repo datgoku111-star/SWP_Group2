@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useTranslations } from "@/lib/translate";
 import LocationInput from "../LocationInput";
 import GuestsInput from "../GuestsInput";
 import DatesRangeInput from "../DatesRangeInput";
@@ -30,6 +31,8 @@ const FlightSearchForm = () => {
     guestInfants: 0,
   });
 
+  const { t } = useTranslations();
+
   const renderInputLocationPickup = () => {
     const isActive = fieldNameShow === "locationPickup";
     return (
@@ -45,12 +48,12 @@ const FlightSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("locationPickup")}
           >
-            <span className="text-neutral-400">Pick up</span>
-            <span>{locationInputPickUp || "Location"}</span>
+            <span className="text-neutral-400">{t("Pick up")}</span>
+            <span>{locationInputPickUp || t("Location")}</span>
           </button>
         ) : (
           <LocationInput
-            headingText="Pick up?"
+            headingText={t("Pick up?")}
             defaultValue={locationInputPickUp}
             onChange={(value) => {
               setLocationInputPickUp(value);
@@ -77,12 +80,12 @@ const FlightSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("locationDropoff")}
           >
-            <span className="text-neutral-400">Drop off</span>
-            <span>{locationInputDropOff || "Location"}</span>
+            <span className="text-neutral-400">{t("Drop off")}</span>
+            <span>{locationInputDropOff || t("Location")}</span>
           </button>
         ) : (
           <LocationInput
-            headingText="Drop off?"
+            headingText={t("Drop off?")}
             defaultValue={locationInputDropOff}
             onChange={(value) => {
               setLocationInputDropOff(value);
@@ -110,11 +113,11 @@ const FlightSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4  `}
             onClick={() => setFieldNameShow("dates")}
           >
-            <span className="text-neutral-400">When</span>
+            <span className="text-neutral-400">{t("When")}</span>
             <span>
               {startDate
                 ? converSelectedDateToString([startDate, endDate])
-                : "Add date"}
+                : t("Add date")}
             </span>
           </button>
         ) : (
@@ -139,13 +142,13 @@ const FlightSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("general")}
           >
-            <span className="text-neutral-400">Flight type?</span>
-            <span>{`${dropOffLocationType}, ${flightClassState}`}</span>
+            <span className="text-neutral-400">{t("Flight type?")}</span>
+            <span>{`${t(dropOffLocationType)} , ${t(flightClassState)}`}</span>
           </button>
         ) : (
           <div className="p-5">
             <span className="block font-semibold text-xl sm:text-2xl">
-              Flight type?
+              {t("Flight type?")}
             </span>
             <div className="relative mt-5">
               <div className="flex space-x-2">
@@ -157,7 +160,7 @@ const FlightSearchForm = () => {
                   }`}
                   onClick={(e) => setDropOffLocationType("Round-trip")}
                 >
-                  Round-trip
+                  {t("Round-trip")}
                 </div>
                 <div
                   className={`py-1.5 px-4 flex items-center rounded-full font-medium text-xs cursor-pointer select-none ${
@@ -167,18 +170,18 @@ const FlightSearchForm = () => {
                   }`}
                   onClick={(e) => setDropOffLocationType("One-way")}
                 >
-                  One-way
+                  {t("One-way")}
                 </div>
               </div>
 
               <div className="mt-6">
                 <label className="text-base font-semibold" htmlFor="">
-                  Ticket Class:
+                  {t("Ticket Class:")}
                 </label>
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {renderRadio("class", "Economy", "Economy")}
-                  {renderRadio("class", "Business", "Business")}
-                  {renderRadio("class", "Multiple", "Multiple")}
+                  {renderRadio("class", "Economy", t("Economy"))}
+                  {renderRadio("class", "Business", t("Business"))}
+                  {renderRadio("class", "Multiple", t("Multiple"))}
                 </div>
               </div>
             </div>
@@ -220,11 +223,8 @@ const FlightSearchForm = () => {
     if (guestInput.guestAdults || guestInput.guestChildren) {
       const guest =
         (guestInput.guestAdults || 0) + (guestInput.guestChildren || 0);
-      guestSelected += `${guest} guests`;
-    }
-
-    if (guestInput.guestInfants) {
-      guestSelected += `, ${guestInput.guestInfants} infants`;
+      guestSelected += `${guest} ${t("Guests")}`;
+      guestSelected += `, ${guestInput.guestInfants} ${t("Infants")}`;
     }
 
     return (
@@ -240,8 +240,8 @@ const FlightSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("guests")}
           >
-            <span className="text-neutral-400">Who</span>
-            <span>{guestSelected || `Add guests`}</span>
+            <span className="text-neutral-400">{t("Who")}</span>
+            <span>{guestSelected || t("Add guests")}</span>
           </button>
         ) : (
           <GuestsInput defaultValue={guestInput} onChange={setGuestInput} />

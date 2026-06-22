@@ -5,8 +5,11 @@ import { NAVIGATION_DEMO_2 } from "@/data/navigation";
 import { NavItemType } from "@/shared/Navigation/NavigationItem";
 import Link from "next/link";
 import Collection from "@/components/Collection";
+import { useTranslations } from "@/lib/translate";
 
 export default function TemplatesDropdown() {
+  const { t } = useTranslations();
+
   const renderMegaMenuNavlink = (
     item: NavItemType,
     index: number,
@@ -23,7 +26,7 @@ export default function TemplatesDropdown() {
           }}
           onClick={close}
         >
-          {item.name}
+          {t(item.name)}
         </Link>
       </li>
     );
@@ -39,7 +42,7 @@ export default function TemplatesDropdown() {
                 ${open ? "" : "text-opacity-80"}
                 group h-10 sm:h-12 px-3 py-1.5 inline-flex items-center text-sm text-gray-800 dark:text-slate-300 font-medium hover:text-opacity-100 focus:outline-none `}
             >
-              <span className="">Templates</span>
+              <span className="">{t("Templates")}</span>
               <ChevronDownIcon
                 className={`${open ? "-rotate-180" : ""}
                   ml-1 h-4 w-4 transition ease-in-out duration-150 `}
@@ -63,7 +66,7 @@ export default function TemplatesDropdown() {
                         {NAVIGATION_DEMO_2.map((item, index) => (
                           <div key={index}>
                             <p className="font-medium text-slate-900 dark:text-neutral-200">
-                              {item.name}
+                              {t(item.name)}
                             </p>
                             <ul className="grid space-y-4 mt-4">
                               {item.children?.map((item, index) =>

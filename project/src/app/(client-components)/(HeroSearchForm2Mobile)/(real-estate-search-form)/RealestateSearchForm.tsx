@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "@/lib/translate";
 import convertNumbThousand from "@/utils/convertNumbThousand";
 import LocationInput from "../LocationInput";
 import PriceRangeInput from "./PriceRangeInput";
@@ -54,12 +55,12 @@ const RealestateSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("location")}
           >
-            <span className="text-neutral-400">Where</span>
-            <span>{locationInputTo || "Location"}</span>
+            <span className="text-neutral-400">{t("Where")}</span>
+            <span>{locationInputTo || t("Location")}</span>
           </button>
         ) : (
           <LocationInput
-            headingText="Where to find?"
+            headingText={t("Where to find?")}
             defaultValue={locationInputTo}
             onChange={(value) => {
               setLocationInputTo(value);
@@ -97,9 +98,9 @@ const RealestateSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("propertyType")}
           >
-            <span className="text-neutral-400">Property</span>
+            <span className="text-neutral-400">{t("Property")}</span>
             <span className="truncate ml-5">
-              {typeOfPropertyText || "Add property"}
+              {typeOfPropertyText || t("Add property")}
             </span>
           </button>
         ) : (
@@ -128,7 +129,7 @@ const RealestateSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("price")}
           >
-            <span className="text-neutral-400">Price</span>
+            <span className="text-neutral-400">{t("Price")}</span>
             <span>
               {`$${convertNumbThousand(
                 rangePrices[0] / 1000

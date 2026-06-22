@@ -4,6 +4,7 @@ import Logo from "@/shared/Logo";
 import SocialsList1 from "@/shared/SocialsList1";
 import { CustomLink } from "@/data/types";
 import React from "react";
+import { useTranslations } from "@/lib/translate";
 import FooterNav from "./FooterNav";
 
 export interface WidgetFooterMenu {
@@ -60,11 +61,13 @@ const widgetMenus: WidgetFooterMenu[] = [
 ];
 
 const Footer: React.FC = () => {
+  const { t } = useTranslations();
+
   const renderWidgetMenuItem = (menu: WidgetFooterMenu, index: number) => {
     return (
       <div key={index} className="text-sm">
         <h2 className="font-semibold text-neutral-700 dark:text-neutral-200">
-          {menu.title}
+          {t(menu.title)}
         </h2>
         <ul className="mt-5 space-y-4">
           {menu.menus.map((item, index) => (
@@ -74,7 +77,7 @@ const Footer: React.FC = () => {
                 className="text-neutral-6000 dark:text-neutral-300 hover:text-black dark:hover:text-white"
                 href={item.href}
               >
-                {item.label}
+                {t(item.label)}
               </a>
             </li>
           ))}
