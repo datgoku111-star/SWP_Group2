@@ -139,6 +139,9 @@ export interface CarDataType {
   gearshift: string;
   saleOff?: string | null;
   isAds: boolean | null;
+  description?: string;
+  carType?: string;
+  type?: "Small" | "Medium" | "Large" | "SUV" | "Van" | "Luxury";
   map: {
     lat: number;
     lng: number;

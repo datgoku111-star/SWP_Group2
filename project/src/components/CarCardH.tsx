@@ -29,7 +29,14 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     reviewCount,
     author,
     featuredImage,
+    seats,
+    gearshift,
   } = data;
+
+  const imgUrl = typeof featuredImage === "string" 
+    ? featuredImage 
+    : (featuredImage ? (featuredImage as any).src : "") || "";
+  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&seats=${seats}&gearshift=${encodeURIComponent(gearshift)}` as any;
 
   const renderSliderGallery = () => {
     return (
@@ -41,6 +48,8 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
               className="w-full"
               src={featuredImage}
               sizes="(max-width: 640px) 100vw, 300px"
+              width={300}
+              height={169}
             />
           ) : (
             <div className="w-full h-full min-h-[150px] bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center">
@@ -78,26 +87,39 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
         <div className="hidden sm:block w-14 border-b border-neutral-200/80 dark:border-neutral-700 my-4"></div>
         {/* SHOW MOBILE */}
         <div className="flex sm:hidden items-center text-sm text-neutral-500 dark:text-neutral-400 space-x-2 mt-4 sm:mt-0">
-          <span>4 seats</span>
+          {data.type && (
+            <>
+              <span>{data.type}</span>
+              <span>· </span>
+            </>
+          )}
+          <span>{seats} seats</span>
           <span>· </span>
-          <span>Auto gearbox</span>
-          <span>· </span>
-          <span>4 seats</span>
+          <span>{gearshift}</span>
         </div>
         {/* SHOW DESK */}
         <div className="hidden sm:flex items-center space-x-8">
           {/* --- */}
+          {data.type && (
+            <div className="flex items-center space-x-2">
+              <i className="las la-car text-xl"></i>
+              <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                {data.type}
+              </span>
+            </div>
+          )}
+          {/* --- */}
           <div className="flex items-center space-x-2">
             <i className="las la-user-friends text-xl"></i>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              4 seats
+              {seats} seats
             </span>
           </div>
           {/* --- */}
           <div className="flex items-center space-x-2">
             <i className="las la-dharmachakra text-xl"></i>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Auto gearbox
+              {gearshift}
             </span>
           </div>
           {/* --- */}
@@ -134,7 +156,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     <div
       className={`nc-CarCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden ${className}`}
     >
-      <Link href={href} className="flex flex-col md:flex-row">
+      <Link href={dynamicHref} className="flex flex-col md:flex-row">
         {renderSliderGallery()}
         {renderContent()}
       </Link>
