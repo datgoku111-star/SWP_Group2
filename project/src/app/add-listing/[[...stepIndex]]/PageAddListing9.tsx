@@ -10,9 +10,9 @@ export interface PageAddListing9Props {}
 
 const PageAddListing9: FC<PageAddListing9Props> = () => {
   const [dates, setDates] = useState<number[]>([
-    new Date("2023/02/06").getTime(),
-    new Date("2023/02/09").getTime(),
-    new Date("2023/02/15").getTime(),
+    new Date().getTime(),
+    new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).getTime(),
+    new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).getTime(),
   ]);
 
   return (

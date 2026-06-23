@@ -3,6 +3,7 @@ import GallerySlider from "@/components/GallerySlider";
 import { DEMO_EXPERIENCES_LISTINGS } from "@/data/listings";
 import { ExperiencesDataType } from "@/data/types";
 import StartRating from "@/components/StartRating";
+import { useCurrency } from "@/hooks/useCurrency";
 import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
@@ -24,6 +25,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
   data = DEMO_DATA,
   ratioClass = "aspect-w-3 aspect-h-3",
 }) => {
+  const { formatPrice } = useCurrency();
   const {
     galleryImgs,
     address,
@@ -80,7 +82,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
         <div className="border-b border-neutral-100 dark:border-neutral-800"></div>
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            {formatPrice(parseFloat(price.toString().replace('$', '')) || 0, 'USD')}
             {` `}
             {size === "default" && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">

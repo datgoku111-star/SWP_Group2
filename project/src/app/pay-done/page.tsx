@@ -1,12 +1,100 @@
+"use client";
+
 import StartRating from "@/components/StartRating";
-import React, { FC } from "react";
+import React, { FC, useState, useEffect, Suspense } from "react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export interface PayPageProps {}
 
-const PayPage: FC<PayPageProps> = () => {
+const PayPageContent: FC = () => {
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get("bookingId");
+  const serviceOrderId = searchParams.get("serviceOrderId");
+  const type = searchParams.get("type");
+  const title = searchParams.get("title") || "The Lounge & Bar";
+  const img = searchParams.get("img") || "https://images.pexels.com/photos/6373478/pexels-photo-6373478.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
+  const category = searchParams.get("category") || "Hotel room";
+  const address = searchParams.get("address") || "Tokyo, Jappan";
+
+  const { formatPrice } = useCurrency();
+
+  const [loading, setLoading] = useState(true);
+  const [bookingData, setBookingData] = useState<any>(null);
+  const [orderData, setOrderData] = useState<any>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!bookingId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // 1. Fetch booking details
+        const bookingRes = await fetch(`/api/bookings/${bookingId}`);
+        if (!bookingRes.ok) {
+          throw new Error("Không thể tải thông tin đặt phòng.");
+        }
+        const bData = await bookingRes.json();
+        setBookingData(bData);
+
+        // 2. Fetch service order if type is service
+        if (type === "service" && serviceOrderId) {
+          const ordersRes = await fetch(`/api/orders?booking_id=${bookingId}`);
+          if (ordersRes.ok) {
+            const orders = await ordersRes.json();
+            const specificOrder = orders.find((o: any) => o.id === serviceOrderId);
+            if (specificOrder) {
+              setOrderData(specificOrder);
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Đã xảy ra lỗi khi tải dữ liệu giao dịch.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [bookingId, serviceOrderId, type]);
+
+  const formatDateRange = (startStr: string, endStr: string) => {
+    if (!startStr || !endStr) return "";
+    const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
+    const start = new Date(startStr).toLocaleDateString("vi-VN", options);
+    const end = new Date(endStr).toLocaleDateString("vi-VN", options);
+    return `${start} - ${end}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="container min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-6000 border-t-transparent"></div>
+        <p className="text-neutral-500 dark:text-neutral-400">Đang tải thông tin giao dịch...</p>
+      </div>
+    );
+  }
+
+  if (error && !bookingData) {
+    return (
+      <div className="container min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="text-red-500 text-5xl">⚠️</div>
+        <p className="text-neutral-800 dark:text-neutral-200 font-semibold">{error}</p>
+        <ButtonPrimary href="/">Quay lại Trang chủ</ButtonPrimary>
+      </div>
+    );
+  }
+
   const renderContent = () => {
+    const isService = type === "service";
+
     return (
       <div className="w-full flex flex-col sm:rounded-2xl space-y-10 px-0 sm:p-6 xl:p-8">
         <h2 className="text-3xl lg:text-4xl font-semibold">
@@ -17,7 +105,7 @@ const PayPage: FC<PayPageProps> = () => {
 
         {/* ------------------------ */}
         <div className="space-y-6">
-          <h3 className="text-2xl font-semibold">Your booking</h3>
+          <h3 className="text-2xl font-semibold">Your {isService ? "order" : "booking"}</h3>
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex-shrink-0 w-full sm:w-40">
               <div className=" aspect-w-4 aspect-h-3 sm:aspect-h-4 rounded-2xl overflow-hidden">
@@ -25,21 +113,24 @@ const PayPage: FC<PayPageProps> = () => {
                   fill
                   alt=""
                   className="object-cover"
-                  src="https://images.pexels.com/photos/6373478/pexels-photo-6373478.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+                  src={img}
                 />
               </div>
             </div>
             <div className="pt-5  sm:pb-5 sm:px-5 space-y-3">
               <div>
                 <span className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                  Hotel room in Tokyo, Jappan
+                  {isService ? "Dịch vụ gọi món & đồ uống" : `${category} in ${address}`}
                 </span>
                 <span className="text-base sm:text-lg font-medium mt-1 block">
-                  The Lounge & Bar
+                  {title}
                 </span>
               </div>
               <span className="block  text-sm text-neutral-500 dark:text-neutral-400">
-                2 beds · 2 baths
+                {isService 
+                  ? (bookingData?.room?.room_number ? `Giao tới Phòng ${bookingData.room.room_number} (Tầng ${bookingData.room.floor})` : "Dịch vụ phòng")
+                  : (bookingData?.room ? `Phòng ${bookingData.room.room_number} - Tầng ${bookingData.room.floor} (${bookingData.room.room_type?.name || "Standard"})` : "2 beds · 2 baths")
+                }
               </span>
               <div className="w-10 border-b border-neutral-200  dark:border-neutral-700"></div>
               <StartRating />
@@ -65,7 +156,10 @@ const PayPage: FC<PayPageProps> = () => {
               <div className="flex flex-col">
                 <span className="text-sm text-neutral-400">Date</span>
                 <span className="mt-1.5 text-lg font-semibold">
-                  Aug 12 - 16, 2021
+                  {isService 
+                    ? (orderData ? new Date(orderData.created_at).toLocaleDateString("vi-VN", { day: "numeric", month: "short", year: "numeric" }) : "Hôm nay")
+                    : (bookingData ? formatDateRange(bookingData.check_in_date, bookingData.check_out_date) : "Aug 12 - 16, 2021")
+                  }
                 </span>
               </div>
             </div>
@@ -86,8 +180,13 @@ const PayPage: FC<PayPageProps> = () => {
               </svg>
 
               <div className="flex flex-col">
-                <span className="text-sm text-neutral-400">Guests</span>
-                <span className="mt-1.5 text-lg font-semibold">3 Guests</span>
+                <span className="text-sm text-neutral-400">{isService ? "Order Status" : "Guests"}</span>
+                <span className="mt-1.5 text-lg font-semibold">
+                  {isService 
+                    ? (orderData?.status === "PENDING" ? "Đang chờ" : orderData?.status === "IN_PROGRESS" ? "Đang thực hiện" : orderData?.status === "COMPLETED" ? "Đã giao" : "Đã hủy")
+                    : (bookingData ? `${bookingData.num_guests} khách` : "3 Guests")
+                  }
+                </span>
               </div>
             </div>
           </div>
@@ -95,30 +194,53 @@ const PayPage: FC<PayPageProps> = () => {
 
         {/* ------------------------ */}
         <div className="space-y-6">
-          <h3 className="text-2xl font-semibold">Booking detail</h3>
+          <h3 className="text-2xl font-semibold">Giao dịch chi tiết</h3>
           <div className="flex flex-col space-y-4">
             <div className="flex text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">Booking code</span>
+              <span className="flex-1">{isService ? "Mã đơn hàng" : "Mã đặt phòng"}</span>
+              <span className="flex-1 font-mono font-medium text-neutral-900 dark:text-neutral-100 select-all">
+                #{isService 
+                  ? (orderData?.id?.slice(0, 8).toUpperCase() || "SERVICE_ORDER") 
+                  : (bookingData?.id?.slice(0, 8).toUpperCase() || "BOOKING")
+                }
+              </span>
+            </div>
+            
+            {/* If service, list food items */}
+            {isService && orderData?.items && (
+              <div className="flex flex-col space-y-2 py-2 border-y border-neutral-100 dark:border-neutral-800">
+                <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Danh sách món ăn:</span>
+                {orderData.items.map((item: any) => (
+                  <div key={item.id} className="flex justify-between text-sm text-neutral-600 dark:text-neutral-300">
+                    <span>{item.service?.name} x {item.quantity}</span>
+                    <span>{formatPrice(item.subtotal, "VND")}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex text-neutral-6000 dark:text-neutral-300">
+              <span className="flex-1">Ngày thanh toán</span>
               <span className="flex-1 font-medium text-neutral-900 dark:text-neutral-100">
-                #222-333-111
+                {isService
+                  ? (orderData ? new Date(orderData.created_at).toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric" }) : "")
+                  : (bookingData ? new Date(bookingData.created_at).toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric" }) : "12 Aug, 2021")
+                }
               </span>
             </div>
             <div className="flex text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">Date</span>
-              <span className="flex-1 font-medium text-neutral-900 dark:text-neutral-100">
-                12 Aug, 2021
-              </span>
-            </div>
-            <div className="flex text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">Total</span>
-              <span className="flex-1 font-medium text-neutral-900 dark:text-neutral-100">
-                $199
+              <span className="flex-1">Tổng tiền thanh toán</span>
+              <span className="flex-1 font-bold text-neutral-900 dark:text-neutral-100 text-lg">
+                {isService
+                  ? (orderData ? formatPrice(orderData.total_amount, "VND") : "")
+                  : (bookingData ? formatPrice(bookingData.total_amount, "USD") : "$199")
+                }
               </span>
             </div>
             <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">Payment method</span>
+              <span className="flex-1">Phương thức thanh toán</span>
               <span className="flex-1 font-medium text-neutral-900 dark:text-neutral-100">
-                Credit card
+                VietQR (PayOS) / Chuyển khoản
               </span>
             </div>
           </div>
@@ -136,6 +258,19 @@ const PayPage: FC<PayPageProps> = () => {
         <div className="max-w-4xl mx-auto">{renderContent()}</div>
       </main>
     </div>
+  );
+};
+
+const PayPage: FC<PayPageProps> = () => {
+  return (
+    <Suspense fallback={
+      <div className="container min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-6000 border-t-transparent"></div>
+        <p className="text-neutral-500 dark:text-neutral-400">Đang tải thông tin giao dịch...</p>
+      </div>
+    }>
+      <PayPageContent />
+    </Suspense>
   );
 };
 

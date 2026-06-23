@@ -14,9 +14,9 @@ const CarsSearchForm = () => {
   const [locationInputDropOff, setLocationInputDropOff] = useState("");
 
   const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/02/06")
+    new Date()
   );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
 
   const [dropOffLocationType, setDropOffLocationType] = useState<
     "same" | "different"

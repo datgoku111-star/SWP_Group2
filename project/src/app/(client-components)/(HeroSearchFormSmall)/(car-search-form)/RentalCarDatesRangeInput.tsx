@@ -20,9 +20,9 @@ const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
   hasButtonSubmit = true,
 }) => {
   const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/03/01")
+    new Date()
   );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/03/16"));
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
 
   const onChangeDate = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;

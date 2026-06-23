@@ -2,6 +2,7 @@ import React, { FC } from "react";
 import { DEMO_CAR_LISTINGS } from "@/data/listings";
 import { CarDataType } from "@/data/types";
 import StartRating from "@/components/StartRating";
+import { useCurrency } from "@/hooks/useCurrency";
 import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
@@ -17,6 +18,7 @@ export interface CarCardHProps {
 const DEMO_DATA: CarDataType = DEMO_CAR_LISTINGS[0];
 
 const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
+  const { formatPrice } = useCurrency();
   const {
     address,
     title,
@@ -141,7 +143,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
             </span>
           </div>
           <span className="text-lg font-semibold text-secondary-700">
-            {price}
+            {formatPrice(parseFloat(price.toString().replace('$', '')) || 0, 'USD')}
             {` `}
             <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
               /day

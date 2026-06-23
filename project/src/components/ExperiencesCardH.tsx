@@ -3,6 +3,7 @@ import GallerySlider from "@/components/GallerySlider";
 import { DEMO_EXPERIENCES_LISTINGS } from "@/data/listings";
 import { ExperiencesDataType } from "@/data/types";
 import StartRating from "@/components/StartRating";
+import { useCurrency } from "@/hooks/useCurrency";
 import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
@@ -20,6 +21,7 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
   className = "",
   data = DEMO_DATA,
 }) => {
+  const { formatPrice } = useCurrency();
   const {
     galleryImgs,
     address,
@@ -106,7 +108,7 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
             </span>
           </div>
           <span className="text-base font-semibold text-secondary-700">
-            {price}
+            {formatPrice(parseFloat(price.toString().replace('$', '')) || 0, 'USD')}
             {` `}
             <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
               /person

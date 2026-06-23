@@ -26,6 +26,12 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+
+    try {
+      const fs = require("fs");
+      const logMsg = `[${new Date().toISOString()}] User: ${JSON.stringify(user)}\nData: ${JSON.stringify(data)}\n\n`;
+      fs.appendFileSync("D:/Pho/Pho/project/bookings_log.txt", logMsg);
+    } catch (e) {}
     
     // Basic validation
     if (!data.room_id || !data.check_in_date || !data.check_out_date) {
@@ -49,6 +55,6 @@ export async function POST(request: Request) {
     if (error.message && error.message.includes("no longer available")) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }
