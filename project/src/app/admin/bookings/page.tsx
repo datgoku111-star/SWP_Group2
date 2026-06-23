@@ -64,21 +64,11 @@ export default function AdminBookingsPage() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      // Fetch bookings joined with user/guest if possible, else fetch list
-      const { data, error } = await supabaseBrowser
-        .from("bookings")
-        .select(`
-          id,
-          check_in_date,
-          check_out_date,
-          total_amount,
-          status,
-          user:users(full_name),
-          room:rooms(room_number)
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const res = await fetch("/api/bookings");
+      if (!res.ok) {
+        throw new Error("Failed to fetch bookings");
+      }
+      const data = await res.json();
 
       if (data && data.length > 0) {
         const mapped: Booking[] = data.map((b: any) => ({
@@ -96,7 +86,7 @@ export default function AdminBookingsPage() {
         }));
         setBookings(mapped);
       } else {
-        setBookings(fallbackBookings);
+        setBookings([]);
       }
     } catch (err) {
       console.warn("Could not fetch bookings from Supabase, using mock fallback. Details:", err);

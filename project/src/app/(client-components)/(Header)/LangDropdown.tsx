@@ -6,6 +6,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { FC, Fragment } from "react";
 import { headerCurrency } from "./CurrencyDropdown";
+import CurrencyConverter from "@/components/CurrencyConverter";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export const headerLanguage = [
   {
@@ -60,6 +62,8 @@ const LangDropdown: FC<LangDropdownProps> = ({
   panelClassName = "top-full right-0 max-w-sm w-96",
   className = "hidden md:flex",
 }) => {
+  const { currency, setCurrency } = useCurrency();
+
   const renderLang = (close: () => void) => {
     return (
       <div className="grid gap-8 lg:grid-cols-2">
@@ -86,20 +90,26 @@ const LangDropdown: FC<LangDropdownProps> = ({
 
   const renderCurr = (close: () => void) => {
     return (
-      <div className="grid gap-7 lg:grid-cols-2">
-        {headerCurrency.map((item, index) => (
-          <a
-            key={index}
-            href={item.href}
-            onClick={() => close()}
-            className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
-              item.active ? "bg-gray-100 dark:bg-gray-700" : "opacity-80"
-            }`}
-          >
-            <item.icon className="w-[18px] h-[18px] " />
-            <p className="ml-2 text-sm font-medium ">{item.name}</p>
-          </a>
-        ))}
+      <div>
+        <div className="grid gap-7 lg:grid-cols-2">
+          {headerCurrency.map((item, index) => (
+            <a
+              key={index}
+              href={item.href}
+              onClick={() => {
+                setCurrency(item.id as any);
+                close();
+              }}
+              className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
+                item.id === currency ? "bg-gray-100 dark:bg-gray-700" : "opacity-80"
+              }`}
+            >
+              <item.icon className="w-[18px] h-[18px] " />
+              <p className="ml-2 text-sm font-medium ">{item.name}</p>
+            </a>
+          ))}
+        </div>
+        <CurrencyConverter />
       </div>
     );
   };

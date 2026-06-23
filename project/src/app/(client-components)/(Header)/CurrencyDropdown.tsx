@@ -4,49 +4,30 @@ import { Popover, Transition } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/24/solid";
 import {
   CurrencyDollarIcon,
-  CurrencyBangladeshiIcon,
-  CurrencyEuroIcon,
-  CurrencyPoundIcon,
-  CurrencyRupeeIcon,
   BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import { Fragment } from "react";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export const headerCurrency = [
-  {
-    id: "EUR",
-    name: "EUR",
-    href: "##",
-    icon: CurrencyEuroIcon,
-    active: true,
-  },
   {
     id: "USD",
     name: "USD",
     href: "##",
     icon: CurrencyDollarIcon,
+    active: true,
   },
   {
-    id: "GBF",
-    name: "GBF",
+    id: "VND",
+    name: "VND",
     href: "##",
-    icon: CurrencyBangladeshiIcon,
-  },
-  {
-    id: "SAR",
-    name: "SAR",
-    href: "##",
-    icon: CurrencyPoundIcon,
-  },
-  {
-    id: "QAR",
-    name: "QAR",
-    href: "##",
-    icon: CurrencyRupeeIcon,
+    icon: BanknotesIcon,
   },
 ];
 
 export default function CurrencyDropdown() {
+  const { currency, setCurrency } = useCurrency();
+
   return (
     <div className="CurrencyDropdown">
       <Popover className="relative">
@@ -81,9 +62,12 @@ export default function CurrencyDropdown() {
                       <a
                         key={index}
                         href={item.href}
-                        onClick={() => close()}
+                        onClick={() => {
+                          setCurrency(item.id as any);
+                          close();
+                        }}
                         className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
-                          item.active
+                          item.id === currency
                             ? "bg-gray-100 dark:bg-neutral-700"
                             : "opacity-80"
                         }`}

@@ -4,6 +4,7 @@ import React, { FC, Fragment, useState, useEffect, Suspense } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/lib/auth-context";
+import { useCurrency } from "@/hooks/useCurrency";
 import CommentListing from "@/components/CommentListing";
 import FiveStartIconForRate from "@/components/FiveStartIconForRate";
 import StartRating from "@/components/StartRating";
@@ -22,10 +23,13 @@ import StayDatesRangeInput from "./StayDatesRangeInput";
 import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
+import { supabaseBrowser } from "@/lib/supabase";
+import { GuestsObject } from "../../(client-components)/type";
 
 export interface ListingStayDetailPageProps {}
 
 const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
+  const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
   const titleParam = searchParams.get("title") || "Beach House in Collingwood";
   const priceParam = searchParams.get("price") || "119";
@@ -34,8 +38,89 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "6";
 
-  const [startDate, setStartDate] = useState<Date | null>(new Date("2023/02/06"));
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
+  const [guests, setGuests] = useState<GuestsObject>({
+    guestAdults: 2,
+    guestChildren: 1,
+    guestInfants: 1,
+  });
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>("");
+  const [hotelRoomData, setHotelRoomData] = useState<any>(null);
+  const [occupancyData, setOccupancyData] = useState<any[]>([]);
+
+  // 1. Fetch static hotel product data (available_rooms capacity) from DB
+  useEffect(() => {
+    const fetchHotelRoom = async () => {
+      try {
+        const { data, error } = await supabaseBrowser
+          .from("hotel_rooms")
+          .select("*")
+          .eq("title", titleParam)
+          .single();
+        if (data) {
+          setHotelRoomData(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch hotel room info:", err);
+      }
+    };
+    fetchHotelRoom();
+  }, [titleParam]);
+
+  // 2. Fetch occupancy calendar for all rooms
+  const fetchOccupancyData = async () => {
+    try {
+      const res = await fetch("/api/rooms/occupancy");
+      if (res.ok) {
+        const data = await res.json();
+        setOccupancyData(data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch room occupancy:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOccupancyData();
+  }, []);
+
+  // 3. Check live rooms available for selected dates
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+    const checkInStr = startDate.toISOString().split("T")[0];
+    const checkOutStr = endDate.toISOString().split("T")[0];
+
+    const checkAvailability = async () => {
+      setCheckingAvailability(true);
+      try {
+        const res = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableRooms(data || []);
+          if (data && data.length > 0) {
+            // Keep selected room if it is still available, otherwise default to first available
+            setSelectedRoomId((prevId) => {
+              const stillAvailable = data.some((r: any) => r.id === prevId);
+              return stillAvailable ? prevId : data[0].id;
+            });
+          } else {
+            setSelectedRoomId("");
+          }
+        }
+        // Refresh occupancy calendar too
+        fetchOccupancyData();
+      } catch (err) {
+        console.error("Failed to check room availability:", err);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    };
+
+    checkAvailability();
+  }, [startDate, endDate]);
 
   let [isOpenModalAmenities, setIsOpenModalAmenities] = useState(false);
 
@@ -355,6 +440,103 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     );
   };
 
+  const renderSectionOccupancySchedule = () => {
+    return (
+      <div className="listingSection__wrap !space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold">Lịch hoạt động & Trạng thái phòng trống</h2>
+          <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
+            Xem chi tiết danh sách phòng và các khoảng thời gian đã được đặt để dễ dàng lên kế hoạch
+          </span>
+        </div>
+        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
+        
+        <div className="overflow-x-auto rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm">
+          <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800 text-left text-sm text-neutral-500 dark:text-neutral-400">
+            <thead className="bg-neutral-50 dark:bg-neutral-800/80 text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+              <tr>
+                <th scope="col" className="px-6 py-3.5">Mã phòng / Tầng</th>
+                <th scope="col" className="px-6 py-3.5">Loại phòng</th>
+                <th scope="col" className="px-6 py-3.5">Hôm nay</th>
+                <th scope="col" className="px-6 py-3.5">Lịch đã đặt sắp tới</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 bg-white dark:bg-neutral-900/40">
+              {occupancyData.length > 0 ? (
+                occupancyData.map((room) => {
+                  const todayStr = new Date().toISOString().split("T")[0];
+                  const isOccupiedToday = room.bookedRanges?.some((b: any) => {
+                    return todayStr >= b.checkIn && todayStr < b.checkOut;
+                  });
+
+                  return (
+                    <tr key={room.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/20 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
+                        Phòng {room.room_number} <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-1 font-normal">(Tầng {room.floor})</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
+                          {room.room_type || "Standard"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {isOccupiedToday ? (
+                          <span className="inline-flex items-center text-xs font-semibold text-red-600 dark:text-red-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400 mr-1.5 animate-pulse"></span>
+                            Đang bận
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center text-xs font-semibold text-green-600 dark:text-green-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 mr-1.5"></span>
+                            Trống
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {room.bookedRanges && room.bookedRanges.length > 0 ? (
+                            room.bookedRanges.map((b: any, idx: number) => {
+                              const checkInFormatted = new Date(b.checkIn).toLocaleDateString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit"
+                              });
+                              const checkOutFormatted = new Date(b.checkOut).toLocaleDateString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit"
+                              });
+                              return (
+                                <span 
+                                  key={idx} 
+                                  className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-mono font-medium bg-red-50 text-red-700 border border-red-100 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30"
+                                >
+                                  {checkInFormatted} - {checkOutFormatted}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <span className="text-xs text-neutral-400 dark:text-neutral-500 italic">
+                              ✓ Trống lịch (Không có booking sắp tới)
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center text-sm text-neutral-400 dark:text-neutral-500">
+                    Đang tải lịch hoạt động phòng...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   const renderSection5 = () => {
     return (
       <div className="listingSection__wrap">
@@ -612,7 +794,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
-            ${priceVal}
+            {formatPrice(priceVal, "USD")}
             <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
               /night
             </span>
@@ -632,28 +814,89 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
             }}
           />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <GuestsInput className="flex-1" />
+          <GuestsInput className="flex-1" defaultValue={guests} onChange={(val) => setGuests(val)} />
         </form>
 
         {/* SUM */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>${priceVal} x {nights} night{nights > 1 ? "s" : ""}</span>
-            <span>${subtotal}</span>
+            <span>{formatPrice(priceVal, "USD")} x {nights} night{nights > 1 ? "s" : ""}</span>
+            <span>{formatPrice(subtotal, "USD")}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>Service charge</span>
-            <span>$0</span>
+            <span>{formatPrice(0, "USD")}</span>
           </div>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>${total}</span>
+            <span>{formatPrice(total, "USD")}</span>
           </div>
         </div>
 
+        {/* AVAILABILITY INFO */}
+        <div className="bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-2xl border border-neutral-100 dark:border-neutral-800 space-y-2.5 text-sm">
+          {checkingAvailability ? (
+            <div className="flex items-center justify-center space-x-2 py-1 text-neutral-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-6000 border-t-transparent"></div>
+              <span>Đang kiểm tra phòng trống...</span>
+            </div>
+          ) : (() => {
+            const maxAvailable = hotelRoomData ? Math.min(hotelRoomData.available_rooms, availableRooms.length) : availableRooms.length;
+            if (maxAvailable > 0) {
+              return (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-green-600 font-semibold">
+                    <span>✓ Còn phòng trống</span>
+                    <span className="bg-green-50 dark:bg-green-900/20 text-xs px-2.5 py-1 rounded-lg">
+                      {maxAvailable} phòng sẵn sàng
+                    </span>
+                  </div>
+                  
+                  {/* Room selection dropdown */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 block">
+                      Chọn mã phòng & tầng mong muốn:
+                    </label>
+                    <select
+                      value={selectedRoomId}
+                      onChange={(e) => setSelectedRoomId(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-medium focus:ring-1 focus:ring-primary-500 text-neutral-900 dark:text-neutral-200"
+                    >
+                      {availableRooms.slice(0, maxAvailable).map((room) => (
+                        <option key={room.id} value={room.id}>
+                          Phòng {room.room_number} - Tầng {room.floor} ({room.room_type?.name || "Standard"})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <div className="text-red-600 font-semibold py-1">
+                  ⚠️ Không còn phòng trống trong thời gian đã chọn!
+                </div>
+              );
+            }
+          })()}
+        </div>
+
         {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&beds=${bedsParam}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}` as any}>Reserve</ButtonPrimary>
+        {(() => {
+          const maxAvailable = hotelRoomData ? Math.min(hotelRoomData.available_rooms, availableRooms.length) : availableRooms.length;
+          return maxAvailable > 0 ? (
+            <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&beds=${bedsParam}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}&adults=${guests.guestAdults}&children=${guests.guestChildren}&infants=${guests.guestInfants}&roomId=${selectedRoomId}` as any}>Reserve</ButtonPrimary>
+          ) : (
+            <button 
+              type="button" 
+              disabled 
+              className="w-full py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 rounded-3xl font-semibold cursor-not-allowed text-center text-sm"
+            >
+              Không còn phòng trống
+            </button>
+          );
+        })()}
       </div>
     );
   };
@@ -721,6 +964,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           {renderSection2()}
           {renderSection3()}
           {renderSection4()}
+          {renderSectionOccupancySchedule()}
           <SectionDateRange />
           {renderSection5()}
           {renderSection6()}

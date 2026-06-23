@@ -3,6 +3,7 @@
 import React, { FC, useState, useEffect, Suspense } from "react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/lib/auth-context";
+import { useCurrency } from "@/hooks/useCurrency";
 import CommentListing from "@/components/CommentListing";
 import FiveStartIconForRate from "@/components/FiveStartIconForRate";
 import StartRating from "@/components/StartRating";
@@ -23,9 +24,10 @@ import { Route } from "next";
 export interface ListingCarDetailPageProps {}
 
 const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
+  const { formatPrice } = useCurrency();
   // USE STATE
-  const [startDate, setStartDate] = useState<Date | null>(new Date("2023/03/01"));
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/03/16"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
 
   const thisPathname = usePathname();
   const router = useRouter();
@@ -469,7 +471,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
-            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam)}
+            {formatPrice(priceParam, "USD")}
             <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
               /day
             </span>
@@ -493,14 +495,14 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         {/* SUM */}
         <div className="flex flex-col space-y-4 ">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam)} x {daysCount} day</span>
-            <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam * daysCount)}</span>
+            <span>{formatPrice(priceParam, "USD")} x {daysCount} day</span>
+            <span>{formatPrice(priceParam * daysCount, "USD")}</span>
           </div>
 
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(priceParam * daysCount + 15)}</span>
+            <span>{formatPrice(priceParam * daysCount + 15, "USD")}</span>
           </div>
         </div>
 

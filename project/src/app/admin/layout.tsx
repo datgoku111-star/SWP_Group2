@@ -13,7 +13,8 @@ import {
   Users,
   LogOut, 
   Home,
-  Compass
+  Compass,
+  CreditCard
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Hotels & Rooms", href: "/admin/rooms", icon: BedDouble },
     { name: "Experiences", href: "/admin/experiences", icon: Compass },
     { name: "Bookings", href: "/admin/bookings", icon: CalendarCheck },
+    { name: "Payments", href: "/admin/payments", icon: CreditCard },
     { name: "User Management", href: "/admin/users", icon: Users },
   ];
 

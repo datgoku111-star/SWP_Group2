@@ -2,6 +2,7 @@ import React, { FC } from "react";
 import { DEMO_CAR_LISTINGS } from "@/data/listings";
 import { CarDataType } from "@/data/types";
 import StartRating from "@/components/StartRating";
+import { useCurrency } from "@/hooks/useCurrency";
 import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
@@ -17,6 +18,7 @@ export interface CarCardHProps {
 const DEMO_DATA: CarDataType = DEMO_CAR_LISTINGS[0];
 
 const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
+  const { formatPrice } = useCurrency();
   const {
     address,
     title,
@@ -30,6 +32,11 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     author,
     featuredImage,
   } = data;
+
+  const imgUrl = typeof featuredImage === "string" 
+    ? featuredImage 
+    : (featuredImage ? (featuredImage as any).src : "") || "";
+  const dynamicHref = `${href}?title=${encodeURIComponent(title)}&price=${encodeURIComponent(price.toString().replace('$', '').split(' ')[0])}&img=${encodeURIComponent(imgUrl)}&seats=4&gearshift=${encodeURIComponent("Auto gearbox")}` as any;
 
   const renderSliderGallery = () => {
     return (
@@ -119,7 +126,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
             </span>
           </div>
           <span className="text-lg font-semibold text-secondary-700">
-            {price}
+            {formatPrice(parseFloat(price.toString().replace('$', '')) || 0, 'USD')}
             {` `}
             <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
               /day
@@ -134,7 +141,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     <div
       className={`nc-CarCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden ${className}`}
     >
-      <Link href={href} className="flex flex-col md:flex-row">
+      <Link href={dynamicHref} className="flex flex-col md:flex-row">
         {renderSliderGallery()}
         {renderContent()}
       </Link>

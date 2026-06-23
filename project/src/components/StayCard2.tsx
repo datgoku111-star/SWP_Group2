@@ -3,6 +3,7 @@ import GallerySlider from "@/components/GallerySlider";
 import { DEMO_STAY_LISTINGS } from "@/data/listings";
 import { StayDataType } from "@/data/types";
 import StartRating from "@/components/StartRating";
+import { useCurrency } from "@/hooks/useCurrency";
 import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
@@ -21,6 +22,7 @@ const StayCard2: FC<StayCard2Props> = ({
   className = "",
   data = DEMO_DATA,
 }) => {
+  const { formatPrice } = useCurrency();
   const {
     galleryImgs,
     listingCategory,
@@ -113,7 +115,7 @@ const StayCard2: FC<StayCard2Props> = ({
         <div className="w-14 border-b border-neutral-100 dark:border-neutral-800"></div>
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            {formatPrice(parseFloat(price.toString().replace('$', '')) || 0, 'USD')}
             {` `}
             {size === "default" && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">

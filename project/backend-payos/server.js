@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
-const { PayOS } = require("@payos/node");
+const PayOS = require("@payos/node");
 require("dotenv").config({ path: "../.env.local" }); // Load project's env variables
 
 const app = express();
@@ -91,6 +91,7 @@ app.post("/api/payment/create-embedded-link", async (req, res) => {
     // Lưu mapping thanh toán dịch vụ hoặc đặt phòng
     orderMap.set(orderCode, { bookingId, serviceOrderId, type: type || "room", roomName });
     // Tạo thanh toán PENDING trong database
+    const transactionRef = type === "service" ? `${orderCode}_service_${serviceOrderId}` : orderCode.toString();
     const { error: paymentError } = await supabase
       .from("payments")
       .insert({
@@ -98,13 +99,13 @@ app.post("/api/payment/create-embedded-link", async (req, res) => {
         amount: totalPrice,
         method: "TRANSFER",
         status: "PENDING",
-        transaction_ref: orderCode.toString(),
+        transaction_ref: transactionRef,
       });
     if (paymentError) {
       console.error("Error creating pending payment in Supabase:", paymentError);
     }
     const domain = process.env.FRONTEND_URL || "http://localhost:3000";
-    const amountInVnd = Math.round(Number(totalPrice) * 23000);
+    const amountInVnd = type === "service" ? Math.round(Number(totalPrice)) : Math.round(Number(totalPrice) * 26320);
     const paymentLinkData = {
       orderCode,
       amount: amountInVnd,
@@ -218,14 +219,43 @@ app.post("/api/payment/webhook", async (req, res) => {
     const webhookData = payOS.verifyPaymentWebhookData(req.body);
     console.log("PayOS Webhook received and verified:", webhookData);
     const { orderCode } = webhookData;
+    
+    let type = "room";
+    let serviceOrderId = "";
+    let bookingId = "";
+    let roomName = "";
+    
     const mapping = orderMap.get(orderCode);
     if (mapping) {
-      const { type, serviceOrderId, bookingId, roomName } = mapping;
+      type = mapping.type;
+      serviceOrderId = mapping.serviceOrderId;
+      bookingId = mapping.bookingId;
+      roomName = mapping.roomName;
+    } else {
+      // Lookup the payment from DB
+      const { data: payment } = await supabase
+        .from("payments")
+        .select("*")
+        .like("transaction_ref", `${orderCode}%`)
+        .single();
+        
+      if (payment) {
+        bookingId = payment.booking_id;
+        const refStr = payment.transaction_ref;
+        if (refStr.includes("_service_")) {
+          type = "service";
+          serviceOrderId = refStr.split("_service_")[1];
+        }
+      }
+    }
+
+    if (bookingId) {
       // 1. Cập nhật bảng payments thành COMPLETED
       await supabase
         .from("payments")
         .update({ status: "COMPLETED" })
-        .eq("transaction_ref", orderCode.toString());
+        .like("transaction_ref", `${orderCode}%`);
+
       if (type === "service" && serviceOrderId) {
         console.log(`Processing successful payment for food order: ${serviceOrderId}`);
         // 2a. Nếu là dịch vụ: chuyển trạng thái dịch vụ sang IN_PROGRESS (để bếp làm món)
@@ -240,18 +270,32 @@ app.post("/api/payment/webhook", async (req, res) => {
           .from("bookings")
           .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
           .eq("id", bookingId);
-        if (roomName) {
+        
+        // Find roomName if not available (lost from memory mapping)
+        let targetRoomName = roomName;
+        if (!targetRoomName) {
+          const { data: bookingData } = await supabase
+            .from("bookings")
+            .select("*, room:rooms(*, room_type:room_types(*))")
+            .eq("id", bookingId)
+            .single();
+          if (bookingData && bookingData.room && bookingData.room.room_type) {
+            targetRoomName = bookingData.room.room_type.name;
+          }
+        }
+
+        if (targetRoomName) {
           const { data: hotelRoom } = await supabase
             .from("hotel_rooms")
             .select("id, available_rooms")
-            .eq("title", roomName)
+            .eq("title", targetRoomName)
             .single();
           if (hotelRoom && hotelRoom.available_rooms > 0) {
             await supabase
               .from("hotel_rooms")
               .update({ available_rooms: hotelRoom.available_rooms - 1 })
               .eq("id", hotelRoom.id);
-            console.log(`Updated hotel_rooms count for ${roomName}`);
+            console.log(`Updated hotel_rooms count for ${targetRoomName}`);
           }
         }
       }

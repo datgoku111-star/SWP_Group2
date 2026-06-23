@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useThemeMode } from "@/utils/useThemeMode";
+import ChatboxAI from "@/components/ChatboxAI";
 
 const ClientCommons = () => {
   //
@@ -29,7 +30,11 @@ const ClientCommons = () => {
     };
   }, [pathname]);
 
-  return <></>;
+  return (
+    <>
+      <ChatboxAI />
+    </>
+  );
 };
 
 export default ClientCommons;

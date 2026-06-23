@@ -6,9 +6,9 @@ import ModalReserveMobile from "./ModalReserveMobile";
 
 const MobileFooterSticky = () => {
   const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/02/06")
+    new Date()
   );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
 
   return (
     <div className="block lg:hidden fixed bottom-0 inset-x-0 py-2 sm:py-3 bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-6000 z-40">
