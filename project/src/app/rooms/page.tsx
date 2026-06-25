@@ -1,5 +1,5 @@
 import React from "react";
-import { getAvailableRooms, getRoomTypes } from "@/lib/db/rooms";
+import { getRoomsWithDeadlines, getRoomTypes } from "@/lib/db/rooms";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,7 +14,7 @@ export default async function RoomsPage({
   searchParams: { checkIn?: string; checkOut?: string; type?: string };
 }) {
   const [rooms, roomTypes] = await Promise.all([
-    getAvailableRooms(
+    getRoomsWithDeadlines(
       searchParams.checkIn,
       searchParams.checkOut,
       searchParams.type
@@ -124,6 +124,14 @@ function RoomCard({ room }: { room: Room }) {
 
         <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-2">
           <span>Max: {rt.max_occupancy} Guests</span>
+          {(room as any).deadline && (
+            <>
+              <span>•</span>
+              <span className="text-red-500 font-medium whitespace-nowrap">
+                Trống từ: {(room as any).deadline}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
