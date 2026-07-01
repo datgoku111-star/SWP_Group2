@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
-const { PayOS } = require("@payos/node");
+const PayOS = require("@payos/node");
 require("dotenv").config({ path: "../.env.local" }); // Load project's env variables
 
 const app = express();
@@ -12,11 +12,13 @@ app.use(express.json());
 const payOS = new PayOS(
   process.env.PAYOS_CLIENT_ID || "",
   process.env.PAYOS_API_KEY || "",
-  process.env.PAYOS_CHECKSUM_KEY || ""
+  process.env.PAYOS_CHECKSUM_KEY || "",
 );
 
 // Initialize Supabase Client (using service role key for admin privileges)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://rufagrsdrbnjjomhfzei.supabase.co";
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://rufagrsdrbnjjomhfzei.supabase.co";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -30,7 +32,9 @@ app.post("/api/payment/create-embedded-link", async (req, res) => {
     const { bookingId, roomName, totalPrice } = req.body;
 
     if (!bookingId || !roomName || !totalPrice) {
-      return res.status(400).json({ error: "Missing bookingId, roomName, or totalPrice" });
+      return res
+        .status(400)
+        .json({ error: "Missing bookingId, roomName, or totalPrice" });
     }
 
     // Generate a unique 6-digit to 10-digit numeric orderCode
@@ -40,18 +44,19 @@ app.post("/api/payment/create-embedded-link", async (req, res) => {
     orderMap.set(orderCode, { bookingId, roomName });
 
     // Store pending payment in payments table
-    const { error: paymentError } = await supabase
-      .from("payments")
-      .insert({
-        booking_id: bookingId,
-        amount: totalPrice,
-        method: "TRANSFER",
-        status: "PENDING",
-        transaction_ref: orderCode.toString(),
-      });
+    const { error: paymentError } = await supabase.from("payments").insert({
+      booking_id: bookingId,
+      amount: totalPrice,
+      method: "TRANSFER",
+      status: "PENDING",
+      transaction_ref: orderCode.toString(),
+    });
 
     if (paymentError) {
-      console.error("Error creating pending payment in Supabase:", paymentError);
+      console.error(
+        "Error creating pending payment in Supabase:",
+        paymentError,
+      );
     }
 
     // Call PayOS SDK
@@ -71,13 +76,17 @@ app.post("/api/payment/create-embedded-link", async (req, res) => {
     return res.status(200).json({
       orderCode,
       checkoutUrl: paymentLink.checkoutUrl,
-      qrCode: paymentLink.qrCode || `https://api.vietqr.io/image/970418-00123456789-Q4zS9vP.jpg?accountName=HOTEL&amount=${amountInVnd}&addInfo=${paymentLinkData.description}`,
+      qrCode:
+        paymentLink.qrCode ||
+        `https://api.vietqr.io/image/970418-00123456789-Q4zS9vP.jpg?accountName=HOTEL&amount=${amountInVnd}&addInfo=${paymentLinkData.description}`,
       amount: amountInVnd,
       description: paymentLinkData.description,
     });
   } catch (error) {
     console.error("Create payment link failed:", error);
-    return res.status(500).json({ error: error.message || "Failed to create payment link" });
+    return res
+      .status(500)
+      .json({ error: error.message || "Failed to create payment link" });
   }
 });
 
@@ -102,7 +111,7 @@ app.post("/api/payment/webhook", async (req, res) => {
         .select("booking_id")
         .eq("transaction_ref", orderCode.toString())
         .single();
-      
+
       if (payment) {
         bookingId = payment.booking_id;
         // Look up booking to get room details

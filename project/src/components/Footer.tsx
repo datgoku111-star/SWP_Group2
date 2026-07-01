@@ -4,8 +4,8 @@ import Logo from "@/shared/Logo";
 import SocialsList1 from "@/shared/SocialsList1";
 import { CustomLink } from "@/data/types";
 import React from "react";
-import { useTranslations } from "@/lib/translate";
 import FooterNav from "./FooterNav";
+import { useTranslation } from "react-i18next";
 
 export interface WidgetFooterMenu {
   id: string;
@@ -13,61 +13,66 @@ export interface WidgetFooterMenu {
   menus: CustomLink[];
 }
 
-const widgetMenus: WidgetFooterMenu[] = [
+const widgetMenus: Array<
+  Omit<WidgetFooterMenu, "title" | "menus"> & {
+    titleKey: string;
+    menuKeys: { href: string; labelKey: string }[];
+  }
+> = [
   {
     id: "5",
-    title: "Getting started",
-    menus: [
-      { href: "#", label: "Installation" },
-      { href: "#", label: "Release Notes" },
-      { href: "#", label: "Upgrade Guide" },
-      { href: "#", label: "Browser Support" },
-      { href: "#", label: "Editor Support" },
+    titleKey: "footerGettingStarted",
+    menuKeys: [
+      { href: "#", labelKey: "footerInstallation" },
+      { href: "#", labelKey: "footerReleaseNotes" },
+      { href: "#", labelKey: "footerUpgradeGuide" },
+      { href: "#", labelKey: "footerBrowserSupport" },
+      { href: "#", labelKey: "footerEditorSupport" },
     ],
   },
   {
     id: "1",
-    title: "Explore",
-    menus: [
-      { href: "#", label: "Design features" },
-      { href: "#", label: "Prototyping" },
-      { href: "#", label: "Design systems" },
-      { href: "#", label: "Pricing" },
-      { href: "#", label: "Security" },
+    titleKey: "footerExplore",
+    menuKeys: [
+      { href: "#", labelKey: "footerDesignFeatures" },
+      { href: "#", labelKey: "footerPrototyping" },
+      { href: "#", labelKey: "footerDesignSystems" },
+      { href: "#", labelKey: "footerPricing" },
+      { href: "#", labelKey: "footerSecurity" },
     ],
   },
   {
     id: "2",
-    title: "Resources",
-    menus: [
-      { href: "#", label: "Best practices" },
-      { href: "#", label: "Support" },
-      { href: "#", label: "Developers" },
-      { href: "#", label: "Learn design" },
-      { href: "#", label: "Releases" },
+    titleKey: "footerResources",
+    menuKeys: [
+      { href: "#", labelKey: "footerBestPractices" },
+      { href: "#", labelKey: "footerSupport" },
+      { href: "#", labelKey: "footerDevelopers" },
+      { href: "#", labelKey: "footerLearnDesign" },
+      { href: "#", labelKey: "footerReleases" },
     ],
   },
   {
     id: "4",
-    title: "Community",
-    menus: [
-      { href: "#", label: "Discussion Forums" },
-      { href: "#", label: "Code of Conduct" },
-      { href: "#", label: "Community Resources" },
-      { href: "#", label: "Contributing" },
-      { href: "#", label: "Concurrent Mode" },
+    titleKey: "footerCommunity",
+    menuKeys: [
+      { href: "#", labelKey: "footerDiscussionForums" },
+      { href: "#", labelKey: "footerCodeOfConduct" },
+      { href: "#", labelKey: "footerCommunityResources" },
+      { href: "#", labelKey: "footerContributing" },
+      { href: "#", labelKey: "footerConcurrentMode" },
     ],
   },
 ];
 
 const Footer: React.FC = () => {
-  const { t } = useTranslations();
+  const { t } = useTranslation();
 
   const renderWidgetMenuItem = (menu: WidgetFooterMenu, index: number) => {
     return (
       <div key={index} className="text-sm">
         <h2 className="font-semibold text-neutral-700 dark:text-neutral-200">
-          {t(menu.title)}
+          {menu.title}
         </h2>
         <ul className="mt-5 space-y-4">
           {menu.menus.map((item, index) => (
@@ -77,7 +82,7 @@ const Footer: React.FC = () => {
                 className="text-neutral-6000 dark:text-neutral-300 hover:text-black dark:hover:text-white"
                 href={item.href}
               >
-                {t(item.label)}
+                {item.label}
               </a>
             </li>
           ))}
@@ -85,6 +90,15 @@ const Footer: React.FC = () => {
       </div>
     );
   };
+
+  const localizedWidgetMenus: WidgetFooterMenu[] = widgetMenus.map((menu) => ({
+    id: menu.id,
+    title: t(menu.titleKey),
+    menus: menu.menuKeys.map((item) => ({
+      href: item.href,
+      label: t(item.labelKey),
+    })),
+  }));
 
   return (
     <>
@@ -100,7 +114,7 @@ const Footer: React.FC = () => {
               <SocialsList1 className="flex items-center space-x-3 lg:space-x-0 lg:flex-col lg:space-y-2.5 lg:items-start" />
             </div>
           </div>
-          {widgetMenus.map(renderWidgetMenuItem)}
+          {localizedWidgetMenus.map(renderWidgetMenuItem)}
         </div>
       </div>
     </>

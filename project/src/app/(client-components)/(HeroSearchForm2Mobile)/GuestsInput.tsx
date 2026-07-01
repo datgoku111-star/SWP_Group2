@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useTranslations } from "@/lib/translate";
 import NcInputNumber from "@/components/NcInputNumber";
 import { FC } from "react";
 import { GuestsObject } from "../type";
@@ -16,7 +15,6 @@ const GuestsInput: FC<GuestsInputProps> = ({
   onChange,
   className = "",
 }) => {
-  const { t } = useTranslations();
   const [guestAdultsInputValue, setGuestAdultsInputValue] = useState(
     defaultValue?.guestAdults || 0
   );
@@ -61,23 +59,23 @@ const GuestsInput: FC<GuestsInputProps> = ({
   return (
     <div className={`flex flex-col relative p-5 ${className}`}>
       <span className="mb-5 block font-semibold text-xl sm:text-2xl">
-        {t("Who's coming?")}
+        {`Who's coming?`}
       </span>
       <NcInputNumber
         className="w-full"
         defaultValue={guestAdultsInputValue}
         onChange={(value) => handleChangeData(value, "guestAdults")}
         max={20}
-        label={t("Adults")}
-        desc={t("Ages 13 or above")}
+        label="Adults"
+        desc="Ages 13 or above"
       />
       <NcInputNumber
         className="w-full mt-6"
         defaultValue={guestChildrenInputValue}
         onChange={(value) => handleChangeData(value, "guestChildren")}
         max={20}
-        label={t("Children")}
-        desc={t("Ages 2–12")}
+        label="Children"
+        desc="Ages 2–12"
       />
 
       <NcInputNumber
@@ -85,8 +83,8 @@ const GuestsInput: FC<GuestsInputProps> = ({
         defaultValue={guestInfantsInputValue}
         onChange={(value) => handleChangeData(value, "guestInfants")}
         max={20}
-        label={t("Infants")}
-        desc={t("Ages 0–2")}
+        label="Infants"
+        desc="Ages 0–2"
       />
     </div>
   );

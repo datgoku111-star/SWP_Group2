@@ -20,6 +20,7 @@ import { GuestsObject } from "../(client-components)/type";
 
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 export interface CheckOutPagePageMainProps {
   className?: string;
@@ -28,10 +29,13 @@ export interface CheckOutPagePageMainProps {
 const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   className = "",
 }) => {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const titleParam = searchParams.get("title") || "The Lounge & Bar";
   const priceParam = searchParams.get("price") || "19";
-  const imgParam = searchParams.get("img") || "https://images.pexels.com/photos/6373478/pexels-photo-6373478.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
+  const imgParam =
+    searchParams.get("img") ||
+    "https://images.pexels.com/photos/6373478/pexels-photo-6373478.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
   const categoryParam = searchParams.get("category") || "Hotel room";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "2";
@@ -40,11 +44,13 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const checkOutParam = searchParams.get("checkOut");
 
   const [startDate, setStartDate] = useState<Date | null>(
-    checkInParam ? new Date(checkInParam) : new Date()
+    checkInParam ? new Date(checkInParam) : new Date(),
   );
   // Set default checkout date to tomorrow
   const [endDate, setEndDate] = useState<Date | null>(
-    checkOutParam ? new Date(checkOutParam) : new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
+    checkOutParam
+      ? new Date(checkOutParam)
+      : new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
   );
 
   const [guests, setGuests] = useState<GuestsObject>({
@@ -89,7 +95,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
             setShowPayOSModal(false);
             router.push("/pay-done");
           }
-        }
+        },
       )
       .subscribe();
 
@@ -102,7 +108,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     targetRoom: any,
     checkInStr: string,
     checkOutStr: string,
-    totalAmount: number
+    totalAmount: number,
   ) => {
     try {
       // 1. Call bookings API to create PENDING booking
@@ -127,19 +133,22 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       const bookingId = bookingData.id;
 
       // 2. Call Express Backend to generate payment link
-      const payOSRes = await fetch("http://localhost:5000/api/payment/create-embedded-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId,
-          roomName: titleParam,
-          totalPrice: totalAmount,
-        }),
-      });
+      const payOSRes = await fetch(
+        "http://localhost:5000/api/payment/create-embedded-link",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookingId,
+            roomName: titleParam,
+            totalPrice: totalAmount,
+          }),
+        },
+      );
 
       const payOSData = await payOSRes.json();
       if (!payOSRes.ok) {
-        throw new Error(payOSData.error || "Failed to generate VietQR code.");
+        throw new Error(payOSData.error || t("checkoutVietQRError"));
       }
 
       // 3. Open Modal and save payment info
@@ -151,21 +160,22 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         bookingId,
       });
       setShowPayOSModal(true);
-
     } catch (err: any) {
       console.error("PayOS booking failed:", err);
-      setError(err.message || "An unexpected error occurred during VietQR creation.");
+      setError(
+        err.message || "An unexpected error occurred during VietQR creation.",
+      );
     }
   };
 
   const handleConfirmAndPay = async () => {
     if (!startDate || !endDate) {
-      setError("Please select check-in and check-out dates.");
+      setError(t("checkoutSelectDatesError"));
       return;
     }
 
     if (!user) {
-      setError("You must be logged in to reserve a room.");
+      setError(t("checkoutLoginRequiredError"));
       return;
     }
 
@@ -177,27 +187,40 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       const checkOutStr = endDate.toISOString().split("T")[0];
 
       // 1. Fetch available rooms for these dates
-      const roomsRes = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
+      const roomsRes = await fetch(
+        `/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`,
+      );
       if (!roomsRes.ok) {
-        throw new Error("Failed to check room availability.");
+        throw new Error(t("checkoutAvailabilityError"));
       }
 
       const rooms = await roomsRes.json();
       if (!rooms || rooms.length === 0) {
-        throw new Error("No rooms are available for the selected dates.");
+        throw new Error(t("checkoutNoRoomsError"));
       }
 
       // 2. Choose the first available room
       const targetRoom = rooms[0];
 
       // Calculate total amount based on room price and nights
-      const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-      const pricePerNight = Number(priceParam) || targetRoom.room_type?.base_price || 100;
+      const nights = Math.max(
+        1,
+        Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        ),
+      );
+      const pricePerNight =
+        Number(priceParam) || targetRoom.room_type?.base_price || 100;
       const totalAmount = pricePerNight * nights;
 
       // 3. Routing payment flow
       if (activeTab === 2) {
-        await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
+        await handlePayOSPayment(
+          targetRoom,
+          checkInStr,
+          checkOutStr,
+          totalAmount,
+        );
         return;
       }
 
@@ -225,14 +248,22 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       router.push("/pay-done");
     } catch (err: any) {
       console.error("Booking failed:", err);
-      setError(err.message || "An unexpected error occurred.");
+      setError(err.message || t("checkoutGeneralError"));
     } finally {
       setLoading(false);
     }
   };
 
   const renderSidebar = () => {
-    const nights = startDate && endDate ? Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))) : 1;
+    const nights =
+      startDate && endDate
+        ? Math.max(
+            1,
+            Math.ceil(
+              (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+            ),
+          )
+        : 1;
     const priceVal = Number(priceParam) || 19;
     const subtotal = priceVal * nights;
     const total = subtotal;
@@ -242,12 +273,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center">
           <div className="flex-shrink-0 w-full sm:w-40">
             <div className=" aspect-w-4 aspect-h-3 sm:aspect-h-4 rounded-2xl overflow-hidden">
-              <Image
-                alt=""
-                fill
-                sizes="200px"
-                src={imgParam}
-              />
+              <Image alt="" fill sizes="200px" src={imgParam} />
             </div>
           </div>
           <div className="py-5 sm:px-5 space-y-3">
@@ -267,19 +293,24 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           </div>
         </div>
         <div className="flex flex-col space-y-4">
-          <h3 className="text-2xl font-semibold">Price detail</h3>
+          <h3 className="text-2xl font-semibold">
+            {t("checkoutPaymentDetails")}
+          </h3>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>${priceVal} x {nights} day{nights > 1 ? "s" : ""}</span>
+            <span>
+              ${priceVal} x {nights}{" "}
+              {nights > 1 ? t("checkoutDaysPlural") : t("checkoutDays")}
+            </span>
             <span>${subtotal}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>Service charge</span>
+            <span>{t("checkoutServiceCharge")}</span>
             <span>$0</span>
           </div>
 
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
-            <span>Total</span>
+            <span>{t("checkoutTotal")}</span>
             <span>${total}</span>
           </div>
         </div>
@@ -291,23 +322,23 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     return (
       <div className="w-full flex flex-col sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-700 space-y-8 px-0 sm:p-6 xl:p-8">
         <h2 className="text-3xl lg:text-4xl font-semibold">
-          Confirm and payment
+          {t("checkoutConfirmAndPay")}
         </h2>
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
         <div>
           <div>
-            <h3 className="text-2xl font-semibold">Your trip</h3>
+            <h3 className="text-2xl font-semibold">{t("checkoutYourTrip")}</h3>
             <NcModal
               renderTrigger={(openModal) => (
                 <span
                   onClick={() => openModal()}
                   className="block lg:hidden underline  mt-1 cursor-pointer"
                 >
-                  View booking details
+                  {t("checkoutViewBookingDetails")}
                 </span>
               )}
               renderContent={renderSidebar}
-              modalTitle="Booking details"
+              modalTitle={t("checkoutBookingDetailsTitle")}
             />
           </div>
           <div className="mt-6 border border-neutral-200 dark:border-neutral-700 rounded-3xl flex flex-col sm:flex-row divide-y sm:divide-x sm:divide-y-0 divide-neutral-200 dark:divide-neutral-700 overflow-hidden z-10">
@@ -319,7 +350,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                   type="button"
                 >
                   <div className="flex flex-col">
-                    <span className="text-sm text-neutral-400">Date</span>
+                    <span className="text-sm text-neutral-400">
+                      {t("checkoutDateLabel")}
+                    </span>
                     <span className="mt-1.5 text-lg font-semibold">
                       {converSelectedDateToString([startDate, endDate])}
                     </span>
@@ -337,7 +370,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                   className="text-left flex-1 p-5 flex justify-between space-x-5 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   <div className="flex flex-col">
-                    <span className="text-sm text-neutral-400">Guests</span>
+                    <span className="text-sm text-neutral-400">
+                      {t("checkoutGuestsLabel")}
+                    </span>
                     <span className="mt-1.5 text-lg font-semibold">
                       <span className="line-clamp-1">
                         {`${
@@ -355,7 +390,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         </div>
 
         <div>
-          <h3 className="text-2xl font-semibold">Pay with</h3>
+          <h3 className="text-2xl font-semibold">{t("checkoutPayWith")}</h3>
           <div className="w-14 border-b border-neutral-200 dark:border-neutral-700 my-5"></div>
 
           <div className="mt-6">
@@ -370,7 +405,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                           : "text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       }`}
                     >
-                      Paypal
+                      {t("checkoutPayPal")}
                     </button>
                   )}
                 </Tab>
@@ -383,7 +418,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                           : " text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       }`}
                     >
-                      <span className="mr-2.5">Credit card</span>
+                      <span className="mr-2.5">{t("checkoutCreditCard")}</span>
                       <Image className="w-8" src={visaPng} alt="visa" />
                       <Image
                         className="w-8"
@@ -402,7 +437,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                           : "text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       }`}
                     >
-                      VietQR (PayOS)
+                      {t("checkoutVietQRPayOS")}
                     </button>
                   )}
                 </Tab>
@@ -412,11 +447,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                 {/* Paypal */}
                 <Tab.Panel className="space-y-5">
                   <div className="space-y-1">
-                    <Label>Email </Label>
+                    <Label>{t("checkoutEmailLabel")} </Label>
                     <Input type="email" defaultValue="example@gmail.com" />
                   </div>
                   <div className="space-y-1">
-                    <Label>Password </Label>
+                    <Label>{t("checkoutPasswordLabel")} </Label>
                     <Input type="password" defaultValue="***" />
                   </div>
                   <div className="space-y-1">
@@ -431,20 +466,20 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                 {/* Credit Card */}
                 <Tab.Panel className="space-y-5">
                   <div className="space-y-1">
-                    <Label>Card number </Label>
+                    <Label>{t("checkoutCardNumber")} </Label>
                     <Input defaultValue="111 112 222 999" />
                   </div>
                   <div className="space-y-1">
-                    <Label>Card holder </Label>
+                    <Label>{t("checkoutCardHolder")} </Label>
                     <Input defaultValue="JOHN DOE" />
                   </div>
                   <div className="flex space-x-5  ">
                     <div className="flex-1 space-y-1">
-                      <Label>Expiration date </Label>
+                      <Label>{t("checkoutExpirationDate")} </Label>
                       <Input type="date" defaultValue="MM/YY" />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <Label>CVC </Label>
+                      <Label>{t("checkoutCVC")} </Label>
                       <Input />
                     </div>
                   </div>
@@ -462,10 +497,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                   <div className="p-5 bg-blue-50/50 dark:bg-neutral-800 rounded-2xl border border-blue-100/30 dark:border-neutral-700 space-y-3">
                     <div className="flex items-center space-x-3 text-neutral-800 dark:text-neutral-200">
                       <span className="text-2xl">🇻🇳</span>
-                      <h4 className="font-semibold text-base">Thanh toán an toàn bằng VietQR (PayOS)</h4>
+                      <h4 className="font-semibold text-base">
+                        {t("checkoutPayWithVietQRDescription")}
+                      </h4>
                     </div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                      Mã chuyển khoản VietQR động 24/7 sẽ được tạo tự động bởi cổng thanh toán cổng **PayOS** (đối tác cổng thanh toán ngân hàng chính thức). Bạn chỉ cần mở app ngân hàng quét mã và thanh toán. Phòng của bạn sẽ được xác nhận tự động ngay sau khi chuyển khoản thành công.
+                      {t("checkoutPayWithVietQRIntro")}
                     </p>
                   </div>
                 </Tab.Panel>
@@ -477,8 +514,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
               </div>
             )}
             <div className="pt-8">
-              <ButtonPrimary onClick={handleConfirmAndPay} loading={loading} disabled={loading}>
-                Confirm and pay
+              <ButtonPrimary
+                onClick={handleConfirmAndPay}
+                loading={loading}
+                disabled={loading}
+              >
+                {t("checkoutConfirmAndPay")}
               </ButtonPrimary>
             </div>
           </div>
@@ -498,114 +539,120 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           onClose={() => setShowPayOSModal(false)}
         >
           <div className="min-h-screen px-4 text-center">
-             <Transition.Child
-               as={Fragment}
-               enter="ease-out duration-300"
-               enterFrom="opacity-0"
-               enterTo="opacity-100"
-               leave="ease-in duration-200"
-               leaveFrom="opacity-100"
-               leaveTo="opacity-0"
-             >
-               <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-40 dark:bg-opacity-65 transition-opacity" />
-             </Transition.Child>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-40 dark:bg-opacity-65 transition-opacity" />
+            </Transition.Child>
 
-             {/* Trick browser to center modal */}
-             <span
-               className="inline-block h-screen align-middle"
-               aria-hidden="true"
-             >
-               &#8203;
-             </span>
+            {/* Trick browser to center modal */}
+            <span
+              className="inline-block h-screen align-middle"
+              aria-hidden="true"
+            >
+              &#8203;
+            </span>
 
-             <Transition.Child
-               as={Fragment}
-               enter="ease-out duration-300"
-               enterFrom="opacity-0 scale-95"
-               enterTo="opacity-100 scale-100"
-               leave="ease-in duration-200"
-               leaveFrom="opacity-100 scale-100"
-               leaveTo="opacity-0 scale-95"
-             >
-               <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-3xl">
-                 <Dialog.Title
-                   as="h3"
-                   className="text-lg font-bold text-center text-neutral-950 dark:text-neutral-100 flex items-center justify-center gap-2"
-                 >
-                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                   Quét mã VietQR để thanh toán
-                 </Dialog.Title>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-3xl">
+                <Dialog.Title
+                  as="h3"
+                  className="text-lg font-bold text-center text-neutral-950 dark:text-neutral-100 flex items-center justify-center gap-2"
+                >
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                  {t("checkoutScanVietQR")}
+                </Dialog.Title>
 
-                 <div className="mt-4 flex flex-col items-center space-y-4">
-                   {/* QR Code Container */}
-                   <div className="relative p-4 bg-white rounded-2xl border border-neutral-100 shadow-inner flex items-center justify-center w-64 h-64 overflow-hidden group">
-                     {/* QR Image */}
-                     <img
-                       src={paymentInfo.qrCode}
-                       alt="VietQR Code"
-                       className="w-full h-full object-contain"
-                     />
-                     {/* Scanning Animation line */}
-                     <div className="absolute left-0 right-0 h-0.5 bg-primary-500 opacity-60 animate-bounce top-0 group-hover:block"></div>
-                   </div>
+                <div className="mt-4 flex flex-col items-center space-y-4">
+                  {/* QR Code Container */}
+                  <div className="relative p-4 bg-white rounded-2xl border border-neutral-100 shadow-inner flex items-center justify-center w-64 h-64 overflow-hidden group">
+                    {/* QR Image */}
+                    <img
+                      src={paymentInfo.qrCode}
+                      alt="VietQR Code"
+                      className="w-full h-full object-contain"
+                    />
+                    {/* Scanning Animation line */}
+                    <div className="absolute left-0 right-0 h-0.5 bg-primary-500 opacity-60 animate-bounce top-0 group-hover:block"></div>
+                  </div>
 
-                   {/* Price and info */}
-                   <div className="w-full bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-2xl space-y-2.5 border border-neutral-100 dark:border-neutral-800">
-                     <div className="flex justify-between text-sm">
-                       <span className="text-neutral-500 dark:text-neutral-400">Số tiền:</span>
-                       <span className="font-bold text-secondary-6000 text-base">
-                         {paymentInfo.amount.toLocaleString("vi-VN")} VND
-                       </span>
-                     </div>
-                     <div className="flex justify-between text-sm items-start">
-                       <span className="text-neutral-500 dark:text-neutral-400">Nội dung CK:</span>
-                       <div className="flex items-center gap-1.5">
-                         <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100 select-all">
-                           {paymentInfo.description}
-                         </span>
-                         <button
-                           onClick={() => {
-                             navigator.clipboard.writeText(paymentInfo.description);
-                             alert("Đã sao chép nội dung chuyển khoản!");
-                           }}
-                           className="text-xs text-primary-500 underline hover:text-primary-600"
-                         >
-                           Sao chép
-                         </button>
-                       </div>
-                     </div>
-                   </div>
+                  {/* Price and info */}
+                  <div className="w-full bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-2xl space-y-2.5 border border-neutral-100 dark:border-neutral-800">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        {t("checkoutAmount")}
+                      </span>
+                      <span className="font-bold text-secondary-6000 text-base">
+                        {paymentInfo.amount.toLocaleString("vi-VN")} VND
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm items-start">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        {t("checkoutTransferContent")}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100 select-all">
+                          {paymentInfo.description}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              paymentInfo.description,
+                            );
+                            alert(t("checkoutCopied"));
+                          }}
+                          className="text-xs text-primary-500 underline hover:text-primary-600"
+                        >
+                          {t("checkoutCopy")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-                   <p className="text-xs text-center text-neutral-500 leading-relaxed px-2">
-                     * Vui lòng nhập đúng nội dung chuyển khoản ở trên để hệ thống tự động xác nhận đơn phòng của bạn ngay lập tức.
-                   </p>
+                  <p className="text-xs text-center text-neutral-500 leading-relaxed px-2">
+                    {t("checkoutPaymentInstruction")}
+                  </p>
 
-                   {/* Actions */}
-                   <div className="w-full flex flex-col space-y-2 pt-2">
-                     <a
-                       href={paymentInfo.checkoutUrl}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium text-center rounded-xl transition-all shadow-md text-sm"
-                     >
-                       Thanh toán qua trang PayOS →
-                     </a>
-                     <button
-                       type="button"
-                       onClick={() => setShowPayOSModal(false)}
-                       className="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-center rounded-xl font-medium text-sm transition-all"
-                     >
-                       Hủy thanh toán
-                     </button>
-                   </div>
-                 </div>
-               </div>
-             </Transition.Child>
-           </div>
-         </Dialog>
-       </Transition>
-     );
-   };
+                  {/* Actions */}
+                  <div className="w-full flex flex-col space-y-2 pt-2">
+                    <a
+                      href={paymentInfo.checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium text-center rounded-xl transition-all shadow-md text-sm"
+                    >
+                      {t("checkoutPayViaPayOS")}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setShowPayOSModal(false)}
+                      className="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-center rounded-xl font-medium text-sm transition-all"
+                    >
+                      {t("checkoutCancelPayment")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
+    );
+  };
 
   return (
     <div className={`nc-CheckOutPagePageMain ${className}`}>

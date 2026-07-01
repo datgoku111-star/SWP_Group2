@@ -1,7 +1,4 @@
-"use client";
-
 import React, { FC } from "react";
-import { useTranslations } from "@/lib/translate";
 import { PathName } from "@/routers/types";
 
 interface Props {
@@ -14,7 +11,6 @@ const ButtonSubmit: FC<Props> = ({
   onClick = () => {},
   href = "/listing-stay",
 }) => {
-  const { t } = useTranslations();
   return (
     <button
       type="submit"
@@ -38,7 +34,7 @@ const ButtonSubmit: FC<Props> = ({
           d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
         />
       </svg>
-      <span className="ml-2">{t("Search")}</span>
+      <span className="ml-2">Search</span>
     </button>
   );
 };

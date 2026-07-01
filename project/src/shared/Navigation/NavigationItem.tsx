@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { FC, Fragment, useEffect, useState } from "react";
-import { useTranslations } from "@/lib/translate";
+import { useTranslation } from "react-i18next";
 
 // <--- NavItemType --->
 export interface MegamenuItem {
@@ -35,7 +35,7 @@ type NavigationItemWithRouterProps = NavigationItemProps;
 
 const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
   const [menuCurrentHovers, setMenuCurrentHovers] = useState<string[]>([]);
-  const { t } = useTranslations();
+  const { t } = useTranslation();
 
   // CLOSE ALL MENU OPENING WHEN CHANGE HISTORY
   const locationPathName = usePathname();
@@ -101,7 +101,7 @@ const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
                           </div>
                         </div>
                         <p className="font-medium text-neutral-900 dark:text-neutral-200 py-1 px-2 my-2">
-                          {item.title}
+                          {t(item.title)}
                         </p>
                         <ul className="grid space-y-1">
                           {item.items.map(renderMegaMenuNavlink)}

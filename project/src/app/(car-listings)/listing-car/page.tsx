@@ -3,6 +3,8 @@ import SectionGridFilterCard from "../SectionGridFilterCard";
 
 export interface ListingCarPageProps {}
 
+export const dynamic = "force-dynamic";
+
 const ListingCarPage: FC<ListingCarPageProps> = () => {
   return (
     <div className="container ">

@@ -1,12 +1,10 @@
 "use client";
 import converSelectedDateToString from "@/utils/converSelectedDateToString";
 import React, { useState } from "react";
-import { useTranslations } from "@/lib/translate";
 import DatesRangeInput from "../DatesRangeInput";
 import LocationInput from "../LocationInput";
 
 const CarsSearchForm = () => {
-  const { t } = useTranslations();
   //
   const [fieldNameShow, setFieldNameShow] = useState<
     "locationPickup" | "locationDropoff" | "dates"
@@ -25,7 +23,6 @@ const CarsSearchForm = () => {
   >("same");
 
   const renderInputLocationPickup = () => {
-    const { t } = useTranslations();
     const isActive = fieldNameShow === "locationPickup";
     return (
       <div
@@ -40,12 +37,12 @@ const CarsSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("locationPickup")}
           >
-            <span className="text-neutral-400">{t("Pick up")}</span>
-            <span>{locationInputPickUp || t("Location")}</span>
+            <span className="text-neutral-400">Pick up</span>
+            <span>{locationInputPickUp || "Location"}</span>
           </button>
         ) : (
           <LocationInput
-            headingText={t("Pick up?")}
+            headingText="Pick up?"
             defaultValue={locationInputPickUp}
             onChange={(value) => {
               setLocationInputPickUp(value);
@@ -62,7 +59,6 @@ const CarsSearchForm = () => {
   };
 
   const renderInputLocationDropoff = () => {
-    const { t } = useTranslations();
     const isActive = fieldNameShow === "locationDropoff";
     return (
       <div
@@ -77,12 +73,12 @@ const CarsSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("locationDropoff")}
           >
-            <span className="text-neutral-400">{t("Drop off")}</span>
-            <span>{locationInputDropOff || t("Location")}</span>
+            <span className="text-neutral-400">Drop off</span>
+            <span>{locationInputDropOff || "Location"}</span>
           </button>
         ) : (
           <LocationInput
-            headingText={t("Drop off?")}
+            headingText="Drop off?"
             defaultValue={locationInputDropOff}
             onChange={(value) => {
               setLocationInputDropOff(value);
@@ -95,7 +91,6 @@ const CarsSearchForm = () => {
   };
 
   const renderInputDates = () => {
-    const { t } = useTranslations();
     const isActive = fieldNameShow === "dates";
 
     return (
@@ -111,11 +106,11 @@ const CarsSearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4  `}
             onClick={() => setFieldNameShow("dates")}
           >
-            <span className="text-neutral-400">{t("When")}</span>
+            <span className="text-neutral-400">When</span>
             <span>
               {startDate
                 ? converSelectedDateToString([startDate, endDate])
-                : t("Add date")}
+                : "Add date"}
             </span>
           </button>
         ) : (
@@ -126,7 +121,6 @@ const CarsSearchForm = () => {
   };
 
   const renderRadioBtn = () => {
-    const { t } = useTranslations();
     return (
       <div className="flex justify-center items-center space-x-3">
         <div
@@ -137,7 +131,7 @@ const CarsSearchForm = () => {
           }`}
           onClick={(e) => setDropOffLocationType("same")}
         >
-          {t("Same drop off")}
+          Same drop off
         </div>
         <div
           className={`py-1.5 px-4 flex items-center rounded-full font-medium text-xs cursor-pointer ${
@@ -147,7 +141,7 @@ const CarsSearchForm = () => {
           }`}
           onClick={(e) => setDropOffLocationType("different")}
         >
-          {t("Different drop off")}
+          Different drop off
         </div>
       </div>
     );

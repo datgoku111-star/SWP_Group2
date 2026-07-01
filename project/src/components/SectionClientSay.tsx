@@ -16,6 +16,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import Image from "next/image";
 import { useSwipeable } from "react-swipeable";
 import { variants } from "@/utils/animationVariants";
+import { useTranslation } from "react-i18next";
 
 export interface SectionClientSayProps {
   className?: string;
@@ -50,6 +51,7 @@ const SectionClientSay: FC<SectionClientSayProps> = ({
   className = "",
   data = DEMO_DATA,
 }) => {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -117,8 +119,8 @@ const SectionClientSay: FC<SectionClientSayProps> = ({
 
   return (
     <div className={`nc-SectionClientSay relative ${className} `}>
-      <Heading desc="Let's see what people think of Chisfis" isCenter>
-        Good news from far away
+      <Heading desc={t("clientSayDesc")} isCenter>
+        {t("clientSayTitle")}
       </Heading>
       <div className="relative md:mb-16 max-w-2xl mx-auto">
         {renderBg()}

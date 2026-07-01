@@ -17,6 +17,7 @@ import Input from "@/shared/Input";
 import LikeSaveBtns from "@/components/LikeSaveBtns";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Amenities_demos, PHOTOS } from "./constant";
 import StayDatesRangeInput from "./StayDatesRangeInput";
 import GuestsInput from "./GuestsInput";
@@ -26,6 +27,7 @@ import { Route } from "next";
 export interface ListingStayDetailPageProps {}
 
 const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const titleParam = searchParams.get("title") || "Beach House in Collingwood";
   const priceParam = searchParams.get("price") || "119";
@@ -34,7 +36,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "6";
 
-  const [startDate, setStartDate] = useState<Date | null>(new Date("2023/02/06"));
+  const [startDate, setStartDate] = useState<Date | null>(
+    new Date("2023/02/06"),
+  );
   const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
 
   let [isOpenModalAmenities, setIsOpenModalAmenities] = useState(false);
@@ -51,7 +55,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const res = await fetch(`/api/feedbacks?title=${encodeURIComponent(titleParam)}`);
+        const res = await fetch(
+          `/api/feedbacks?title=${encodeURIComponent(titleParam)}`,
+        );
         if (res.ok) {
           const data = await res.json();
           setFeedbacks(data);
@@ -65,11 +71,11 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
   const handleSubmitFeedback = async () => {
     if (!user) {
-      alert("Vui lòng đăng nhập để gửi nhận xét!");
+      alert(t("listingDetailLoginToComment"));
       return;
     }
     if (!commentInput.trim()) {
-      alert("Vui lòng nhập nội dung nhận xét!");
+      alert(t("listingDetailCommentRequired"));
       return;
     }
 
@@ -87,14 +93,14 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || "Gửi nhận xét thất bại.");
+        throw new Error(errData.error || t("listingDetailCommentSubmitError"));
       }
 
       const newFeedback = await res.json();
       setFeedbacks((prev) => [newFeedback, ...prev]);
       setCommentInput("");
     } catch (err: any) {
-      alert(err.message || "Đã xảy ra lỗi khi gửi nhận xét.");
+      alert(err.message || t("listingDetailCommentGeneralError"));
     } finally {
       setSubmitLoading(false);
     }
@@ -107,7 +113,6 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   function openModalAmenities() {
     setIsOpenModalAmenities(true);
   }
-
 
   const handleOpenModalImageGallery = () => {
     router.push(`${thisPathname}/?modal=PHOTO_TOUR_SCROLLABLE` as Route);
@@ -141,7 +146,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         <div className="flex items-center">
           <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
           <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
-            Hosted by{" "}
+            {t("listingDetailHostedBy")}{" "}
             <span className="text-neutral-900 dark:text-neutral-200 font-medium">
               Kevin Francis
             </span>
@@ -156,25 +161,37 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           <div className="flex items-center space-x-3 ">
             <i className=" las la-user text-2xl "></i>
             <span className="">
-              {bedsParam} <span className="hidden sm:inline-block">guests</span>
+              {bedsParam}{" "}
+              <span className="hidden sm:inline-block">
+                {t("listingDetailGuests")}
+              </span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <i className=" las la-bed text-2xl"></i>
             <span className=" ">
-              {bedsParam} <span className="hidden sm:inline-block">beds</span>
+              {bedsParam}{" "}
+              <span className="hidden sm:inline-block">
+                {t("listingDetailBeds")}
+              </span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <i className=" las la-bath text-2xl"></i>
             <span className=" ">
-              3 <span className="hidden sm:inline-block">baths</span>
+              3{" "}
+              <span className="hidden sm:inline-block">
+                {t("listingDetailBaths")}
+              </span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <i className=" las la-door-open text-2xl"></i>
             <span className=" ">
-              2 <span className="hidden sm:inline-block">bedrooms</span>
+              2{" "}
+              <span className="hidden sm:inline-block">
+                {t("listingDetailBedrooms")}
+              </span>
             </span>
           </div>
         </div>
@@ -184,9 +201,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
   const getStayDescription = () => {
     const p1 = `Welcome to ${titleParam}, a delightful ${categoryParam.toLowerCase()} nestled in ${addressParam}. Offering a harmonious blend of modern convenience and local charm, this property provides the perfect escape. Experience excellent amenities and warm hospitality starting from $${priceParam} per night.`;
-    
+
     const p2 = `This well-appointed space accommodates guests comfortably with its ${bedsParam} beds, making it ideal for both short getaways and extended stays. Each unit is equipped with a private bathroom, clean linens, a hairdryer, and complimentary toiletries to ensure a seamless and restful stay.`;
-    
+
     const p3 = `Guests at ${titleParam} can enjoy access to unique property highlights such as a scenic terrace, a cozy shared lounge, and a tranquil garden area. Conveniently located near local attractions, it serves as the perfect base for exploring the rich culture and activities nearby.`;
 
     return { p1, p2, p3 };
@@ -196,7 +213,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     const { p1, p2, p3 } = getStayDescription();
     return (
       <div className="listingSection__wrap">
-        <h2 className="text-2xl font-semibold">Stay information</h2>
+        <h2 className="text-2xl font-semibold">
+          {t("listingDetailStayInformation")}
+        </h2>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
         <div className="text-neutral-6000 dark:text-neutral-300 space-y-4">
           <p>{p1}</p>
@@ -211,9 +230,11 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     return (
       <div className="listingSection__wrap">
         <div>
-          <h2 className="text-2xl font-semibold">Amenities </h2>
+          <h2 className="text-2xl font-semibold">
+            {t("listingDetailAmenities")}
+          </h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            {` About the property's amenities and services`}
+            {t("listingDetailAmenitiesSubtitle")}
           </span>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
@@ -231,7 +252,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         <div className="w-14 border-b border-neutral-200"></div>
         <div>
           <ButtonSecondary onClick={openModalAmenities}>
-            View more 20 amenities
+            {t("listingDetailViewMoreAmenities")}
           </ButtonSecondary>
         </div>
         {renderMotalAmenities()}
@@ -458,7 +479,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     return (
       <div className="listingSection__wrap">
         {/* HEADING */}
-        <h2 className="text-2xl font-semibold">Reviews ({feedbacks.length} reviews)</h2>
+        <h2 className="text-2xl font-semibold">
+          Reviews ({feedbacks.length} reviews)
+        </h2>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
         {/* Content */}
@@ -474,7 +497,11 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               fontClass=""
               sizeClass="h-16 px-4 py-3"
               rounded="rounded-3xl"
-              placeholder={user ? "Share your thoughts ..." : "Đăng nhập để viết đánh giá..."}
+              placeholder={
+                user
+                  ? "Share your thoughts ..."
+                  : "Đăng nhập để viết đánh giá..."
+              }
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
               disabled={!user || submitLoading}
@@ -498,12 +525,15 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                 key={item.id}
                 className="py-8"
                 data={{
-                  name: item.user?.full_name || item.user?.email?.split("@")[0] || "Người dùng",
+                  name:
+                    item.user?.full_name ||
+                    item.user?.email?.split("@")[0] ||
+                    "Người dùng",
                   avatar: "",
                   date: new Date(item.created_at).toLocaleDateString("vi-VN", {
                     day: "numeric",
                     month: "long",
-                    year: "numeric"
+                    year: "numeric",
                   }),
                   comment: item.comment,
                   starPoint: item.rating,
@@ -511,7 +541,10 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               />
             ))
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của bạn!</p>
+            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">
+              Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của
+              bạn!
+            </p>
           )}
         </div>
       </div>
@@ -603,7 +636,15 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
   const renderSidebar = () => {
     const priceVal = Number(priceParam) || 119;
-    const nights = startDate && endDate ? Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))) : 1;
+    const nights =
+      startDate && endDate
+        ? Math.max(
+            1,
+            Math.ceil(
+              (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+            ),
+          )
+        : 1;
     const subtotal = priceVal * nights;
     const total = subtotal;
 
@@ -638,7 +679,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         {/* SUM */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>${priceVal} x {nights} night{nights > 1 ? "s" : ""}</span>
+            <span>
+              ${priceVal} x {nights} night{nights > 1 ? "s" : ""}
+            </span>
             <span>${subtotal}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
@@ -653,7 +696,13 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         </div>
 
         {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&beds=${bedsParam}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}` as any}>Reserve</ButtonPrimary>
+        <ButtonPrimary
+          href={
+            `/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&beds=${bedsParam}&checkIn=${startDate ? startDate.toISOString().split("T")[0] : ""}&checkOut=${endDate ? endDate.toISOString().split("T")[0] : ""}` as any
+          }
+        >
+          Reserve
+        </ButtonPrimary>
       </div>
     );
   };

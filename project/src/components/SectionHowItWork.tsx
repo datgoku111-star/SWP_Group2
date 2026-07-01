@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import HIW1img from "@/images/HIW1.png";
 import HIW2img from "@/images/HIW2.png";
@@ -5,13 +7,14 @@ import HIW3img from "@/images/HIW3.png";
 import VectorImg from "@/images/VectorHIW.svg";
 import Image, { StaticImageData } from "next/image";
 import Heading from "@/shared/Heading";
+import { useTranslation } from "react-i18next";
 
 export interface SectionHowItWorkProps {
   className?: string;
   data?: {
     id: number;
-    title: string;
-    desc: string;
+    titleKey: string;
+    descKey: string;
     img: StaticImageData;
     imgDark?: StaticImageData;
   }[];
@@ -21,20 +24,20 @@ const DEMO_DATA: SectionHowItWorkProps["data"] = [
   {
     id: 1,
     img: HIW1img,
-    title: "Book & relax",
-    desc: "Let each trip be an inspirational journey, each room a peaceful space",
+    titleKey: "howItWorkBookRelax",
+    descKey: "howItWorkDesc",
   },
   {
     id: 2,
     img: HIW2img,
-    title: "Smart checklist",
-    desc: "Let each trip be an inspirational journey, each room a peaceful space",
+    titleKey: "howItWorkSmartChecklist",
+    descKey: "howItWorkDesc",
   },
   {
     id: 3,
     img: HIW3img,
-    title: "Save more",
-    desc: "Let each trip be an inspirational journey, each room a peaceful space",
+    titleKey: "howItWorkSaveMore",
+    descKey: "howItWorkDesc",
   },
 ];
 
@@ -42,13 +45,15 @@ const SectionHowItWork: FC<SectionHowItWorkProps> = ({
   className = "",
   data = DEMO_DATA,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div
       className={`nc-SectionHowItWork  ${className}`}
       data-nc-id="SectionHowItWork"
     >
-      <Heading isCenter desc="Keep calm & travel on">
-        How it work
+      <Heading isCenter desc={t("howItWorkDescHeading")}>
+        {t("howItWorkHeading")}
       </Heading>
       <div className="mt-20 relative grid md:grid-cols-3 gap-20">
         <Image
@@ -82,9 +87,9 @@ const SectionHowItWork: FC<SectionHowItWorkProps> = ({
               />
             )}
             <div className="text-center mt-auto">
-              <h3 className="text-xl font-semibold">{item.title}</h3>
+              <h3 className="text-xl font-semibold">{t(item.titleKey)}</h3>
               <span className="block mt-5 text-neutral-500 dark:text-neutral-400">
-                {item.desc}
+                {t(item.descKey)}
               </span>
             </div>
           </div>

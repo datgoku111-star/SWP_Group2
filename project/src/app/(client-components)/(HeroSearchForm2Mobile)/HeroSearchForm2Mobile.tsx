@@ -4,7 +4,6 @@ import React, { Fragment, useState } from "react";
 import { Dialog, Tab, Transition } from "@headlessui/react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { XMarkIcon } from "@heroicons/react/24/solid";
-import { useTranslations } from "@/lib/translate";
 import ButtonSubmit from "./ButtonSubmit";
 import { useTimeoutFn } from "react-use";
 import StaySearchForm from "./(stay-search-form)/StaySearchForm";
@@ -12,7 +11,6 @@ import CarsSearchForm from "./(car-search-form)/CarsSearchForm";
 import FlightSearchForm from "./(flight-search-form)/FlightSearchForm";
 
 const HeroSearchForm2Mobile = () => {
-  const { t } = useTranslations();
   const [showModal, setShowModal] = useState(false);
 
   // FOR RESET ALL DATA WHEN CLICK CLEAR BUTTON
@@ -36,10 +34,10 @@ const HeroSearchForm2Mobile = () => {
         <MagnifyingGlassIcon className="flex-shrink-0 w-5 h-5" />
 
         <div className="ml-3 flex-1 text-left overflow-hidden">
-          <span className="block font-medium text-sm">{t("Where to?")}</span>
+          <span className="block font-medium text-sm">Where to?</span>
           <span className="block mt-0.5 text-xs font-light text-neutral-500 dark:text-neutral-400 ">
             <span className="line-clamp-1">
-              {t("Anywhere • Any week • Add guests")}
+              Anywhere • Any week • Add guests
             </span>
           </span>
         </div>
@@ -102,7 +100,7 @@ const HeroSearchForm2Mobile = () => {
                                         : ""
                                     }  `}
                                   >
-                                    {t(item)}
+                                    {item}
                                   </div>
                                   {selected && (
                                     <span className="absolute inset-x-0 top-full border-b-2 border-black dark:border-white"></span>
@@ -146,7 +144,7 @@ const HeroSearchForm2Mobile = () => {
                             resetIsShowingDialog();
                           }}
                         >
-                          {t("Clear all")}
+                          Clear all
                         </button>
                         <ButtonSubmit
                           onClick={() => {

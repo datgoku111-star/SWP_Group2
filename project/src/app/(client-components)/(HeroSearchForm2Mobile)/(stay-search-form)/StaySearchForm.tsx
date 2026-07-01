@@ -2,7 +2,6 @@
 
 import converSelectedDateToString from "@/utils/converSelectedDateToString";
 import React, { useState } from "react";
-import { useTranslations } from "@/lib/translate";
 import { GuestsObject } from "../../type";
 import GuestsInput from "../GuestsInput";
 import LocationInput from "../LocationInput";
@@ -32,8 +31,6 @@ const StaySearchForm = () => {
     setEndDate(end);
   };
 
-  const { t } = useTranslations();
-
   const renderInputLocation = () => {
     const isActive = fieldNameShow === "location";
     return (
@@ -49,8 +46,8 @@ const StaySearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("location")}
           >
-            <span className="text-neutral-400">{t("Where")}</span>
-            <span>{locationInputTo || t("Location")}</span>
+            <span className="text-neutral-400">Where</span>
+            <span>{locationInputTo || "Location"}</span>
           </button>
         ) : (
           <LocationInput
@@ -81,11 +78,11 @@ const StaySearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4  `}
             onClick={() => setFieldNameShow("dates")}
           >
-            <span className="text-neutral-400">{t("When")}</span>
+            <span className="text-neutral-400">When</span>
             <span>
               {startDate
                 ? converSelectedDateToString([startDate, endDate])
-                : t("Add date")}
+                : "Add date"}
             </span>
           </button>
         ) : (
@@ -121,8 +118,8 @@ const StaySearchForm = () => {
             className={`w-full flex justify-between text-sm font-medium p-4`}
             onClick={() => setFieldNameShow("guests")}
           >
-            <span className="text-neutral-400">{t("Who")}</span>
-            <span>{guestSelected || t("Add guests")}</span>
+            <span className="text-neutral-400">Who</span>
+            <span>{guestSelected || `Add guests`}</span>
           </button>
         ) : (
           <GuestsInput defaultValue={guestInput} onChange={setGuestInput} />

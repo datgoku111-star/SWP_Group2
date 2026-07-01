@@ -8,6 +8,7 @@ import "rc-slider/assets/index.css";
 import Footer from "@/components/Footer";
 import FooterNav from "@/components/FooterNav";
 import { AuthProvider } from "@/lib/auth-context";
+import I18nProvider from "@/components/I18nProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -20,22 +21,21 @@ export default function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale?: string };
+  params: any;
 }) {
-  const locale = params?.locale ?? "en";
-
   return (
-    <html lang={locale} className={poppins.className}>
+    <html lang="vn" className={poppins.className}>
       <body className="bg-white text-base dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200">
-        <AuthProvider>
-          <ClientCommons />
-          <SiteHeader />
-          {children}
-          <FooterNav />
-          <Footer />
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <ClientCommons />
+            <SiteHeader />
+            {children}
+            <FooterNav />
+            <Footer />
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );
 }
-

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import Logo from "@/shared/Logo";
 import MenuBar from "@/shared/MenuBar";
@@ -11,7 +13,7 @@ import TemplatesDropdown from "./TemplatesDropdown";
 import { Route } from "@/routers/types";
 import { useAuth } from "@/lib/auth-context";
 import ButtonPrimary from "@/shared/ButtonPrimary";
-import { useTranslations } from "@/lib/translate";
+import { useTranslation } from "react-i18next";
 
 export interface MainNav2Props {
   className?: string;
@@ -19,7 +21,7 @@ export interface MainNav2Props {
 
 const MainNav2: FC<MainNav2Props> = ({ className = "" }) => {
   const { user } = useAuth();
-  const { t } = useTranslations();
+  const { t } = useTranslation();
 
   return (
     <div className={`MainNav2 relative z-10 ${className}`}>
@@ -44,7 +46,7 @@ const MainNav2: FC<MainNav2Props> = ({ className = "" }) => {
               href={"/add-listing" as Route<string>}
               className="self-center text-opacity-90 group px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full inline-flex items-center text-sm text-gray-700 dark:text-neutral-300 font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 mr-2"
             >
-              {t("List your property")}
+              {t("listYourProperty")}
             </Link>
 
             {user ? (
@@ -58,10 +60,10 @@ const MainNav2: FC<MainNav2Props> = ({ className = "" }) => {
                   href="/login"
                   className="self-center text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 px-4 py-2"
                 >
-                  {t("Sign in")}
+                  {t("signIn")}
                 </Link>
                 <ButtonPrimary href="/signup" className="self-center">
-                  {t("Sign up")}
+                  {t("signUp")}
                 </ButtonPrimary>
               </div>
             )}
@@ -76,6 +78,5 @@ const MainNav2: FC<MainNav2Props> = ({ className = "" }) => {
     </div>
   );
 };
-
 
 export default MainNav2;
