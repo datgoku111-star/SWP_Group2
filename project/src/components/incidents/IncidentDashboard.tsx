@@ -34,8 +34,8 @@ export default function IncidentDashboard() {
       <div className="bg-indigo-600 p-6 rounded-lg shadow text-white flex flex-col justify-center">
         <h3 className="text-xl font-bold">Tổng sự cố phát sinh</h3>
         <p className="text-5xl font-bold mt-2">
-          {Object.values(stats as any).reduce((a: any, b: any) => a + b, 0)}
-        </p>
+        {Object.values(stats as Record<string, number>).reduce((a, b) => a + b, 0)}
+       </p>
       </div>
     </div>
   );
