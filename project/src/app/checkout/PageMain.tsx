@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, Transition } from "@headlessui/react";
+import { Dialog, Transition, Tab } from "@headlessui/react";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import React, { FC, Fragment, useState, useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
@@ -14,6 +14,8 @@ import ModalSelectDate from "@/components/ModalSelectDate";
 import converSelectedDateToString from "@/utils/converSelectedDateToString";
 import ModalSelectGuests from "@/components/ModalSelectGuests";
 import Image from "next/image";
+import visaPng from "@/images/vis.png";
+import mastercardPng from "@/images/mastercard.png";
 import { GuestsObject } from "../(client-components)/type";
 
 import { useCurrency } from "@/hooks/useCurrency";
@@ -71,8 +73,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const { user } = useAuth();
   const router = useRouter();
   const { formatPrice, convertPrice, currency } = useCurrency();
-
-
+  const [activeTab, setActiveTab] = useState(0); // 0: paypal, 1: card, 2: payos
   const [showPayOSModal, setShowPayOSModal] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<{
     qrCode: string;
@@ -358,11 +359,24 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       // XỬ LÝ CHO ĐƠN DỊCH VỤ ĐỒ ĂN
       if (typeParam === "service") {
         const totalAmount = Number(priceParam);
-        // Cổng VietQR (PayOS)
-        await handlePayOSPayment(null, "", "", totalAmount);
+        if (activeTab === 2) {
+          // Cổng VietQR (PayOS)
+          await handlePayOSPayment(null, "", "", totalAmount);
+        } else {
+          // PayPal or Credit Card for service order: place order directly via API
+          const items = itemsParam ? JSON.parse(decodeURIComponent(itemsParam)) : [];
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ booking_id: bookingIdParam, items }),
+          });
+          if (!res.ok) throw new Error("Không thể đặt món ăn.");
+          const orderData = await res.json();
+          router.push(`/pay-done?bookingId=${bookingIdParam}&serviceOrderId=${orderData.id}&type=service&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
+        }
         return;
       }
-      // LUỒNG ĐẶT PHÒNG CŨ
+      // LUỒNG ĐẶT PHÒNG
       if (!startDate || !endDate) {
         throw new Error("Please select check-in and check-out dates.");
       }
@@ -384,8 +398,29 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       const pricePerNight = Number(priceParam) || targetRoom.room_type?.base_price || 100;
       const totalAmount = pricePerNight * nights;
 
-      // Cổng VietQR (PayOS)
-      await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
+      if (activeTab === 2) {
+        // Cổng VietQR (PayOS)
+        await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
+      } else {
+        // PayPal or Credit Card for booking: create traditional booking in local DB
+        const bookingRes = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            room_id: targetRoom.id,
+            check_in_date: checkInStr,
+            check_out_date: checkOutStr,
+            num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
+            total_amount: totalAmount,
+            special_requests: "",
+          }),
+        });
+        const bookingData = await bookingRes.json();
+        if (!bookingRes.ok) {
+          throw new Error(bookingData.error || "Failed to create booking.");
+        }
+        router.push(`/pay-done?bookingId=${bookingData.id}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
+      }
     } catch (err: any) {
       console.error("Payment failed:", err);
       setError(err.message || "An unexpected error occurred.");
@@ -439,7 +474,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
             {t("checkoutPaymentDetails")}
           </h3>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>
             <span>
               {typeParam === "service"
                 ? formatPrice(priceVal, "VND")

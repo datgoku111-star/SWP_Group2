@@ -8,7 +8,12 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     .select("*")
     .eq("email", email.toLowerCase())
     .single();
-  if (error) return null;
+  if (error) {
+    if (error.message?.includes("fetch failed") || error.details?.includes("ENOTFOUND")) {
+      throw new Error(`Database connection failed: ${error.message}`);
+    }
+    return null;
+  }
   return data as User;
 }
 

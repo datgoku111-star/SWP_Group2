@@ -61,28 +61,38 @@ const LoginPageContent = () => {
 
     try {
       // 1. Try Supabase Auth first
-      const { data: sbData, error: loginError } =
-        await supabaseBrowser.auth.signInWithPassword({
+      let sbData = null;
+      let loginError = null;
+      
+      try {
+        const { data, error } = await supabaseBrowser.auth.signInWithPassword({
           email,
           password,
         });
+        sbData = data;
+        loginError = error;
+      } catch (sbException: any) {
+        console.warn("Supabase auth threw exception, trying local fallback:", sbException);
+        loginError = { message: sbException.message || "Failed to fetch" };
+      }
 
       if (loginError) {
         // 2. If Supabase Auth fails, try local DB authentication API
-        const res = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+        let res;
+        try {
+          res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+        } catch (fetchErr: any) {
+          throw new Error("Failed to connect to authentication server. Your Supabase project might be paused or deleted. Please check your Supabase Dashboard or verify NEXT_PUBLIC_SUPABASE_URL in .env.local.");
+        }
 
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(
-            loginError.message ||
-              data.error ||
-              "Email hoặc mật khẩu không đúng",
-          );
+          throw new Error(data.error || loginError.message || "Email hoặc mật khẩu không đúng");
         }
 
         // Successful local DB login
@@ -98,7 +108,11 @@ const LoginPageContent = () => {
       router.push(callbackUrl as Route);
     } catch (err: any) {
       console.error("Login failed:", err);
-      setError(err.message || "Email hoặc mật khẩu không đúng");
+      let errMsg = err.message || "Email hoặc mật khẩu không đúng";
+      if (errMsg.includes("Failed to fetch") || errMsg.includes("fetch failed") || errMsg.includes("fetch")) {
+        errMsg = "Không thể kết nối đến Supabase (Failed to fetch). Dự án Supabase có thể đã bị tạm dừng (Paused) hoặc cấu hình NEXT_PUBLIC_SUPABASE_URL trong .env.local chưa chính xác. Vui lòng đăng nhập vào Supabase Dashboard để kích hoạt lại dự án của bạn.";
+      }
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
