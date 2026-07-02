@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC } from "react";
 import Logo from "@/shared/Logo";
 import Navigation from "@/shared/Navigation/Navigation";
@@ -11,6 +13,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import NotifyDropdown from "./NotifyDropdown";
 import AvatarDropdown from "./AvatarDropdown";
+import { useTranslation } from "react-i18next";
 
 export interface MainNav1Props {
   className?: string;
@@ -18,6 +21,7 @@ export interface MainNav1Props {
 
 const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <div className={`nc-MainNav1 relative z-10 ${className}`}>
@@ -38,7 +42,7 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
             <SwitchDarkMode />
             <SearchDropdown className="flex items-center" />
             <div className="px-1" />
-            
+
             {user ? (
               <>
                 <NotifyDropdown />
@@ -51,10 +55,10 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
                   href="/login"
                   className="self-center text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 px-3 py-2"
                 >
-                  Sign in
+                  {t("signIn")}
                 </Link>
                 <ButtonPrimary className="self-center" href="/signup">
-                  Sign up
+                  {t("signUp")}
                 </ButtonPrimary>
               </div>
             )}
@@ -80,4 +84,3 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
 };
 
 export default MainNav1;
-

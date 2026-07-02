@@ -137,22 +137,22 @@ function PageHome2() {
               id: 1,
               img: HIW1img,
               imgDark: HIW1imgDark,
-              title: "Smart search",
-              desc: "Name the area or type of home you are looking for the search bar. Our app will find you the perfect match.",
+              titleKey: "home2HowItWorkSmartSearch",
+              descKey: "home2HowItWorkSmartSearchDesc",
             },
             {
               id: 2,
               img: HIW2img,
               imgDark: HIW2imgDark,
-              title: "Choose property",
-              desc: "From the number of options our app will provide, you can select any property that you like to explore.",
+              titleKey: "home2HowItWorkChooseProperty",
+              descKey: "home2HowItWorkChoosePropertyDesc",
             },
             {
               id: 3,
               img: HIW3img,
               imgDark: HIW3imgDark,
-              title: "Book you property",
-              desc: "Find a home or space from our search bar. Enter your specific location, property type and price range.",
+              titleKey: "home2HowItWorkBookProperty",
+              descKey: "home2HowItWorkBookPropertyDesc",
             },
           ]}
         />

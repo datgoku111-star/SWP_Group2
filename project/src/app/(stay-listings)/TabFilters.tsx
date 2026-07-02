@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Fragment, useState, FC } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, Popover, Transition } from "@headlessui/react";
 import NcInputNumber from "@/components/NcInputNumber";
 import ButtonPrimary from "@/shared/ButtonPrimary";
@@ -84,12 +85,15 @@ const TabFilters: FC<TabFiltersProps> = ({
   location = "",
   setLocation = () => {},
 }) => {
+  const { t } = useTranslation();
   const [isOpenMoreFilter, setisOpenMoreFilter] = useState(false);
   const [isOpenMoreFilterMobile, setisOpenMoreFilterMobile] = useState(false);
-  
+
   // Local state initialized with props
-  const [localTypeOfPlace, setLocalTypeOfPlace] = useState<string[]>(typeOfPlace);
-  const [localRangePrices, setLocalRangePrices] = useState<number[]>(rangePrices);
+  const [localTypeOfPlace, setLocalTypeOfPlace] =
+    useState<string[]>(typeOfPlace);
+  const [localRangePrices, setLocalRangePrices] =
+    useState<number[]>(rangePrices);
   const [localLocation, setLocalLocation] = useState<string>(location);
 
   //
@@ -125,13 +129,15 @@ const TabFilters: FC<TabFiltersProps> = ({
           <>
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-6000 focus:outline-none ${
-                localTypeOfPlace.length > 0 ? "border-primary-500 bg-primary-50 text-primary-700" : ""
+                localTypeOfPlace.length > 0
+                  ? "border-primary-500 bg-primary-50 text-primary-700"
+                  : ""
               }`}
             >
               <span>
                 {localTypeOfPlace.length > 0
-                  ? `Type of place (${localTypeOfPlace.length})`
-                  : "Type of place"}
+                  ? `${t("listingTypeOfPlaceLabel")} (${localTypeOfPlace.length})`
+                  : t("listingTypeOfPlaceLabel")}
               </span>
               <i className="las la-angle-down ml-2"></i>
             </Popover.Button>
@@ -156,9 +162,14 @@ const TabFilters: FC<TabFiltersProps> = ({
                           defaultChecked={localTypeOfPlace.includes(item.name)}
                           onChange={(checked) => {
                             if (checked) {
-                              setLocalTypeOfPlace([...localTypeOfPlace, item.name]);
+                              setLocalTypeOfPlace([
+                                ...localTypeOfPlace,
+                                item.name,
+                              ]);
                             } else {
-                              setLocalTypeOfPlace(localTypeOfPlace.filter((t) => t !== item.name));
+                              setLocalTypeOfPlace(
+                                localTypeOfPlace.filter((t) => t !== item.name),
+                              );
                             }
                           }}
                         />
@@ -174,7 +185,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Clear
+                      {t("listingClear")}
                     </ButtonThird>
                     <ButtonPrimary
                       onClick={() => {
@@ -183,7 +194,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Apply
+                      {t("listingApply")}
                     </ButtonPrimary>
                   </div>
                 </div>
@@ -202,10 +213,16 @@ const TabFilters: FC<TabFiltersProps> = ({
           <>
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-6000 focus:outline-none ${
-                localLocation ? "border-primary-500 bg-primary-50 text-primary-700" : ""
+                localLocation
+                  ? "border-primary-500 bg-primary-50 text-primary-700"
+                  : ""
               }`}
             >
-              <span>{localLocation ? `Địa điểm: ${localLocation}` : "Địa điểm"}</span>
+              <span>
+                {localLocation
+                  ? `${t("listingLocationLabel")}: ${localLocation}`
+                  : t("listingLocationLabel")}
+              </span>
               <i className="las la-angle-down ml-2"></i>
             </Popover.Button>
             <Transition
@@ -221,7 +238,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                 <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
                   <div className="relative flex flex-col px-5 py-6 space-y-5">
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Nhập thành phố hoặc địa chỉ
+                      {t("listingLocationInputLabel")}
                     </label>
                     <input
                       type="text"
@@ -240,7 +257,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Clear
+                      {t("listingClear")}
                     </ButtonThird>
                     <ButtonPrimary
                       onClick={() => {
@@ -249,7 +266,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Apply
+                      {t("listingApply")}
                     </ButtonPrimary>
                   </div>
                 </div>
@@ -271,7 +288,7 @@ const TabFilters: FC<TabFiltersProps> = ({
             >
               <span>
                 {`$${convertNumbThousand(
-                  localRangePrices[0]
+                  localRangePrices[0],
                 )} - $${convertNumbThousand(localRangePrices[1])}`}{" "}
               </span>
               {renderXClear()}
@@ -289,13 +306,18 @@ const TabFilters: FC<TabFiltersProps> = ({
                 <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
                   <div className="relative flex flex-col px-5 py-6 space-y-8">
                     <div className="space-y-5">
-                      <span className="font-medium">Price per day</span>
+                      <span className="font-medium">
+                        {t("listingPricePerDay")}
+                      </span>
                       <Slider
                         range
                         className="text-red-400"
                         min={0}
                         max={2000}
-                        defaultValue={[localRangePrices[0], localRangePrices[1]]}
+                        defaultValue={[
+                          localRangePrices[0],
+                          localRangePrices[1],
+                        ]}
                         allowCross={false}
                         onChange={(e) => setLocalRangePrices(e as number[])}
                       />
@@ -307,7 +329,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                           htmlFor="minPrice"
                           className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                         >
-                          Min price
+                          {t("listingMinPrice")}
                         </label>
                         <div className="mt-1 relative rounded-md">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -330,7 +352,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                           htmlFor="maxPrice"
                           className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                         >
-                          Max price
+                          {t("listingMaxPrice")}
                         </label>
                         <div className="mt-1 relative rounded-md">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -359,7 +381,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Clear
+                      {t("listingClear")}
                     </ButtonThird>
                     <ButtonPrimary
                       onClick={() => {
@@ -368,7 +390,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Apply
+                      {t("listingApply")}
                     </ButtonPrimary>
                   </div>
                 </div>
@@ -384,7 +406,7 @@ const TabFilters: FC<TabFiltersProps> = ({
     data: {
       name: string;
       defaultChecked?: boolean;
-    }[]
+    }[],
   ) => {
     const list1 = data.filter((_, i) => i < data.length / 2);
     const list2 = data.filter((_, i) => i >= data.length / 2);
@@ -421,7 +443,7 @@ const TabFilters: FC<TabFiltersProps> = ({
           className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 focus:outline-none cursor-pointer`}
           onClick={openModalMoreFilter}
         >
-          <span>More filters (3)</span>
+          <span>{t("listingMoreFilters")}</span>
           {renderXClear()}
         </div>
 
@@ -507,13 +529,13 @@ const TabFilters: FC<TabFiltersProps> = ({
                       onClick={closeModalMoreFilter}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Clear
+                      {t("listingClear")}
                     </ButtonThird>
                     <ButtonPrimary
                       onClick={closeModalMoreFilter}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Apply
+                      {t("listingApply")}
                     </ButtonPrimary>
                   </div>
                 </div>
@@ -532,7 +554,7 @@ const TabFilters: FC<TabFiltersProps> = ({
           className={`flex lg:hidden items-center justify-center px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 focus:outline-none cursor-pointer`}
           onClick={openModalMoreFilterMobile}
         >
-          <span>More filters (3)</span>
+          <span>{t("listingMoreFilters")}</span>
           {renderXClear()}
         </div>
 
@@ -588,7 +610,9 @@ const TabFilters: FC<TabFiltersProps> = ({
                     <div className="px-4 sm:px-6 divide-y divide-neutral-200 dark:divide-neutral-800">
                       {/* ---- */}
                       <div className="py-7">
-                        <h3 className="text-xl font-medium">Type of place</h3>
+                        <h3 className="text-xl font-medium">
+                          {t("listingTypeOfPlaceLabel")}
+                        </h3>
                         <div className="mt-6 relative ">
                           {renderMoreFilterItem(typeOfPaces)}
                         </div>
@@ -596,7 +620,9 @@ const TabFilters: FC<TabFiltersProps> = ({
 
                       {/* ---- */}
                       <div className="py-7">
-                        <h3 className="text-xl font-medium">Range Prices</h3>
+                        <h3 className="text-xl font-medium">
+                          {t("listingRangePrices")}
+                        </h3>
                         <div className="mt-6 relative ">
                           <div className="relative flex flex-col space-y-8">
                             <div className="space-y-5">
@@ -617,7 +643,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                                   htmlFor="minPrice"
                                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                                 >
-                                  Min price
+                                  {t("listingMinPrice")}
                                 </label>
                                 <div className="mt-1 relative rounded-md">
                                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -640,7 +666,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                                   htmlFor="maxPrice"
                                   className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                                 >
-                                  Max price
+                                  {t("listingMaxPrice")}
                                 </label>
                                 <div className="mt-1 relative rounded-md">
                                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -665,11 +691,13 @@ const TabFilters: FC<TabFiltersProps> = ({
 
                       {/* ---- */}
                       <div className="py-7">
-                        <h3 className="text-xl font-medium">Địa điểm</h3>
+                        <h3 className="text-xl font-medium">
+                          {t("listingLocationLabel")}
+                        </h3>
                         <div className="mt-6 relative">
                           <input
                             type="text"
-                            placeholder="Ví dụ: Park, Hill, Court..."
+                            placeholder={t("listingLocationPlaceholder")}
                             className="block w-full px-4 py-3 text-sm rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-neutral-900 dark:text-white"
                             value={localLocation}
                             onChange={(e) => setLocalLocation(e.target.value)}
@@ -720,7 +748,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Clear
+                      {t("listingClear")}
                     </ButtonThird>
                     <ButtonPrimary
                       onClick={() => {
@@ -729,7 +757,7 @@ const TabFilters: FC<TabFiltersProps> = ({
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
-                      Apply
+                      {t("listingApply")}
                     </ButtonPrimary>
                   </div>
                 </div>

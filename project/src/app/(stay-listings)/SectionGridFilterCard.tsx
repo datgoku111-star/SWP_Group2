@@ -1,6 +1,7 @@
 "use client";
 
 import React, { FC, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { DEMO_STAY_LISTINGS } from "@/data/listings";
 import { StayDataType } from "@/data/types";
 import Pagination from "@/shared/Pagination";
@@ -20,6 +21,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
   className = "",
   data = DEMO_STAY_LISTINGS,
 }) => {
+  const { t } = useTranslation();
   const [stayData, setStayData] = useState<StayDataType[]>(data);
   const [typeOfPlace, setTypeOfPlace] = useState<string[]>([]);
   const [rangePrices, setRangePrices] = useState<number[]>([0, 1000]);
@@ -48,7 +50,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
               h.image_url,
               "https://images.pexels.com/photos/1268871/pexels-photo-1268871.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
               "https://images.pexels.com/photos/1179156/pexels-photo-1179156.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              "https://images.pexels.com/photos/2506988/pexels-photo-2506988.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500"
+              "https://images.pexels.com/photos/2506988/pexels-photo-2506988.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
             ],
             commentCount: 70,
             viewCount: 602,
@@ -65,10 +67,10 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
             availableRooms: h.available_rooms,
             author: DEMO_AUTHORS[0],
             listingCategory: DEMO_STAY_CATEGORIES[0],
-            map: { 
-              lat: 55.2094559 + (index * 0.01) - 0.03, 
-              lng: 61.5594641 + (index * 0.01) - 0.03 
-            }
+            map: {
+              lat: 55.2094559 + index * 0.01 - 0.03,
+              lng: 61.5594641 + index * 0.01 - 0.03,
+            },
           }));
           setStayData(mapped);
         }
@@ -81,7 +83,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
 
   const filteredData = stayData.filter((stay) => {
     // 1. Price
-    const priceNum = Number(stay.price.replace('$', '').trim());
+    const priceNum = Number(stay.price.replace("$", "").trim());
     if (priceNum < rangePrices[0] || priceNum > rangePrices[1]) {
       return false;
     }
@@ -130,7 +132,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
       </div>
       {filteredData.length === 0 ? (
         <div className="text-center py-20 text-neutral-500">
-          No stays match your selected filters. Please try resetting your filters.
+          {t("listingNoStaysMatch")}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

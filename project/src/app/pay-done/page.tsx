@@ -2,6 +2,7 @@
 
 import StartRating from "@/components/StartRating";
 import React, { FC, useState, useEffect, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -10,6 +11,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 export interface PayPageProps {}
 
 const PayPageContent: FC = () => {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
   const serviceOrderId = searchParams.get("serviceOrderId");
@@ -98,14 +100,14 @@ const PayPageContent: FC = () => {
     return (
       <div className="w-full flex flex-col sm:rounded-2xl space-y-10 px-0 sm:p-6 xl:p-8">
         <h2 className="text-3xl lg:text-4xl font-semibold">
-          Congratulation 🎉
+          {t("paydoneCongratulations")}
         </h2>
 
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
 
         {/* ------------------------ */}
         <div className="space-y-6">
-          <h3 className="text-2xl font-semibold">Your {isService ? "order" : "booking"}</h3>
+          <h3 className="text-2xl font-semibold">{isService ? t("paydoneYourOrder") || "Your order" : t("paydoneYourBooking")}</h3>
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex-shrink-0 w-full sm:w-40">
               <div className=" aspect-w-4 aspect-h-3 sm:aspect-h-4 rounded-2xl overflow-hidden">
@@ -154,7 +156,9 @@ const PayPageContent: FC = () => {
               </svg>
 
               <div className="flex flex-col">
-                <span className="text-sm text-neutral-400">Date</span>
+                <span className="text-sm text-neutral-400">
+                  {t("checkoutDateLabel")}
+                </span>
                 <span className="mt-1.5 text-lg font-semibold">
                   {isService 
                     ? (orderData ? new Date(orderData.created_at).toLocaleDateString("vi-VN", { day: "numeric", month: "short", year: "numeric" }) : "Hôm nay")
@@ -180,7 +184,7 @@ const PayPageContent: FC = () => {
               </svg>
 
               <div className="flex flex-col">
-                <span className="text-sm text-neutral-400">{isService ? "Order Status" : "Guests"}</span>
+                <span className="text-sm text-neutral-400">{isService ? "Order Status" : t("checkoutGuestsLabel")}</span>
                 <span className="mt-1.5 text-lg font-semibold">
                   {isService 
                     ? (orderData?.status === "PENDING" ? "Đang chờ" : orderData?.status === "IN_PROGRESS" ? "Đang thực hiện" : orderData?.status === "COMPLETED" ? "Đã giao" : "Đã hủy")
@@ -194,10 +198,10 @@ const PayPageContent: FC = () => {
 
         {/* ------------------------ */}
         <div className="space-y-6">
-          <h3 className="text-2xl font-semibold">Giao dịch chi tiết</h3>
+          <h3 className="text-2xl font-semibold">{t("paydoneBookingDetail")}</h3>
           <div className="flex flex-col space-y-4">
             <div className="flex text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">{isService ? "Mã đơn hàng" : "Mã đặt phòng"}</span>
+              <span className="flex-1">{isService ? "Mã đơn hàng" : t("paydoneBookingCode")}</span>
               <span className="flex-1 font-mono font-medium text-neutral-900 dark:text-neutral-100 select-all">
                 #{isService 
                   ? (orderData?.id?.slice(0, 8).toUpperCase() || "SERVICE_ORDER") 
@@ -220,7 +224,7 @@ const PayPageContent: FC = () => {
             )}
 
             <div className="flex text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">Ngày thanh toán</span>
+              <span className="flex-1">{t("checkoutDateLabel")}</span>
               <span className="flex-1 font-medium text-neutral-900 dark:text-neutral-100">
                 {isService
                   ? (orderData ? new Date(orderData.created_at).toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric" }) : "")
@@ -229,7 +233,7 @@ const PayPageContent: FC = () => {
               </span>
             </div>
             <div className="flex text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">Tổng tiền thanh toán</span>
+              <span className="flex-1">{t("paydoneTotal")}</span>
               <span className="flex-1 font-bold text-neutral-900 dark:text-neutral-100 text-lg">
                 {isService
                   ? (orderData ? formatPrice(orderData.total_amount, "VND") : "")
@@ -238,7 +242,7 @@ const PayPageContent: FC = () => {
               </span>
             </div>
             <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-              <span className="flex-1">Phương thức thanh toán</span>
+              <span className="flex-1">{t("paydonePaymentMethod")}</span>
               <span className="flex-1 font-medium text-neutral-900 dark:text-neutral-100">
                 VietQR (PayOS) / Chuyển khoản
               </span>
@@ -246,7 +250,7 @@ const PayPageContent: FC = () => {
           </div>
         </div>
         <div>
-          <ButtonPrimary href="/">Explore more stays</ButtonPrimary>
+          <ButtonPrimary href="/">{t("paydoneExploreMoreStays")}</ButtonPrimary>
         </div>
       </div>
     );

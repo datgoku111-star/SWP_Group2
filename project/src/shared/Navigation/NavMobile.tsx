@@ -12,6 +12,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/solid";
 import SwitchDarkMode from "@/shared/SwitchDarkMode";
 import Link from "next/link";
 import LangDropdown from "@/app/(client-components)/(Header)/LangDropdown";
+import { useTranslation } from "react-i18next";
 
 export interface NavMobileProps {
   data?: NavItemType[];
@@ -22,6 +23,8 @@ const NavMobile: React.FC<NavMobileProps> = ({
   data = NAVIGATION_DEMO,
   onClickClose,
 }) => {
+  const { t } = useTranslation();
+
   const _renderMenuChild = (item: NavItemType) => {
     return (
       <ul className="nav-mobile-sub-menu pl-6 pb-1 text-base">
@@ -36,7 +39,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
               <span
                 className={`py-2.5 pr-3 ${!i.children ? "block w-full" : ""}`}
               >
-                {i.name}
+                {t(i.name)}
               </span>
               {i.children && (
                 <span
@@ -80,7 +83,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
           <span
             className={`py-2.5 pr-3 ${!item.children ? "block w-full" : ""}`}
           >
-            {item.name}
+            {t(item.name)}
           </span>
           {item.children && (
             <span className="flex-1 flex" onClick={(e) => e.preventDefault()}>
@@ -108,10 +111,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
       <div className="py-6 px-5">
         <Logo />
         <div className="flex flex-col mt-5 text-neutral-700 dark:text-neutral-300 text-sm">
-          <span>
-            Discover the most outstanding articles on all topics of life. Write
-            your stories and share them
-          </span>
+          <span>{t("navMobileDescription")}</span>
 
           <div className="flex justify-between items-center mt-4">
             <SocialsList itemClass="w-9 h-9 flex items-center justify-center rounded-full bg-neutral-100 text-xl dark:bg-neutral-800 dark:text-neutral-300" />
@@ -134,7 +134,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
           target="_blank"
           rel="noopener noreferrer"
         >
-          <ButtonPrimary>Get Template</ButtonPrimary>
+          <ButtonPrimary>{t("getTemplate")}</ButtonPrimary>
         </a>
 
         <LangDropdown

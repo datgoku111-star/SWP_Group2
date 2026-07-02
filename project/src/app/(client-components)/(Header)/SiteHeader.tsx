@@ -12,6 +12,7 @@ import Header from "./Header";
 import Header3 from "./Header3";
 import { usePathname } from "next/navigation";
 import { useThemeMode } from "@/utils/useThemeMode";
+import { useTranslation } from "react-i18next";
 
 export type SiteHeaders = "Header 1" | "Header 2" | "Header 3";
 
@@ -35,6 +36,7 @@ const PAGES_HIDE_HEADER_BORDER: PathName[] = [
 
 const SiteHeader = () => {
   const anchorRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   let [headers] = useState<SiteHeaders[]>(["Header 1", "Header 2", "Header 3"]);
 
@@ -78,7 +80,7 @@ const SiteHeader = () => {
   const renderRadioHeaders = () => {
     return (
       <div className="mt-4">
-        <span className="text-sm font-medium">Header Styles</span>
+        <span className="text-sm font-medium">{t("headerStyles")}</span>
         <div className="mt-1.5 flex items-center space-x-2">
           {headers.map((header) => {
             return (
@@ -103,7 +105,7 @@ const SiteHeader = () => {
   const renderRadioHomePages = () => {
     return (
       <div className="mt-4">
-        <span className="text-sm font-medium">Home Demos</span>
+        <span className="text-sm font-medium">{t("homeDemos")}</span>
         <div className="mt-1.5 flex items-center space-x-2">
           {homePages.map((home) => {
             return (
@@ -152,12 +154,13 @@ const SiteHeader = () => {
                   <Popover.Panel className="absolute right-0 z-10 mt-3 w-screen max-w-sm">
                     <div className="rounded-2xl bg-white dark:bg-neutral-800 overflow-hidden nc-custom-shadow-1">
                       <div className="relative p-6">
-                        <span className="text-xl font-semibold">Customize</span>
+                        <span className="text-xl font-semibold">
+                          {t("customize")}
+                        </span>
                         <div className="w-full border-b border-neutral-200 dark:border-neutral-700 mt-4"></div>
                         {renderRadioHeaders()}
                         {renderRadioHomePages()}
                       </div>
-                    
                     </div>
                   </Popover.Panel>
                 </Transition>
