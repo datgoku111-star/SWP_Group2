@@ -59,8 +59,8 @@ export interface User {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  loyalty_points: number;  
 }
-
 /** User without password hash — safe for client */
 export type SafeUser = Omit<User, "password_hash">;
 
