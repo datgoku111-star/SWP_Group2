@@ -2,6 +2,7 @@ import React from "react";
 import { supabaseServer as supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import LoyaltyTimeline from "@/components/loyalty/LoyaltyTimeline";
+import PointAdjustmentPanel from "@/components/loyalty/PointAdjustmentPanel";
 
 export const revalidate = 0; // Tắt cache để điểm số luôn chuẩn xác theo thời gian thực
 
@@ -76,6 +77,9 @@ export default async function CustomerDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Tích hợp Bảng điều chỉnh điểm thủ công */}
+      <PointAdjustmentPanel customerId={customer.id} />
 
       {/* Khối hiển thị Trục Timeline Lịch sử Điểm */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow ring-1 ring-black ring-opacity-5">
