@@ -383,10 +383,17 @@
   resolved "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/node@20.2.3":
+"@types/node@*", "@types/node@20.2.3":
   version "20.2.3"
   resolved "https://registry.npmjs.org/@types/node/-/node-20.2.3.tgz"
   integrity sha512-pg9d0yC4rVNWQzX8U7xb4olIOFuuVL9za3bzMT2pu2SU0SNEi66i2qrvhE2qt0HvkhuCaWJu7pLNOt/Pj8BIrw==
+
+"@types/nodemailer@^8.0.1":
+  version "8.0.1"
+  resolved "https://registry.npmjs.org/@types/nodemailer/-/nodemailer-8.0.1.tgz"
+  integrity sha512-PxpaInm8V1JQDd4j0ds5HfvWQk8JupS1C0Picb96QJsrrRDjBH+DlK7L4ZdNSqNULhiZRQHc40nLVShaGxXAMw==
+  dependencies:
+    "@types/node" "*"
 
 "@types/prop-types@*":
   version "15.7.5"
@@ -2260,6 +2267,11 @@ node-releases@^2.0.8:
   version "2.0.12"
   resolved "https://registry.npmjs.org/node-releases/-/node-releases-2.0.12.tgz"
   integrity sha512-QzsYKWhXTWx8h1kIvqfnC++o0pEmpRQA/aenALsL2F4pqNVr7YzcdMlDij5WBnwftRbJCNJL/O7zdKaxKPHqgQ==
+
+nodemailer@^7.0.13, nodemailer@^7.0.7:
+  version "7.0.13"
+  resolved "https://registry.npmjs.org/nodemailer/-/nodemailer-7.0.13.tgz"
+  integrity sha512-PNDFSJdP+KFgdsG3ZzMXCgquO7I6McjY2vlqILjtJd0hy8wEvtugS9xKRF2NWlPNGxvLCXlTNIae4serI7dinw==
 
 normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"
