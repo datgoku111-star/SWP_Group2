@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAvailableRooms, getAllRooms } from "@/lib/db/rooms";
+import { getCurrentUser } from "@/lib/auth-server";
 
 export async function GET(request: Request) {
   try {
@@ -9,11 +10,14 @@ export async function GET(request: Request) {
     const type = searchParams.get("type") || undefined;
     const all = searchParams.get("all") === "true";
 
+    const user = await getCurrentUser();
+    const currentUserId = user?.sub || undefined;
+
     let rooms;
     if (all) {
       rooms = await getAllRooms();
     } else {
-      rooms = await getAvailableRooms(checkIn, checkOut, type);
+      rooms = await getAvailableRooms(checkIn, checkOut, type, currentUserId);
     }
 
     return NextResponse.json(rooms);

@@ -4,7 +4,8 @@ import type { Room, RoomType, RoomStatus } from "@/types/hotel";
 export async function getAvailableRooms(
   checkIn?: string,
   checkOut?: string,
-  roomTypeId?: string
+  roomTypeId?: string,
+  currentUserId?: string
 ) {
   let query = supabaseServer
     .from("rooms")
@@ -28,6 +29,22 @@ export async function getAvailableRooms(
     if (excludeIds.length > 0) {
       query = query.not("id", "in", `(${excludeIds.join(",")})`);
     }
+  }
+
+  // Filter out rooms that are locked by OTHER users
+  let locksQuery = supabaseServer
+    .from("room_locks")
+    .select("room_id")
+    .gt("locked_until", new Date().toISOString());
+
+  if (currentUserId) {
+    locksQuery = locksQuery.neq("user_id", currentUserId);
+  }
+
+  const { data: lockedRooms } = await locksQuery;
+  const lockedRoomIds = (lockedRooms || []).map((l) => l.room_id);
+  if (lockedRoomIds.length > 0) {
+    query = query.not("id", "in", `(${lockedRoomIds.join(",")})`);
   }
 
   const { data, error } = await query.order("floor").order("room_number");

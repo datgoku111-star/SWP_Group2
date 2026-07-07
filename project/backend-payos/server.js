@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
-const { PayOS } = require("@payos/node");
+const PayOS = require("@payos/node");
 require("dotenv").config({ path: "../.env.local" }); // Load project's env variables
 
 const app = express();
