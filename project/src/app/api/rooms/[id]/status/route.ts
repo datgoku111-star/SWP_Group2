@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateRoomStatus } from "@/lib/db/rooms";
+import { updateRoomStatus, getRoomById } from "@/lib/db/rooms";
 import { getCurrentUser } from "@/lib/auth-server";
 
 
@@ -17,6 +17,37 @@ export async function PATCH(
     if (!status) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
     }
+
+    // Role-based flow validation
+    if (user.role === "HOUSEKEEPING") {
+      let currentRoom;
+      try {
+        currentRoom = await getRoomById(params.id);
+      } catch (err) {
+        return NextResponse.json({ error: "Room not found" }, { status: 404 });
+      }
+
+      // Housekeeping can ONLY change DIRTY -> CLEANING, or CLEANING -> AVAILABLE
+      if (currentRoom.status === "DIRTY" && status !== "CLEANING") {
+        return NextResponse.json(
+          { error: "Housekeeping can only update DIRTY rooms to CLEANING." },
+          { status: 403 }
+        );
+      }
+      if (currentRoom.status === "CLEANING" && status !== "AVAILABLE") {
+        return NextResponse.json(
+          { error: "Housekeeping can only update CLEANING rooms to AVAILABLE." },
+          { status: 403 }
+        );
+      }
+      if (currentRoom.status !== "DIRTY" && currentRoom.status !== "CLEANING") {
+        return NextResponse.json(
+          { error: `Housekeeping cannot update rooms with status ${currentRoom.status}. Only DIRTY or CLEANING rooms can be processed.` },
+          { status: 403 }
+        );
+      }
+    }
+    // Receptionist & Admin can override room status to any state at any time
 
     const room = await updateRoomStatus(params.id, status);
     

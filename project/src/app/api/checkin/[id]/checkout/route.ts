@@ -48,10 +48,18 @@ export async function POST(
     if (ubError) throw ubError;
 
     // 4. Update room status to DIRTY
-    const { error: urError } = await supabaseServer
+    const nowIso = new Date().toISOString();
+    let { error: urError } = await supabaseServer
       .from("rooms")
-      .update({ status: "DIRTY", updated_at: new Date().toISOString() })
+      .update({ status: "DIRTY", updated_at: nowIso, status_updated_at: nowIso })
       .eq("id", booking.room_id);
+    if (urError && urError.message && urError.message.includes("status_updated_at")) {
+      const fallback = await supabaseServer
+        .from("rooms")
+        .update({ status: "DIRTY", updated_at: nowIso })
+        .eq("id", booking.room_id);
+      urError = fallback.error;
+    }
     if (urError) throw urError;
 
     // 5. Audit log

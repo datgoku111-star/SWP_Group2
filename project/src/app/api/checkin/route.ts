@@ -62,13 +62,25 @@ export async function POST(request: Request) {
     if (ubError) throw ubError;
 
     // 4. Update room status
-    const { error: urError } = await supabaseServer
+    const nowIso = new Date().toISOString();
+    let { error: urError } = await supabaseServer
       .from("rooms")
       .update({
         status: "IN_USE",
-        updated_at: new Date().toISOString()
+        updated_at: nowIso,
+        status_updated_at: nowIso,
       })
       .eq("id", booking.room_id);
+    if (urError && urError.message && urError.message.includes("status_updated_at")) {
+      const fallback = await supabaseServer
+        .from("rooms")
+        .update({
+          status: "IN_USE",
+          updated_at: nowIso,
+        })
+        .eq("id", booking.room_id);
+      urError = fallback.error;
+    }
 
     if (urError) throw urError;
 

@@ -112,12 +112,26 @@ export async function getRoomById(id: string) {
 }
 
 export async function updateRoomStatus(id: string, status: RoomStatus) {
-  const { data, error } = await supabaseServer
+  const nowIso = new Date().toISOString();
+  let { data, error } = await supabaseServer
     .from("rooms")
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ status, updated_at: nowIso, status_updated_at: nowIso })
     .eq("id", id)
     .select()
     .single();
+
+  if (error && error.message && error.message.includes("status_updated_at")) {
+    console.warn("status_updated_at column not found, falling back to basic status update without timestamp column:");
+    const fallback = await supabaseServer
+      .from("rooms")
+      .update({ status, updated_at: nowIso })
+      .eq("id", id)
+      .select()
+      .single();
+    data = fallback.data;
+    error = fallback.error;
+  }
+
   if (error) throw error;
   return data as Room;
 }

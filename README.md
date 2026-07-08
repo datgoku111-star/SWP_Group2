@@ -40,6 +40,7 @@ A big shoutout to all the libraries, plugins, and assets that made this project 
 ---
 
 ## 📋 HSRM Project Status & Completed TODOs
+- [x] **TODO 1**: Cập nhật trạng thái phòng: Quản lý luồng buồng phòng (DIRTY -> CLEANING -> AVAILABLE), thời gian dọn phòng trực quan, và luồng lễ tân tự động chuyển DIRTY khi Checkout hoặc ghi đè khẩn cấp (Resolved in Issue #10 / PR #10).
 - [x] **TODO 3**: Kiểm tra phòng trống: Truy vấn Database để tìm các phòng thuộc hạng phòng khách chọn có trạng thái Available và không dính lịch đặt nào trong khoảng ngày [Check-in, Check-out] (Resolved in Issue #5 / PR #5).
 
 ---
