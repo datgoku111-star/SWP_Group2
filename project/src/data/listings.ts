@@ -96,6 +96,7 @@ const DEMO_CAR_LISTINGS = __carsListing.map((post, index): CarDataType => {
       ? post.featuredImage
       : carsImgs[index % carsImgs.length],
     href: post.href as Route,
+    type: post.type as CarDataType["type"],
   };
 });
 
