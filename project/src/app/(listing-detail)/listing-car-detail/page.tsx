@@ -20,6 +20,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SectionDateRange from "../SectionDateRange";
 import RentalCarDatesRangeInput from "./RentalCarDatesRangeInput";
 import { Route } from "next";
+import { DEMO_CAR_LISTINGS } from "@/data/listings";
 
 export interface ListingCarDetailPageProps {}
 
@@ -34,6 +35,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const searchParams = useSearchParams();
 
   const titleParam = searchParams.get("title") || "BMW 3 Series Sedan";
+
+  const currentCar = DEMO_CAR_LISTINGS.find(
+    (car) => car.title.toLowerCase() === titleParam.toLowerCase()
+  );
 
   const { user } = useAuth();
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
@@ -129,17 +134,17 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           <span>·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
-            <span className="ml-1"> Tokyo, Jappan</span>
+            <span className="ml-1"> {currentCar?.address || "Tokyo, Japan"}</span>
           </span>
         </div>
 
         {/* 4 */}
         <div className="flex items-center">
-          <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
+          <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" imgUrl={currentCar?.author?.avatar} />
           <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
             Car owner{" "}
             <span className="text-neutral-900 dark:text-neutral-200 font-medium">
-              Kevin Francis
+              {currentCar?.author?.displayName || "Kevin Francis"}
             </span>
           </span>
         </div>
@@ -196,21 +201,14 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   };
 
   const renderSection2 = () => {
+    const desc = currentCar?.description || `Until the all-new ${titleParam} hits the dealer showrooms you can check it out in our Showroom Walkaround video. Watch the video and join our product specialist as he gives you an up-close look of our latest vehicle.`;
     return (
       <div className="listingSection__wrap">
         <h2 className="text-2xl font-semibold">Car descriptions</h2>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
         <div className="text-neutral-6000 dark:text-neutral-300">
-          <p>
-            Until the all-new TUCSON hits the dealer showrooms you can check it
-            out in our Showroom Walkaround video. Watch the video and join our
-            product specialist as he gives you an up-close look of our latest
-            SUV
-            <br />
-            <br />
-            Questions are at the heart of making things great. Watch our
-            celebrity-filled TV ad and you’ll see that when we say “everything,”
-            we mean everything.
+          <p className="whitespace-pre-line">
+            {desc}
           </p>
         </div>
       </div>
@@ -256,24 +254,23 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
             hasCheckedClass="w-4 h-4 -top-0.5 right-0.5"
             sizeClass="h-14 w-14"
             radius="rounded-full"
+            imgUrl={currentCar?.author?.avatar}
           />
           <div>
             <a className="block text-xl font-medium" href="##">
-              Kevin Francis
+              {currentCar?.author?.displayName || "Kevin Francis"}
             </a>
             <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
               <StartRating />
               <span className="mx-2">·</span>
-              <span> 12 places</span>
+              <span> {currentCar?.author?.count || 12} places</span>
             </div>
           </div>
         </div>
 
         {/* desc */}
         <span className="block text-neutral-6000 dark:text-neutral-300">
-          Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides
-          accommodation, an outdoor swimming pool, a bar, a shared lounge, a
-          garden and barbecue facilities...
+          {currentCar?.author?.desc || "Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities..."}
         </span>
 
         {/* info */}
@@ -412,7 +409,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         <div>
           <h2 className="text-2xl font-semibold">Location</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            San Diego, CA, United States of America (SAN-San Diego Intl.)
+            {currentCar?.address || "Tokyo, Japan"}
           </span>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
@@ -455,10 +452,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         <div>
           <h4 className="text-lg font-semibold">Special Note</h4>
           <span className="block mt-3 text-neutral-500 dark:text-neutral-400">
-            We asked ourselves, “How can we make the dash not only look better,
-            but also give the driver a better look outside?” The unexpected
-            answer is having no hood above the available 10.25-inch digital
-            instrument cluster...
+            This {titleParam} is fully cleaned and sanitized before every rental. It is equipped with advanced safety features and premium amenities to ensure your absolute comfort and security during the trip.
           </span>
         </div>
       </div>
@@ -547,6 +541,11 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
     );
   };
 
+  const defaultPhotos = [imgParam, PHOTOS[1], PHOTOS[2], PHOTOS[3]];
+  const carPhotos = (currentCar && currentCar.galleryImgs && currentCar.galleryImgs.length >= 4)
+    ? currentCar.galleryImgs.slice(0, 4)
+    : defaultPhotos;
+
   return (
     <div className={` nc-ListingCarDetailPage `}>
       {/* SINGLE HEADER */}
@@ -558,7 +557,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           >
             <Image
               fill
-              src={imgParam}
+              src={carPhotos[0]}
               alt="photo 0"
               className="object-cover rounded-md sm:rounded-xl"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
@@ -574,7 +573,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
             <Image
               fill
               className="object-cover rounded-md sm:rounded-xl"
-              src={PHOTOS[1]}
+              src={carPhotos[1]}
               alt="photo 1"
               sizes="400px"
             />
@@ -582,12 +581,10 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           </div>
 
           {/*  */}
-          {PHOTOS.filter((_, i) => i >= 2 && i < 4).map((item, index) => (
+          {carPhotos.slice(2, 4).map((item, index) => (
             <div
               key={index}
-              className={`relative rounded-md sm:rounded-xl overflow-hidden ${
-                index >= 2 ? "block" : ""
-              }`}
+              className="relative rounded-md sm:rounded-xl overflow-hidden"
             >
               <div className="aspect-w-4 aspect-h-3">
                 <Image

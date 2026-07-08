@@ -22,7 +22,12 @@ export default async function RoomDetailPage({ params }: { params: { id: string 
         <h2 className="text-3xl font-semibold sm:text-4xl">
           {rt.name} Room - {room.room_number}
         </h2>
-        <div className="flex items-center text-neutral-500 dark:text-neutral-400 space-x-4">
+        <div className="flex items-center text-neutral-500 dark:text-neutral-400 space-x-4 text-sm mt-2">
+          <span className="font-medium text-neutral-900 dark:text-white">Hotel: HSRM Hotel</span>
+          <span>•</span>
+          <span>Location: 123 ABC Street, Hanoi, Vietnam</span>
+        </div>
+        <div className="flex items-center text-neutral-500 dark:text-neutral-400 space-x-4 mt-2">
           <span>Floor {room.floor}</span>
           <span>•</span>
           <span>Max {rt.max_occupancy} Guests</span>
@@ -111,9 +116,16 @@ export default async function RoomDetailPage({ params }: { params: { id: string 
                     Book Now
                   </ButtonPrimary>
                 ) : (
-                  <ButtonPrimary disabled className="w-full h-12 bg-neutral-400">
-                    Room Unavailable
-                  </ButtonPrimary>
+                  <div className="space-y-3">
+                    <ButtonPrimary disabled className="w-full h-12 bg-neutral-400">
+                      Room Unavailable
+                    </ButtonPrimary>
+                    {(room as any).deadline && (
+                      <div className="text-center text-sm font-medium text-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-100 dark:border-red-900/30">
+                        Có thể đặt phòng từ ngày: {(room as any).deadline}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </form>

@@ -54,16 +54,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({
   const renderTienIch = () => {
     return (
       <div className="inline-grid grid-cols-3 gap-2">
-        <div className="flex items-center space-x-2">
-          <span className="hidden sm:inline-block">
-            <i className="las la-bed text-lg"></i>
-          </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            {data.bedrooms || 6} beds
-          </span>
-        </div>
 
-        {/* ---- */}
         <div className="flex items-center space-x-2">
           <span className="hidden sm:inline-block">
             <i className="las la-bath text-lg"></i>

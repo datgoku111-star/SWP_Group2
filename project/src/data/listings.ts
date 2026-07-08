@@ -92,7 +92,9 @@ const DEMO_CAR_LISTINGS = __carsListing.map((post, index): CarDataType => {
     isAds: !index ? true : post.isAds,
     author: DEMO_AUTHORS.filter((user) => user.id === post.authorId)[0],
     listingCategory: category,
-    featuredImage: carsImgs[index % carsImgs.length],
+    featuredImage: (post.featuredImage && typeof post.featuredImage === "string" && post.featuredImage.startsWith("http"))
+      ? post.featuredImage
+      : carsImgs[index % carsImgs.length],
     href: post.href as Route,
   };
 });

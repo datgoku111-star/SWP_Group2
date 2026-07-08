@@ -12,12 +12,12 @@ import Slider from "rc-slider";
 
 // DEMO DATA
 const typeOfCar = [
-  { name: "Small", description: "$68" },
-  { name: "Medium", description: "$128" },
-  { name: "Large", description: "$268" },
-  { name: "SUV", description: "$268" },
-  { name: "Van", description: "$268" },
-  { name: "Luxury", description: "$268" },
+  { name: "Small", description: "Economy and compact" },
+  { name: "Medium", description: "Mid-size vehicles" },
+  { name: "Large", description: "Full-size vehicles" },
+  { name: "SUV", description: "Sport utility vehicles" },
+  { name: "Van", description: "Passenger vans" },
+  { name: "Luxury", description: "Premium and luxury" },
 ];
 
 const carSpecifications = [

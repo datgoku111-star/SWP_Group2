@@ -14,21 +14,24 @@ import convertNumbThousand from "@/utils/convertNumbThousand";
 // DEMO DATA
 const typeOfPaces = [
   {
-    name: "Entire place",
-    description: "Have a place to yourself",
+    name: "Single Room",
+    description: "A room assigned to one person",
   },
   {
-    name: "Private room",
-    description: "Have your own room and share some common spaces",
+    name: "Double Room",
+    description: "A room assigned to two people",
   },
   {
-    name: "Hotel room",
-    description:
-      "Have a private or shared room in a boutique hotel, hostel, and more",
+    name: "Twin Room",
+    description: "A room with two beds",
   },
   {
-    name: "Shared room",
-    description: "Stay in a shared space, like a common room",
+    name: "Triple Room",
+    description: "A room that can accommodate three persons",
+  },
+  {
+    name: "Family Room",
+    description: "A room that can accommodate a family",
   },
 ];
 

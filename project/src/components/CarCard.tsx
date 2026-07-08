@@ -82,6 +82,12 @@ const CarCard: FC<CarCardProps> = ({
             </h2>
           </div>
           <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-2">
+            {data.type && (
+              <>
+                <span className="">{data.type}</span>
+                <span>-</span>
+              </>
+            )}
             <span className="">{seats} seats</span>
             <span>-</span>
             <span className="">{gearshift} </span>

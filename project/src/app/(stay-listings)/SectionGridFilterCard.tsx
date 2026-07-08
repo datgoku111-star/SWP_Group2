@@ -37,20 +37,54 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
 
         if (error) throw error;
 
+        const HOTEL_IMGS = [
+          "https://images.pexels.com/photos/1539777/pexels-photo-1539777.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/6238683/pexels-photo-6238683.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/2029673/pexels-photo-2029673.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/4112557/pexels-photo-4112557.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/1080719/pexels-photo-1080719.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/279867/pexels-photo-279867.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/4665034/pexels-photo-4665034.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/1484981/pexels-photo-1484981.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/189333/pexels-photo-189333.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/6238614/pexels-photo-6238614.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/1652423/pexels-photo-1652423.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/2736139/pexels-photo-2736139.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/3263716/pexels-photo-3263716.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/6238615/pexels-photo-6238615.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/2121120/pexels-photo-2121120.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/2867761/pexels-photo-2867761.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/3935330/pexels-photo-3935330.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/3316925/pexels-photo-3316925.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/2029163/pexels-photo-2029163.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/3741314/pexels-photo-3741314.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/974382/pexels-photo-974382.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/2507010/pexels-photo-2507010.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/6480707/pexels-photo-6480707.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/1428348/pexels-photo-1428348.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/5191371/pexels-photo-5191371.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/2133230/pexels-photo-2133230.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/1571453/pexels-photo-1571453.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/261146/pexels-photo-261146.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+          "https://images.pexels.com/photos/3659683/pexels-photo-3659683.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500"
+        ];
+
         if (dbData && dbData.length > 0) {
           const mapped = dbData.map((h: any, index: number) => ({
             id: h.id,
             authorId: 10,
             date: "May 20, 2021",
             href: "/listing-stay-detail" as any,
-            listingCategoryId: 17,
+            listingCategoryId: DEMO_STAY_CATEGORIES[index % 5].id,
             title: h.title,
             featuredImage: h.image_url,
             galleryImgs: [
               h.image_url,
-              "https://images.pexels.com/photos/1268871/pexels-photo-1268871.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              "https://images.pexels.com/photos/1179156/pexels-photo-1179156.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-              "https://images.pexels.com/photos/2506988/pexels-photo-2506988.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
+              HOTEL_IMGS[(index * 4) % HOTEL_IMGS.length],
+              HOTEL_IMGS[(index * 4 + 1) % HOTEL_IMGS.length],
+              HOTEL_IMGS[(index * 4 + 2) % HOTEL_IMGS.length],
+              HOTEL_IMGS[(index * 4 + 3) % HOTEL_IMGS.length]
             ],
             commentCount: 70,
             viewCount: 602,
@@ -66,11 +100,11 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
             isAds: null,
             availableRooms: h.available_rooms,
             author: DEMO_AUTHORS[0],
-            listingCategory: DEMO_STAY_CATEGORIES[0],
-            map: {
-              lat: 55.2094559 + index * 0.01 - 0.03,
-              lng: 61.5594641 + index * 0.01 - 0.03,
-            },
+            listingCategory: DEMO_STAY_CATEGORIES[index % 5],
+            map: { 
+              lat: 55.2094559 + (index * 0.01) - 0.03, 
+              lng: 61.5594641 + (index * 0.01) - 0.03 
+            }
           }));
           setStayData(mapped);
         }
@@ -100,9 +134,6 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     if (typeOfPlace.length > 0) {
       const categoryName = stay.listingCategory?.name || "";
       const isMatch = typeOfPlace.some((t) => {
-        if (t === "Entire place" && categoryName === "Entire cabin") {
-          return true;
-        }
         return categoryName.toLowerCase().includes(t.toLowerCase());
       });
       if (!isMatch) {
