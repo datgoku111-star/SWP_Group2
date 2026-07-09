@@ -39,4 +39,9 @@ A big shoutout to all the libraries, plugins, and assets that made this project 
 
 ---
 
+## 📋 HSRM Project Status & Completed TODOs
+- [x] **TODO 2**: Xử thêm ở luồng lễ tân: Tìm nhanh theo Tên khách, Mã đặt phòng (Booking ID), hoặc Số điện thoại. Xác nhận thông tin: Kiểm tra lại loại phòng, thời gian lưu trú, các yêu cầu đặc biệt. Nhấn "Check-in", trạng thái phòng chuyển từ "Đặt trước" sang "Đang ở" (Resolved in Issue #18 / PR #18).
+
+---
+
 Crafted with ❤️ by [Hamed Hasan](https://github.com/Hamed-Hasan). Connect with me on [LinkedIn](https://www.linkedin.com/in/hamed-hasan).

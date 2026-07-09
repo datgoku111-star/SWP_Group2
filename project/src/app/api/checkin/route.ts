@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // 1. Verify booking exists and is CONFIRMED
+    // 1. Verify booking exists and validation check
     const { data: booking, error: bError } = await supabaseServer
       .from("bookings")
       .select("id, status, room_id")
@@ -27,14 +27,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    if (booking.status !== "CONFIRMED") {
+    if (["CANCELLED", "CHECKED_OUT"].includes(booking.status)) {
+      return NextResponse.json({ error: `Cannot check in. Booking is already ${booking.status}` }, { status: 400 });
+    }
+
+    if (booking.status !== "CONFIRMED" && booking.status !== "PENDING") {
       return NextResponse.json({ error: `Cannot check in booking with status ${booking.status}` }, { status: 400 });
     }
 
-    // Start a transaction-like sequence (Supabase JS doesn't have true transactions, so we use RPC or sequential calls)
-    // For simplicity in this implementation, we do sequential calls
-
-    // 2. Upsert guest
+    // Upsert guest
     const { data: guestData, error: gError } = await supabaseServer
       .from("guests")
       .upsert({
@@ -49,26 +50,39 @@ export async function POST(request: Request) {
 
     if (gError) throw gError;
 
-    // 3. Update booking status
+    // Update booking status
+    const nowIso = new Date().toISOString();
     const { error: ubError } = await supabaseServer
       .from("bookings")
       .update({ 
         status: "CHECKED_IN",
         guest_id: guestData.id,
-        updated_at: new Date().toISOString()
+        updated_at: nowIso
       })
       .eq("id", booking_id);
 
     if (ubError) throw ubError;
 
-    // 4. Update room status
-    const { error: urError } = await supabaseServer
+    // Update room status with status_updated_at fallback
+    let { error: urError } = await supabaseServer
       .from("rooms")
       .update({
         status: "IN_USE",
-        updated_at: new Date().toISOString()
+        updated_at: nowIso,
+        status_updated_at: nowIso,
       })
       .eq("id", booking.room_id);
+
+    if (urError && urError.message && urError.message.includes("status_updated_at")) {
+      const fallback = await supabaseServer
+        .from("rooms")
+        .update({
+          status: "IN_USE",
+          updated_at: nowIso,
+        })
+        .eq("id", booking.room_id);
+      urError = fallback.error;
+    }
 
     if (urError) throw urError;
 
