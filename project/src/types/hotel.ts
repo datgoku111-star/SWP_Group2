@@ -281,6 +281,7 @@ export interface OcrResult {
   address?: string;
   confidence: number;
 }
+
  
 export type IncidentType = "LOST_ITEM" | "DAMAGE";
 export type IncidentStatus = "PENDING" | "RESOLVED";

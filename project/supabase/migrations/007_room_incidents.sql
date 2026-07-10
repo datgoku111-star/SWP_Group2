@@ -24,5 +24,6 @@ CREATE TABLE IF NOT EXISTS public.room_incidents (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+
 -- 3. Cấu hình Realtime để đồng bộ giao diện lập tức
 ALTER PUBLICATION supabase_realtime ADD TABLE public.room_incidents;

@@ -11,6 +11,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ error: "Trạng thái không hợp lệ" }, { status: 400 });
     }
 
+    
     const { data, error } = await supabase
       .from("room_incidents")
       .update({

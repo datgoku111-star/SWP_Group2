@@ -76,4 +76,5 @@ export default function ReceptionistDashboard() {
       </div>
     </div>
   );
+  
 }
