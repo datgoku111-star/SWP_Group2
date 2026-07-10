@@ -281,3 +281,22 @@ export interface OcrResult {
   address?: string;
   confidence: number;
 }
+ 
+export type IncidentType = "LOST_ITEM" | "DAMAGE";
+export type IncidentStatus = "PENDING" | "RESOLVED";
+
+export interface RoomIncident {
+  id: string;
+  room_id: string;
+  booking_id: string;
+  reporter_id: string | null;
+  type: IncidentType;
+  description: string;
+  fine_amount: number;
+  status: IncidentStatus;
+  created_at: string;
+  resolved_at: string | null;
+  updated_at: string;
+  room?: Room;
+  booking?: Booking;
+}

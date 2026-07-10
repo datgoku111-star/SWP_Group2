@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth-server";
 
-
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
@@ -68,5 +67,58 @@ export async function POST(
   } catch (error) {
     console.error("Checkout API error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const bookingId = params.id;
+    // 1. Kéo thông tin đặt phòng gốc
+    const { data: booking, error: bookingError } = await supabaseServer
+      .from("bookings")
+      .select("*, room:rooms(*, room_type:room_types(*))")
+      .eq("id", bookingId)
+      .single();
+
+    if (bookingError || !booking) {
+      return NextResponse.json({ error: "Không tìm thấy đơn đặt phòng" }, { status: 404 });
+    }
+
+    // 2. Tự động kiểm tra các khoản phạt chưa thanh toán (PENDING) của booking này
+    const { data: incidents } = await supabaseServer
+      .from("room_incidents")
+      .select("*")
+      .eq("booking_id", bookingId)
+      .eq("status", "PENDING");
+
+    const totalFineAmount = incidents
+      ? incidents.reduce((sum, item) => sum + Number(item.fine_amount), 0)
+      : 0;
+
+    // 3. Cộng dồn trực tiếp vào InvoiceData cuối cùng
+    const roomCharges = Number(booking.total_amount);
+    const subtotal = roomCharges + totalFineAmount; // Cộng dồn tiền phạt trực tiếp
+    const vatRate = 0.1; // 10% VAT
+    const vatAmount = subtotal * vatRate;
+    const grandTotal = subtotal + vatAmount;
+
+    return NextResponse.json({
+      booking,
+      room_charges: roomCharges,
+      incident_charges: {
+        incidents: incidents || [],
+        total_fine: totalFineAmount
+      },
+      subtotal,
+      vat_rate: vatRate,
+      vat_amount: vatAmount,
+      grand_total: grandTotal,
+      balance_due: grandTotal
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
