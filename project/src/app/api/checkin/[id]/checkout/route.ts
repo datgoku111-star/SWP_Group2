@@ -98,6 +98,7 @@ export async function GET(
       ? incidents.reduce((sum, item) => sum + Number(item.fine_amount), 0)
       : 0;
 
+      
     // 3. Cộng dồn trực tiếp vào InvoiceData cuối cùng
     const roomCharges = Number(booking.total_amount);
     const subtotal = roomCharges + totalFineAmount; // Cộng dồn tiền phạt trực tiếp
