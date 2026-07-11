@@ -42,6 +42,18 @@ export async function GET(
       .eq("booking_id", bookingId)
       .eq("status", "COMPLETED");
 
+    // 4. Fetch room incidents that are chargeable and not resolved/closed/cancelled
+    const { data: incidents } = await supabaseServer
+      .from("room_incidents")
+      .select("*")
+      .eq("booking_id", bookingId)
+      .eq("is_chargeable", true)
+      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+
+    const totalFineAmount = incidents
+      ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
+      : 0;
+
     // Calculations
     const ciDate = new Date(booking.check_in_date);
     const coDate = new Date(booking.check_out_date);
@@ -55,7 +67,7 @@ export async function GET(
     });
 
     const totalServices = serviceCharges.reduce((sum, sc) => sum + sc.total, 0);
-    const subtotal = roomCharges + totalServices;
+    const subtotal = roomCharges + totalServices + totalFineAmount;
     
     // Configurable VAT, usually 10%
     const vatRate = 0.1;
@@ -69,6 +81,10 @@ export async function GET(
       booking,
       room_charges: roomCharges,
       service_charges: serviceCharges,
+      incident_charges: {
+        incidents: incidents || [],
+        total_fine: totalFineAmount
+      },
       subtotal,
       vat_rate: vatRate,
       vat_amount: vatAmount,

@@ -46,6 +46,18 @@ export async function POST(
       .eq("id", bookingId);
     if (ubError) throw ubError;
 
+    // Update status of paid incidents to RESOLVED
+    await supabaseServer
+      .from("room_incidents")
+      .update({ 
+        status: "RESOLVED", 
+        resolved_at: new Date().toISOString(), 
+        updated_at: new Date().toISOString() 
+      })
+      .eq("booking_id", bookingId)
+      .eq("is_chargeable", true)
+      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+
     // 4. Update room status to DIRTY
     const { error: urError } = await supabaseServer
       .from("rooms")
@@ -55,7 +67,7 @@ export async function POST(
 
     // 5. Audit log
     await supabaseServer.from("audit_logs").insert({
-      user_id: user.sub,
+      user_id: user.id,
       action: "CHECK_OUT",
       entity_type: "BOOKING",
       entity_id: bookingId,
@@ -87,18 +99,18 @@ export async function GET(
       return NextResponse.json({ error: "Không tìm thấy đơn đặt phòng" }, { status: 404 });
     }
 
-    // 2. Tự động kiểm tra các khoản phạt chưa thanh toán (PENDING) của booking này
+    // 2. Tự động kiểm tra các khoản phạt chưa thanh toán (chargeable và chưa RESOLVED/CLOSED/CANCELLED) của booking này
     const { data: incidents } = await supabaseServer
       .from("room_incidents")
       .select("*")
       .eq("booking_id", bookingId)
-      .eq("status", "PENDING");
+      .eq("is_chargeable", true)
+      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
 
     const totalFineAmount = incidents
-      ? incidents.reduce((sum, item) => sum + Number(item.fine_amount), 0)
+      ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
       : 0;
 
-      
     // 3. Cộng dồn trực tiếp vào InvoiceData cuối cùng
     const roomCharges = Number(booking.total_amount);
     const subtotal = roomCharges + totalFineAmount; // Cộng dồn tiền phạt trực tiếp

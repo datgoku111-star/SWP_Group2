@@ -155,6 +155,23 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   ))}
                 </React.Fragment>
               ))}
+
+              {/* Incident Charges */}
+              {invoice.incident_charges && invoice.incident_charges.incidents.length > 0 && (
+                <React.Fragment>
+                  {invoice.incident_charges.incidents.map((incident, i) => (
+                    <tr key={`incident-${i}`} className="text-red-600 dark:text-red-400">
+                      <td className="py-4 px-4">
+                        <div className="font-medium">Sự cố / Phạt đền: {incident.description}</div>
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400">Mã: {incident.incident_code} | Trạng thái: {incident.status}</div>
+                      </td>
+                      <td className="py-4 px-4 text-right font-medium">
+                        {formatMoney(Number(incident.approved_charge || incident.estimated_charge || 0))}
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              )}
             </tbody>
           </table>
 

@@ -254,6 +254,10 @@ export interface InvoiceData {
     items: ServiceOrderItem[];
     total: number;
   }[];
+  incident_charges?: {
+    incidents: any[];
+    total_fine: number;
+  };
   subtotal: number;
   vat_rate: number;
   vat_amount: number;
