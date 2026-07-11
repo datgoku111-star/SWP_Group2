@@ -67,7 +67,7 @@ export async function POST(
 
     // 5. Audit log
     await supabaseServer.from("audit_logs").insert({
-      user_id: user.id,
+      user_id: user.sub,
       action: "CHECK_OUT",
       entity_type: "BOOKING",
       entity_id: bookingId,

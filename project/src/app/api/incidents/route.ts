@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     const data = validatedData.data;
     const incidentCode = generateIncidentCode();
-    const currentUserId = user.id;
+    const currentUserId = user.sub;
     
     // 2. Insert vào bảng room_incidents
     const { data: newIncident, error: incidentError } = await supabase

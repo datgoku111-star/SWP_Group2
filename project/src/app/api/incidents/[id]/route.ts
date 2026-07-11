@@ -54,7 +54,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       old_status: oldStatus,
       new_status: status,
       note: note || `Chuyển trạng thái từ ${oldStatus} sang ${status}`,
-      changed_by_user_id: user.id
+      changed_by_user_id: user.sub
     });
 
     return NextResponse.json({ success: true, data });
