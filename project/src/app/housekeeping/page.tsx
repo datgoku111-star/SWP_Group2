@@ -13,7 +13,7 @@ export default function HousekeepingPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (!user || !["ADMIN", "HOUSEKEEPING"].includes(user.role)) {
+      if (!user || !["ADMIN", "HOUSEKEEPING", "RECEPTIONIST"].includes(user.role)) {
         router.push("/dashboard");
       } else {
         fetchRooms();
@@ -68,8 +68,17 @@ export default function HousekeepingPage() {
   };
 
   return (
-    <div className="container py-16 mb-24 lg:mb-32">
-      <h2 className="text-3xl font-semibold sm:text-4xl mb-10">Housekeeping Dashboard</h2>
+    <div className="container py-12 mb-24 lg:mb-32 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-700 pb-6">
+        <div>
+          <h1 className="text-3xl font-extrabold sm:text-4xl text-neutral-900 dark:text-white">
+            Housekeeping & Emergency Status Grid
+          </h1>
+          <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
+            Monitor room turnover and cleanliness across all floors. Receptionists can perform instant emergency overrides (`DIRTY` &rarr; `AVAILABLE` or `MAINTENANCE`) when expediting VIP arrivals.
+          </p>
+        </div>
+      </div>
       
       <div className="space-y-12">
         {floors.map(floor => (

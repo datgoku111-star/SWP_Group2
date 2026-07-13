@@ -51,6 +51,68 @@ export default function AvatarDropdown({ className = "" }: Props) {
 
                     <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
 
+                    {/* STAFF PORTALS */}
+                    {user?.role === "RECEPTIONIST" && (
+                      <>
+                        <Link
+                          href={"/dashboard/receptionist"}
+                          className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-6000 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50"
+                          onClick={() => close()}
+                        >
+                          <div className="flex items-center justify-center flex-shrink-0 text-xl">🏢</div>
+                          <div className="ml-4">
+                            <p className="text-sm font-bold">Receptionist Portal</p>
+                            <p className="text-xs opacity-75">Front Desk Operations</p>
+                          </div>
+                        </Link>
+                        <Link
+                          href={"/checkin"}
+                          className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                          onClick={() => close()}
+                        >
+                          <div className="flex items-center justify-center flex-shrink-0 text-xl">🏷️</div>
+                          <div className="ml-4">
+                            <p className="text-sm font-semibold">Check-In / Out Desk</p>
+                          </div>
+                        </Link>
+                        <div className="w-full border-b border-neutral-200 dark:border-neutral-700 my-1" />
+                      </>
+                    )}
+
+                    {user?.role === "ADMIN" && (
+                      <>
+                        <Link
+                          href={"/admin/dashboard"}
+                          className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-6000 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50"
+                          onClick={() => close()}
+                        >
+                          <div className="flex items-center justify-center flex-shrink-0 text-xl">⚡</div>
+                          <div className="ml-4">
+                            <p className="text-sm font-bold">Admin Dashboard</p>
+                            <p className="text-xs opacity-75">System Management</p>
+                          </div>
+                        </Link>
+                        <div className="w-full border-b border-neutral-200 dark:border-neutral-700 my-1" />
+                      </>
+                    )}
+
+                    {user?.role === "HOUSEKEEPING" && (
+                      <>
+                        <Link
+                          href={"/housekeeping"}
+                          className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-6000 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50"
+                          onClick={() => close()}
+                        >
+                          <div className="flex items-center justify-center flex-shrink-0 text-xl">🧹</div>
+                          <div className="ml-4">
+                            <p className="text-sm font-bold">Housekeeping Workspace</p>
+                            <p className="text-xs opacity-75">Room Cleaning Grid</p>
+                          </div>
+                        </Link>
+                        <div className="w-full border-b border-neutral-200 dark:border-neutral-700 my-1" />
+                      </>
+                    )}
+
                     {/* ------------------ 1 --------------------- */}
                     <Link
                       href={"/account"}

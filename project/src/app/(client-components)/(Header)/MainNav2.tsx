@@ -42,12 +42,42 @@ const MainNav2: FC<MainNav2Props> = ({ className = "" }) => {
           <div className="hidden lg:flex space-x-1">
             <TemplatesDropdown />
             <LangDropdown />
-            <Link
-              href={"/add-listing" as Route<string>}
-              className="self-center text-opacity-90 group px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full inline-flex items-center text-sm text-gray-700 dark:text-neutral-300 font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 mr-2"
-            >
-              {t("listYourProperty")}
-            </Link>
+            {user?.role === "RECEPTIONIST" ? (
+              <Link
+                href={"/dashboard/receptionist" as Route<string>}
+                className="self-center px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full inline-flex items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+              >
+                🏢 Receptionist Portal
+              </Link>
+            ) : user?.role === "ADMIN" ? (
+              <Link
+                href={"/admin/dashboard" as Route<string>}
+                className="self-center px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full inline-flex items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+              >
+                ⚡ Admin Dashboard
+              </Link>
+            ) : user?.role === "HOUSEKEEPING" ? (
+              <Link
+                href={"/housekeeping" as Route<string>}
+                className="self-center px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full inline-flex items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+              >
+                🧹 Housekeeping Grid
+              </Link>
+            ) : user?.role === "KITCHEN" ? (
+              <Link
+                href={"/orders" as Route<string>}
+                className="self-center px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full inline-flex items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+              >
+                🍳 Kitchen Orders
+              </Link>
+            ) : (
+              <Link
+                href={"/add-listing" as Route<string>}
+                className="self-center text-opacity-90 group px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full inline-flex items-center text-sm text-gray-700 dark:text-neutral-300 font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 mr-2"
+              >
+                {t("listYourProperty")}
+              </Link>
+            )}
 
             {user ? (
               <>

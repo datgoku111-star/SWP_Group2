@@ -45,6 +45,38 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
 
             {user ? (
               <>
+                {user.role === "RECEPTIONIST" && (
+                  <Link
+                    href={"/dashboard/receptionist"}
+                    className="self-center px-3 py-1.5 bg-primary-6000 hover:bg-primary-700 text-white rounded-full text-xs font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    🏢 Receptionist Portal
+                  </Link>
+                )}
+                {user.role === "ADMIN" && (
+                  <Link
+                    href={"/admin/dashboard"}
+                    className="self-center px-3 py-1.5 bg-primary-6000 hover:bg-primary-700 text-white rounded-full text-xs font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    ⚡ Admin Dashboard
+                  </Link>
+                )}
+                {user.role === "HOUSEKEEPING" && (
+                  <Link
+                    href={"/housekeeping"}
+                    className="self-center px-3 py-1.5 bg-primary-6000 hover:bg-primary-700 text-white rounded-full text-xs font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    🧹 Housekeeping Grid
+                  </Link>
+                )}
+                {user.role === "KITCHEN" && (
+                  <Link
+                    href={"/orders"}
+                    className="self-center px-3 py-1.5 bg-primary-6000 hover:bg-primary-700 text-white rounded-full text-xs font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    🍳 Kitchen Orders
+                  </Link>
+                )}
                 <NotifyDropdown />
                 <div className="px-1" />
                 <AvatarDropdown />
