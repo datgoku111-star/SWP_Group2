@@ -185,12 +185,42 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
             {/* NAV */}
             <div className="hidden md:flex relative z-10 flex-1 justify-end text-neutral-700 dark:text-neutral-100">
               <div className=" flex space-x-1 items-center">
-                <Link
-                  href={"/add-listing/1"}
-                  className="self-center hidden xl:inline-flex px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full items-center text-sm text-gray-700 dark:text-neutral-300 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 mr-2"
-                >
-                  List your property
-                </Link>
+                {user?.role === "RECEPTIONIST" ? (
+                  <Link
+                    href={"/dashboard/receptionist"}
+                    className="self-center hidden sm:inline-flex px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    🏢 Receptionist Portal
+                  </Link>
+                ) : user?.role === "ADMIN" ? (
+                  <Link
+                    href={"/admin/dashboard"}
+                    className="self-center hidden sm:inline-flex px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    ⚡ Admin Dashboard
+                  </Link>
+                ) : user?.role === "HOUSEKEEPING" ? (
+                  <Link
+                    href={"/housekeeping"}
+                    className="self-center hidden sm:inline-flex px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    🧹 Housekeeping Grid
+                  </Link>
+                ) : user?.role === "KITCHEN" ? (
+                  <Link
+                    href={"/orders"}
+                    className="self-center hidden sm:inline-flex px-4 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-full items-center text-sm font-semibold mr-2 shadow-sm transition-all"
+                  >
+                    🍳 Kitchen Orders
+                  </Link>
+                ) : (
+                  <Link
+                    href={"/add-listing/1"}
+                    className="self-center hidden xl:inline-flex px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full items-center text-sm text-gray-700 dark:text-neutral-300 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 mr-2"
+                  >
+                    List your property
+                  </Link>
+                )}
 
                 {user ? (
                   <>

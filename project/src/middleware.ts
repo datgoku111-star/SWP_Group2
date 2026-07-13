@@ -43,6 +43,26 @@ const templatePaths = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 0. Smart Role Redirect for staff accessing root or login pages while authenticated
+  const initialToken = request.cookies.get("auth_token")?.value;
+  if (initialToken && (pathname === "/" || pathname === "/login" || pathname === "/hsrm-login" || pathname === "/signup")) {
+    const payload = await verifyToken(initialToken);
+    if (payload && payload.role && payload.role !== "CUSTOMER") {
+      if (payload.role === "RECEPTIONIST") {
+        return NextResponse.redirect(new URL("/dashboard/receptionist", request.url));
+      }
+      if (payload.role === "ADMIN") {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      }
+      if (payload.role === "HOUSEKEEPING") {
+        return NextResponse.redirect(new URL("/housekeeping", request.url));
+      }
+      if (payload.role === "KITCHEN") {
+        return NextResponse.redirect(new URL("/orders", request.url));
+      }
+    }
+  }
+
   // 1. Allow public paths and template paths
   if (
     publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
