@@ -80,7 +80,12 @@ const LoginPageContent = () => {
         // Successful local DB login
         login(data.user);
         
-        const targetUrl = data.user.role === "ADMIN" ? "/admin/dashboard" : callbackUrl;
+        const targetUrl =
+          data.user.role === "ADMIN" ? "/admin/dashboard" :
+          data.user.role === "RECEPTIONIST" ? "/dashboard/receptionist" :
+          data.user.role === "HOUSEKEEPING" ? "/housekeeping" :
+          data.user.role === "KITCHEN" ? "/orders" :
+          callbackUrl;
         router.push(targetUrl as Route);
         return;
       }
