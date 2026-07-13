@@ -3,6 +3,36 @@ const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 const PayOS = require("@payos/node");
 require("dotenv").config({ path: "../.env.local" }); // Load project's env variables
+const http = require("http");
+
+function triggerNextJsEmail(emailData) {
+  const domain = process.env.FRONTEND_URL || "http://localhost:3000";
+  const url = new URL(`${domain}/api/mail/send-experience-confirmation`);
+  
+  const postData = JSON.stringify(emailData);
+  
+  const options = {
+    hostname: url.hostname,
+    port: url.port || 80,
+    path: url.pathname,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(postData),
+    },
+  };
+
+  const req = http.request(options, (res) => {
+    console.log(`Email trigger status: ${res.statusCode}`);
+  });
+
+  req.on("error", (e) => {
+    console.error(`Problem with email trigger request: ${e.message}`);
+  });
+
+  req.write(postData);
+  req.end();
+}
 
 const app = express();
 app.use(cors());
@@ -169,6 +199,39 @@ app.post("/api/payment/webhook", async (req, res) => {
           .from("bookings")
           .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
           .eq("id", bookingId);
+
+        // Check if this is an experience booking and trigger confirmation email
+        try {
+          const { data: bookingData } = await supabase
+            .from("bookings")
+            .select("*")
+            .eq("id", bookingId)
+            .single();
+
+          if (bookingData && bookingData.special_requests) {
+            const meta = JSON.parse(bookingData.special_requests);
+            if (meta && meta.isExperience) {
+              const { data: userData } = await supabase
+                .from("users")
+                .select("email, full_name")
+                .eq("id", bookingData.user_id)
+                .single();
+
+              if (userData && userData.email) {
+                console.log(`Triggering email for experience booking: ${meta.title} to ${userData.email}`);
+                triggerNextJsEmail({
+                  email: userData.email,
+                  customerName: userData.full_name || "Customer",
+                  title: meta.title,
+                  checkInDate: bookingData.check_in_date,
+                  checkOutDate: bookingData.check_out_date,
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error in webhook experience email trigger:", err.message);
+        }
         
         // Find roomName if not available (lost from memory mapping)
         let targetRoomName = roomName;

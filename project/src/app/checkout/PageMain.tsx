@@ -45,6 +45,15 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "2";
 
+  const typeParam = searchParams.get("type");
+  const bookingIdParam = searchParams.get("bookingId");
+  const itemsParam = searchParams.get("items");
+
+  const isExperience = categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience");
+  const specialRequestsValue = isExperience
+    ? JSON.stringify({ isExperience: true, title: titleParam, category: categoryParam })
+    : "";
+
   const checkInParam = searchParams.get("checkIn");
   const checkOutParam = searchParams.get("checkOut");
 
@@ -267,7 +276,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         serviceOrderId = orderData.id;
         bookingId = bookingIdParam || "";
       } else {
-        // Luồng đặt phòng cũ
+        // Luồng đặt phòng
         const bookingRes = await fetch("/api/bookings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -277,7 +286,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
             check_out_date: checkOutStr,
             num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
             total_amount: totalAmount,
-            special_requests: "",
+            special_requests: specialRequestsValue,
           }),
         });
         const bookingData = await bookingRes.json();
@@ -372,11 +381,26 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           check_out_date: checkOutStr,
           num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
           total_amount: totalAmount,
-          special_requests: "",
+          special_requests: specialRequestsValue,
         }),
       });
       const bookingData = await bookingRes.json();
       if (!bookingRes.ok) throw new Error(bookingData.error || "Failed to create booking.");
+
+      if (isExperience) {
+        fetch("/api/mail/send-experience-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: user.email,
+            customerName: user.full_name || "Customer",
+            title: titleParam,
+            checkInDate: checkInStr,
+            checkOutDate: checkOutStr,
+          }),
+        }).catch(err => console.error("Failed to send experience confirmation email:", err));
+      }
+
       router.push(`/pay-done?bookingId=${bookingData.id}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
     } catch (err: any) {
       console.error("Payment failed:", err);
