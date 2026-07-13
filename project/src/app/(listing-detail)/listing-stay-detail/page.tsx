@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FC, Fragment, useState, useEffect, Suspense } from "react";
+import React, { FC, Fragment, useState, useEffect, Suspense, useMemo } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/lib/auth-context";
@@ -135,6 +135,8 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const [commentInput, setCommentInput] = useState("");
   const [ratingInput, setRatingInput] = useState(5);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [hotelLocation, setHotelLocation] = useState<string>("");
+  const [hotelMapUrl, setHotelMapUrl] = useState<string>("");
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
@@ -152,6 +154,56 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     };
     fetchFeedbacks();
   }, [titleParam]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchHotelLocation = async () => {
+      try {
+        let query = supabaseBrowser.from("hotel_rooms").select("title, location, google_map_url");
+
+        if (titleParam) {
+          query = query.ilike("title", `%${titleParam}%`);
+        } else if (addressParam) {
+          query = query.ilike("location", `%${addressParam}%`);
+        }
+
+        const { data, error } = await query.limit(1);
+
+        if (error) throw error;
+
+        if (!isMounted || !data?.[0]) return;
+
+        const matchedHotel = data[0] as { title?: string; location?: string; google_map_url?: string | null };
+        const nextLocation = matchedHotel.location || matchedHotel.title || "";
+        const nextMapUrl = matchedHotel.google_map_url || "";
+
+        setHotelLocation(nextLocation);
+        setHotelMapUrl(nextMapUrl);
+      } catch (err) {
+        console.warn("Could not load hotel location from Supabase, using fallback values:", err);
+      }
+    };
+
+    fetchHotelLocation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [titleParam, addressParam]);
+
+  const displayAddress = useMemo(() => {
+    return hotelLocation || addressParam || "Tokyo, Japan";
+  }, [hotelLocation, addressParam]);
+
+  const mapQuery = useMemo(() => {
+    const rawQuery = hotelMapUrl || displayAddress || `${titleParam} ${addressParam}`;
+    return rawQuery.trim() || "Tokyo, Japan";
+  }, [hotelMapUrl, displayAddress, titleParam, addressParam]);
+
+  const mapEmbedUrl = useMemo(() => {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+  }, [mapQuery]);
 
   const handleSubmitFeedback = async () => {
     if (!user) {
@@ -222,7 +274,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           <span>·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
-            <span className="ml-1"> {addressParam}</span>
+            <span className="ml-1"> {displayAddress}</span>
           </span>
         </div>
 
@@ -728,7 +780,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         <div>
           <h2 className="text-2xl font-semibold">Location</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            San Diego, CA, United States of America (SAN-San Diego Intl.)
+            {displayAddress}
           </span>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
@@ -742,7 +794,8 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               loading="lazy"
               allowFullScreen
               referrerPolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY&q=Eiffel+Tower,Paris+France"
+              src={mapEmbedUrl}
+              title={`Map for ${titleParam}`}
             ></iframe>
           </div>
         </div>
