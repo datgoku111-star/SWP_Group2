@@ -11,7 +11,7 @@ export type UserRole =
   | "KITCHEN"
   | "CUSTOMER";
 
-export type RoomStatus = "AVAILABLE" | "IN_USE" | "DIRTY" | "MAINTENANCE";
+export type RoomStatus = "AVAILABLE" | "IN_USE" | "DIRTY" | "CLEANING" | "MAINTENANCE";
 
 export type BookingStatus =
   | "PENDING"
@@ -95,6 +95,7 @@ export interface Room {
   room_type_id: string;
   status: RoomStatus;
   notes?: string;
+  status_updated_at?: string;
   created_at: string;
   updated_at: string;
   // Joined
