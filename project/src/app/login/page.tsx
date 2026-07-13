@@ -48,8 +48,12 @@ const LoginPageContent = () => {
   // Redirect if already logged in
   React.useEffect(() => {
     if (user) {
-      const targetUrl =
-        user.role === "ADMIN" ? "/admin/dashboard" : callbackUrl;
+      let targetUrl = callbackUrl;
+      if (user.role === "ADMIN") targetUrl = "/admin/dashboard";
+      else if (user.role === "RECEPTIONIST") targetUrl = "/dashboard/receptionist";
+      else if (user.role === "HOUSEKEEPING") targetUrl = "/dashboard/housekeeping";
+      else if (user.role === "KITCHEN") targetUrl = "/dashboard/kitchen";
+      
       router.push(targetUrl as Route);
     }
   }, [user, router, callbackUrl]);
@@ -98,8 +102,12 @@ const LoginPageContent = () => {
         // Successful local DB login
         login(data.user);
 
-        const targetUrl =
-          data.user.role === "ADMIN" ? "/admin/dashboard" : callbackUrl;
+        let targetUrl = callbackUrl;
+        if (data.user.role === "ADMIN") targetUrl = "/admin/dashboard";
+        else if (data.user.role === "RECEPTIONIST") targetUrl = "/dashboard/receptionist";
+        else if (data.user.role === "HOUSEKEEPING") targetUrl = "/dashboard/housekeeping";
+        else if (data.user.role === "KITCHEN") targetUrl = "/dashboard/kitchen";
+
         router.push(targetUrl as Route);
         return;
       }
