@@ -4,7 +4,8 @@ import type { Room, RoomType, RoomStatus } from "@/types/hotel";
 export async function getAvailableRooms(
   checkIn?: string,
   checkOut?: string,
-  roomTypeId?: string
+  roomTypeId?: string,
+  currentUserId?: string
 ) {
   // 1. Edge Case: Validate date range if dates are provided
   if (checkIn || checkOut) {
@@ -48,21 +49,25 @@ export async function getAvailableRooms(
     }
   }
 
-  // 4. Filter out temporary room locks from room_locks table (if unexpired)
+  // 4. Filter out temporary room locks from room_locks table (if unexpired and locked by other users)
   try {
-    const nowIso = new Date().toISOString();
-    const { data: lockedRoomIds, error: lockError } = await supabaseServer
+    let locksQuery = supabaseServer
       .from("room_locks")
       .select("room_id")
-      .gt("locked_until", nowIso);
+      .gt("locked_until", new Date().toISOString());
 
-    if (!lockError && lockedRoomIds && lockedRoomIds.length > 0) {
-      const excludeLockIds = lockedRoomIds.map((l) => l.room_id);
+    if (currentUserId) {
+      locksQuery = locksQuery.neq("user_id", currentUserId);
+    }
+
+    const { data: lockedRooms, error: lockError } = await locksQuery;
+    
+    if (!lockError && lockedRooms && lockedRooms.length > 0) {
+      const excludeLockIds = lockedRooms.map((l) => l.room_id);
       query = query.not("id", "in", `(${excludeLockIds.join(",")})`);
     }
   } catch (lockErr) {
     // Gracefully handle if room_locks table has not been migrated yet (Issue #6)
-    console.warn("Could not query room_locks (table may not exist yet):", lockErr);
   }
 
   const { data, error } = await query.order("floor").order("room_number");

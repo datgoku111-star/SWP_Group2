@@ -73,6 +73,8 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const { user } = useAuth();
   const router = useRouter();
   const { formatPrice, convertPrice, currency } = useCurrency();
+  const [lockedRoom, setLockedRoom] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(600); // 10 minutes (600s)
   const [activeTab, setActiveTab] = useState(0); // 0: paypal, 1: card, 2: payos
   const [showPayOSModal, setShowPayOSModal] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<{
@@ -125,75 +127,126 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     };
   }, [showPayOSModal, paymentInfo?.bookingId, router, typeParam]);
 
-  {/*const handlePayOSPayment = async (
-    targetRoom: any,
-    checkInStr: string,
-    checkOutStr: string,
-    totalAmount: number,
-  ) => {
-    try {
-      // 1. Call bookings API to create PENDING booking
-      const bookingRes = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          room_id: targetRoom.id,
-          check_in_date: checkInStr,
-          check_out_date: checkOutStr,
-          num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
-          total_amount: totalAmount,
-          special_requests: "",
-        }),
-      });
+  // Lock room on checkout mount
+  useEffect(() => {
+    if (typeParam === "service" || !user) return;
 
-      const bookingData = await bookingRes.json();
-      if (!bookingRes.ok) {
-        throw new Error(bookingData.error || "Failed to create booking.");
-      }
+    let activeRoomId: string | null = null;
 
-      const bookingId = bookingData.id;
+    const lockTargetRoom = async () => {
+      try {
+        const checkInStr = startDate ? startDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+        const checkOutStr = endDate ? endDate.toISOString().split("T")[0] : new Date(Date.now() + 24*60*60*1000).toISOString().split("T")[0];
+        
+        // 1. Fetch available rooms
+        const roomsRes = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
+        if (!roomsRes.ok) throw new Error("Failed to check room availability.");
+        const rooms = await roomsRes.json();
+        
+        if (!rooms || rooms.length === 0) {
+          alert("Không còn phòng trống cho khoảng thời gian đã chọn. Vui lòng chọn ngày khác!");
+          router.back();
+          return;
+        }
 
-      // 2. Call Express Backend to generate payment link
-      const payOSRes = await fetch(
-        "http://localhost:5000/api/payment/create-embedded-link",
-        {
+        const targetRoom = rooms[0];
+
+        // 2. Lock room
+        const lockRes = await fetch("/api/rooms/lock", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            bookingId,
-            roomName: titleParam,
-            totalPrice: totalAmount,
+            room_id: targetRoom.id,
+            checkIn: checkInStr,
+            checkOut: checkOutStr,
           }),
-        },
-      );
+        });
 
-      const payOSData = await payOSRes.json();
-      if (!payOSRes.ok) {
-        throw new Error(payOSData.error || t("checkoutVietQRError"));
+        if (!lockRes.ok) {
+          const lockData = await lockRes.json();
+          alert(lockData.error || "Phòng đã bị giữ bởi người khác. Vui lòng chọn ngày khác hoặc phòng khác!");
+          router.back();
+          return;
+        }
+
+        const lockData = await lockRes.json();
+        setLockedRoom(targetRoom);
+        activeRoomId = targetRoom.id;
+      } catch (err: any) {
+        console.error("Locking failed on checkout load:", err);
+        alert(err.message || "Đã xảy ra lỗi khi giữ phòng tạm thời.");
+        router.back();
       }
+    };
 
-      // 3. Open Modal and save payment info
-      setPaymentInfo({
-        qrCode: payOSData.qrCode,
-        amount: payOSData.amount,
-        description: payOSData.description,
-        checkoutUrl: payOSData.checkoutUrl,
-        bookingId,
+    lockTargetRoom();
+
+    // Clean up: Release lock on unmount
+    return () => {
+      if (activeRoomId) {
+        fetch("/api/rooms/unlock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ room_id: activeRoomId }),
+          keepalive: true,
+        }).catch(console.error);
+      }
+    };
+  }, [typeParam, user, startDate, endDate, router]);
+
+  // Tab Close / Page Refresh Event Listener to unlock room
+  useEffect(() => {
+    if (!lockedRoom) return;
+
+    const handleBeforeUnload = () => {
+      fetch("/api/rooms/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room_id: lockedRoom.id }),
+        keepalive: true,
+      }).catch(console.error);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [lockedRoom]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!lockedRoom) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          // Lock expired: Unlock room and redirect
+          fetch("/api/rooms/unlock", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ room_id: lockedRoom.id }),
+            keepalive: true,
+          })
+            .then(() => {
+              alert("Thời gian giữ phòng tạm thời (10 phút) đã hết hạn. Bạn sẽ được chuyển hướng về trang trước.");
+              router.back();
+            })
+            .catch(console.error);
+          return 0;
+        }
+        return prev - 1;
       });
-      setShowPayOSModal(true);
-    } catch (err: any) {
-      console.error("PayOS booking failed:", err);
-      setError(
-        err.message || "An unexpected error occurred during VietQR creation.",
-      );
-    }
-  }; */}
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [lockedRoom, router]);
 
   const handlePayOSPayment = async (
     targetRoom: any,
     checkInStr: string,
     checkOutStr: string,
-    totalAmount: number
+    totalAmount: number,
   ) => {
     try {
       let bookingId = paymentInfo?.bookingId || "";
@@ -244,7 +297,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         }),
       });
       const payOSData = await payOSRes.json();
-      if (!payOSRes.ok) throw new Error(payOSData.error || "Failed to generate VietQR code.");
+      if (!payOSRes.ok) throw new Error(payOSData.error || t("checkoutVietQRError"));
       setPaymentInfo({
         qrCode: payOSData.qrCode,
         amount: payOSData.amount,
@@ -260,65 +313,56 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     }
   };   
 
-  {/* tay them */}
-
-  {/*const handleConfirmAndPay = async () => {
-    if (!startDate || !endDate) {
-      setError(t("checkoutSelectDatesError"));
-      return;
-    }
-
+  const handleConfirmAndPay = async () => {
     if (!user) {
       setError(t("checkoutLoginRequiredError"));
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
-      const checkInStr = startDate.toISOString().split("T")[0];
-      const checkOutStr = endDate.toISOString().split("T")[0];
-
-      // 1. Fetch available rooms for these dates
-      const roomsRes = await fetch(
-        `/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`,
-      );
-      if (!roomsRes.ok) {
-        throw new Error(t("checkoutAvailabilityError"));
-      }
-
-      const rooms = await roomsRes.json();
-      if (!rooms || rooms.length === 0) {
-        throw new Error(t("checkoutNoRoomsError"));
-      }
-
-      // 2. Choose the first available room
-      const targetRoom = rooms[0];
-
-      // Calculate total amount based on room price and nights
-      const nights = Math.max(
-        1,
-        Math.ceil(
-          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-        ),
-      );
-      const pricePerNight =
-        Number(priceParam) || targetRoom.room_type?.base_price || 100;
-      const totalAmount = pricePerNight * nights;
-
-      // 3. Routing payment flow
-      if (activeTab === 2) {
-        await handlePayOSPayment(
-          targetRoom,
-          checkInStr,
-          checkOutStr,
-          totalAmount,
-        );
+      // XỬ LÝ CHO ĐƠN DỊCH VỤ ĐỒ ĂN
+      if (typeParam === "service") {
+        const totalAmount = Number(priceParam);
+        if (activeTab === 2) {
+          // Cổng VietQR (PayOS)
+          await handlePayOSPayment(null, "", "", totalAmount);
+          return;
+        }
+        // Cổng Paypal / Credit Card (Mô phỏng)
+        const orderRes = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            booking_id: bookingIdParam,
+            items: JSON.parse(itemsParam || "[]"),
+            notes: `Paid via ${activeTab === 0 ? "Paypal" : "Credit Card"}`
+          }),
+        });
+        if (!orderRes.ok) {
+          const errData = await orderRes.json();
+          throw new Error(errData.error || "Failed to place food order.");
+        }
+        router.push("/pay-done");
         return;
       }
-
-      // Traditional credit card / Paypal booking
+      // LUỒNG ĐẶT PHÒNG MỚI (Sử dụng phòng đã khóa trước đó)
+      if (!startDate || !endDate) {
+        throw new Error(t("checkoutSelectDatesError"));
+      }
+      if (!lockedRoom) {
+        throw new Error("No active room lock found. Please reload page.");
+      }
+      const targetRoom = lockedRoom;
+      const checkInStr = startDate.toISOString().split("T")[0];
+      const checkOutStr = endDate.toISOString().split("T")[0];
+      const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const pricePerNight = Number(priceParam) || targetRoom.room_type?.base_price || 100;
+      const totalAmount = pricePerNight * nights;
+      if (activeTab === 2) {
+        await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
+        return;
+      }
       const bookingRes = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -331,99 +375,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           special_requests: "",
         }),
       });
-
       const bookingData = await bookingRes.json();
-
-      if (!bookingRes.ok) {
-        throw new Error(bookingData.error || "Failed to create booking.");
-      }
-
-      // 4. Redirect to payment done page
-      router.push("/pay-done");
-    } catch (err: any) {
-      console.error("Booking failed:", err);
-      setError(err.message || t("checkoutGeneralError"));
-    } finally {
-      setLoading(false);
-    }
-  }; */}
-
-  const handleConfirmAndPay = async () => {
-    if (!user) {
-      setError("You must be logged in to make a payment.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      // XỬ LÝ CHO ĐƠN DỊCH VỤ ĐỒ ĂN
-      if (typeParam === "service") {
-        const totalAmount = Number(priceParam);
-        if (activeTab === 2) {
-          // Cổng VietQR (PayOS)
-          await handlePayOSPayment(null, "", "", totalAmount);
-        } else {
-          // PayPal or Credit Card for service order: place order directly via API
-          const items = itemsParam ? JSON.parse(decodeURIComponent(itemsParam)) : [];
-          const res = await fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ booking_id: bookingIdParam, items }),
-          });
-          if (!res.ok) throw new Error("Không thể đặt món ăn.");
-          const orderData = await res.json();
-          router.push(`/pay-done?bookingId=${bookingIdParam}&serviceOrderId=${orderData.id}&type=service&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
-        }
-        return;
-      }
-      // LUỒNG ĐẶT PHÒNG
-      if (!startDate || !endDate) {
-        throw new Error("Please select check-in and check-out dates.");
-      }
-      const checkInStr = startDate.toISOString().split("T")[0];
-      const checkOutStr = endDate.toISOString().split("T")[0];
-      const roomsRes = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
-      if (!roomsRes.ok) throw new Error("Failed to check room availability.");
-      const rooms = await roomsRes.json();
-      if (!rooms || rooms.length === 0) {
-        throw new Error("No rooms are available for the selected dates.");
-      }
-      const targetRoom = roomIdParam 
-        ? rooms.find((r: any) => r.id === roomIdParam) 
-        : rooms[0];
-      if (!targetRoom) {
-        throw new Error("Phòng bạn chọn hiện không còn trống trong thời gian này. Vui lòng quay lại chọn phòng khác.");
-      }
-      const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-      const pricePerNight = Number(priceParam) || targetRoom.room_type?.base_price || 100;
-      const totalAmount = pricePerNight * nights;
-
-      if (activeTab === 2) {
-        // Cổng VietQR (PayOS)
-        await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
-      } else {
-        // PayPal or Credit Card for booking: create traditional booking in local DB
-        const bookingRes = await fetch("/api/bookings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            room_id: targetRoom.id,
-            check_in_date: checkInStr,
-            check_out_date: checkOutStr,
-            num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
-            total_amount: totalAmount,
-            special_requests: "",
-          }),
-        });
-        const bookingData = await bookingRes.json();
-        if (!bookingRes.ok) {
-          throw new Error(bookingData.error || "Failed to create booking.");
-        }
-        router.push(`/pay-done?bookingId=${bookingData.id}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
-      }
+      if (!bookingRes.ok) throw new Error(bookingData.error || "Failed to create booking.");
+      router.push(`/pay-done?bookingId=${bookingData.id}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
     } catch (err: any) {
       console.error("Payment failed:", err);
-      setError(err.message || "An unexpected error occurred.");
+      setError(err.message || t("checkoutGeneralError"));
     } finally {
       setLoading(false);
     }
@@ -515,6 +472,19 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         <h2 className="text-3xl lg:text-4xl font-semibold">
           {t("checkoutConfirmAndPay")}
         </h2>
+        {lockedRoom && (
+          <div className="p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-2xl text-orange-800 dark:text-orange-300 text-sm flex justify-between items-center animate-pulse">
+            <span className="font-semibold flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Đang giữ phòng tạm thời cho bạn
+            </span>
+            <span className="font-mono text-base font-bold bg-orange-200 dark:bg-orange-900/60 px-3 py-1 rounded-lg">
+              {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+            </span>
+          </div>
+        )}
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
         <div>
           <div>

@@ -105,34 +105,13 @@ export default function ServicesPage() {
       setError(t("servicesSelectRoomError"));
       return;
     }
-
-
-    setOrderLoading(true);
-    setError("");
-
-    const items = Object.entries(cart).map(([service_id, quantity]) => ({
-      service_id,
-      quantity,
-    }));
-
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ booking_id: selectedBookingId, items }),
-      });
-
-      if (!res.ok) throw new Error(t("servicesPlaceOrderError"));
-
-      setSuccess(t("servicesPlaceOrderSuccess"));
-      setCart({});
-      setIsCartOpen(false);
-      setTimeout(() => setSuccess(""), 5000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setOrderLoading(false);
-    }
+    // Gom các sản phẩm trong giỏ hàng lại
+    const items = Object.entries(cart).map(([service_id, quantity]) => ({ service_id, quantity }));
+    const itemsParam = encodeURIComponent(JSON.stringify(items));
+    // Chuyển hướng tới trang checkout kèm tham số hóa đơn
+    router.push(
+      `/checkout?type=service&bookingId=${selectedBookingId}&items=${itemsParam}&price=${cartTotal}&title=Food+Order&category=Food+Service&img=https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500` as Route
+    );
   };
 
   if (isLoading) return <div className="container py-20">{t("loading")}</div>;
