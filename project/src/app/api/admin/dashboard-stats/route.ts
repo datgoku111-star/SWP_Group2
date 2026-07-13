@@ -53,6 +53,22 @@ export async function GET() {
       last6Months.push(monthStr);
     }
 
+    // 5. Fetch role distribution from public.profiles
+    const { data: roleData } = await supabaseServer
+      .from("profiles")
+      .select("role");
+
+    const roleCounts: Record<string, number> = {};
+    (roleData || []).forEach((u) => {
+      const roleName = u.role || "CUSTOMER";
+      roleCounts[roleName] = (roleCounts[roleName] || 0) + 1;
+    });
+
+    const roleDistribution = Object.entries(roleCounts).map(([key, value]) => ({
+      name: key,
+      value
+    }));
+
     const signupData = last6Months.map(m => ({ month: m, count: signupCounts[m] || 0 }));
     const revenueData = last6Months.map(m => ({ month: m, revenue: revenueCounts[m] || 0 }));
 
@@ -63,7 +79,8 @@ export async function GET() {
         activeBookings: bookingsCount || 0,
       },
       monthlySignups: signupData,
-      monthlyRevenue: revenueData
+      monthlyRevenue: revenueData,
+      roleDistribution
     });
   } catch (error) {
     console.error("Dashboard stats api error:", error);

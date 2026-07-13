@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { stats, monthlySignups, monthlyRevenue, roleDistribution } = data || {
+  const { stats, monthlySignups, monthlyRevenue, roleDistribution = [] } = data || {
     stats: { totalUsers: 0, totalRevenue: 0, activeBookings: 0 },
     monthlySignups: [],
     monthlyRevenue: [],
