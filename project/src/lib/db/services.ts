@@ -1,5 +1,5 @@
 import { supabaseServer } from "@/lib/supabase";
-import type { Service, ServiceOrder, OrderStatus } from "@/types/hotel";
+import type { Service, ServiceOrder, OrderStatus, ServiceCategory } from "@/types/hotel";
 
 export async function getServices(category?: string) {
   let query = supabaseServer
@@ -24,6 +24,60 @@ export async function getAllServices() {
     .order("name");
   if (error) throw error;
   return data as Service[];
+}
+
+export async function createService(service: {
+  name: string;
+  category: ServiceCategory;
+  price: number;
+  description?: string;
+  is_available?: boolean;
+  image_url?: string;
+}) {
+  const { data, error } = await supabaseServer
+    .from("services")
+    .insert({
+      name: service.name,
+      category: service.category,
+      price: service.price,
+      description: service.description || "",
+      is_available: service.is_available ?? true,
+      image_url: service.image_url || "",
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Service;
+}
+
+export async function updateService(
+  id: string,
+  updates: Partial<{
+    name: string;
+    category: ServiceCategory;
+    price: number;
+    description: string;
+    is_available: boolean;
+    image_url: string;
+  }>
+) {
+  const { data, error } = await supabaseServer
+    .from("services")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Service;
+}
+
+export async function deleteService(id: string) {
+  const { error } = await supabaseServer
+    .from("services")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+  return true;
 }
 
 export async function createServiceOrder(order: {
@@ -89,20 +143,25 @@ export async function getOrdersByBooking(bookingId: string) {
   return data as ServiceOrder[];
 }
 
-export async function getPendingOrders() {
+export async function getPendingOrders(statuses?: string[]) {
+  const filterStatuses = statuses && statuses.length > 0 ? statuses : ["PENDING", "IN_PROGRESS"];
   const { data, error } = await supabaseServer
     .from("service_orders")
     .select("*, items:service_order_items(*, service:services(*)), booking:bookings(*, room:rooms(room_number))")
-    .in("status", ["PENDING", "IN_PROGRESS"])
-    .order("created_at");
+    .in("status", filterStatuses)
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return data as ServiceOrder[];
 }
 
-export async function updateOrderStatus(id: string, status: OrderStatus) {
+export async function updateOrderStatus(id: string, status: OrderStatus, notes?: string) {
+  const updatePayload: any = { status, updated_at: new Date().toISOString() };
+  if (notes !== undefined && notes !== null) {
+    updatePayload.notes = notes;
+  }
   const { data, error } = await supabaseServer
     .from("service_orders")
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq("id", id)
     .select()
     .single();

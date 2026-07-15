@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import Input from "@/shared/Input";
 import type { Booking, Room } from "@/types/hotel";
+import ReceptionistServiceHub from "@/components/ReceptionistServiceHub";
 import { 
   Search, 
   CheckCircle2, 
@@ -21,7 +22,8 @@ import {
   LogIn, 
   PlusCircle, 
   BedDouble,
-  DollarSign
+  DollarSign,
+  Utensils
 } from "lucide-react";
 
 function CheckInContent() {
@@ -35,9 +37,9 @@ function CheckInContent() {
   const urlCheckIn = searchParams?.get("checkIn");
   const urlCheckOut = searchParams?.get("checkOut");
 
-  // Modes: 'checkin' | 'checkout' | 'walkin'
-  const [activeTab, setActiveTab] = useState<"checkin" | "checkout" | "walkin">(
-    urlMode === "checkout" ? "checkout" : urlRoomId ? "walkin" : "checkin"
+  // Modes: 'checkin' | 'checkout' | 'walkin' | 'services'
+  const [activeTab, setActiveTab] = useState<"checkin" | "checkout" | "walkin" | "services">(
+    urlMode === "checkout" ? "checkout" : urlMode === "services" ? "services" : urlRoomId ? "walkin" : "checkin"
   );
 
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -397,6 +399,18 @@ function CheckInContent() {
             <PlusCircle className="w-4 h-4" />
             <span>Walk-In Booking</span>
           </button>
+
+          <button
+            onClick={() => { setActiveTab("services"); setBooking(null); setError(""); setSuccess(""); }}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === "services"
+                ? "bg-purple-600 text-white shadow-md shadow-purple-600/20"
+                : "text-neutral-600 dark:text-neutral-300 hover:bg-white/50 dark:hover:bg-neutral-700/50"
+            }`}
+          >
+            <Utensils className="w-4 h-4" />
+            <span>Phục Vụ & Dịch Vụ</span>
+          </button>
         </div>
       </div>
 
@@ -414,7 +428,10 @@ function CheckInContent() {
       )}
 
       {/* Grid Layout depending on active tab */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {activeTab === "services" ? (
+        <ReceptionistServiceHub />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Panel: Search / Selection List */}
         <div className="lg:col-span-6 space-y-6">
           {activeTab !== "walkin" ? (
@@ -856,6 +873,7 @@ function CheckInContent() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
