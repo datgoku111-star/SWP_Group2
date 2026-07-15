@@ -50,7 +50,11 @@ export async function POST(
     // 4. Update room status to DIRTY
     const { error: urError } = await supabaseServer
       .from("rooms")
-      .update({ status: "DIRTY", updated_at: new Date().toISOString() })
+      .update({ 
+        status: "DIRTY", 
+        updated_at: new Date().toISOString(),
+        status_updated_at: new Date().toISOString()
+      })
       .eq("id", booking.room_id);
     if (urError) throw urError;
 

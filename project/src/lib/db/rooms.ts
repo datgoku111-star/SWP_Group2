@@ -58,7 +58,11 @@ export async function getRoomById(id: string) {
 export async function updateRoomStatus(id: string, status: RoomStatus) {
   const { data, error } = await supabaseServer
     .from("rooms")
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ 
+      status, 
+      updated_at: new Date().toISOString(),
+      status_updated_at: new Date().toISOString()
+    })
     .eq("id", id)
     .select()
     .single();

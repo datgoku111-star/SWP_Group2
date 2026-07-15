@@ -66,7 +66,8 @@ export async function POST(request: Request) {
       .from("rooms")
       .update({
         status: "IN_USE",
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        status_updated_at: new Date().toISOString()
       })
       .eq("id", booking.room_id);
 
