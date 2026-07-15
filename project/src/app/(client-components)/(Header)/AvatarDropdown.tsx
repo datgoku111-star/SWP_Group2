@@ -51,6 +51,26 @@ export default function AvatarDropdown({ className = "" }: Props) {
 
                     <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
 
+                    {user && user.role !== "CUSTOMER" && (
+                      <>
+                        <Link
+                          href={"/dashboard"}
+                          className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none"
+                          onClick={() => close()}
+                        >
+                          <div className="flex items-center justify-center flex-shrink-0 text-primary-6000 dark:text-primary-400">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+                            </svg>
+                          </div>
+                          <div className="ml-4">
+                            <p className="text-sm font-semibold text-primary-6000 dark:text-primary-400">{"Dashboard Workspace"}</p>
+                          </div>
+                        </Link>
+                        <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
+                      </>
+                    )}
+
                     {/* ------------------ 1 --------------------- */}
                     <Link
                       href={"/account"}

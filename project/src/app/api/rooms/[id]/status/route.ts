@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateRoomStatus } from "@/lib/db/rooms";
+import { updateRoomStatus, getRoomById } from "@/lib/db/rooms";
 import { getCurrentUser } from "@/lib/auth-server";
 
 
@@ -16,6 +16,26 @@ export async function PATCH(
     const { status } = await request.json();
     if (!status) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
+    }
+
+    // Retrieve current room to check status transition
+    const currentRoom = await getRoomById(params.id);
+    if (!currentRoom) {
+      return NextResponse.json({ error: "Room not found" }, { status: 404 });
+    }
+
+    // Role-based state transition constraints
+    if (user.role === "HOUSEKEEPING") {
+      const allowed = 
+        (currentRoom.status === "DIRTY" && status === "CLEANING") ||
+        (currentRoom.status === "CLEANING" && status === "AVAILABLE");
+
+      if (!allowed) {
+        return NextResponse.json(
+          { error: `Invalid status transition for Housekeeping: from ${currentRoom.status} to ${status}` },
+          { status: 400 }
+        );
+      }
     }
 
     const room = await updateRoomStatus(params.id, status);
