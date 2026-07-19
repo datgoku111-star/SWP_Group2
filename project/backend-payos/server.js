@@ -2,7 +2,38 @@ const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 const { PayOS } = require("@payos/node");
+const nodemailer = require("nodemailer");
 require("dotenv").config({ path: "../.env.local" }); // Load project's env variables
+
+async function sendInvoiceEmail(bookingId, roomName, amount) {
+  try {
+    let transporter;
+    if (process.env.SMTP_HOST) {
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+    } else {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email", port: 587, secure: false,
+        auth: { user: testAccount.user, pass: testAccount.pass },
+      });
+    }
+    const info = await transporter.sendMail({
+      from: '"HSRM System" <no-reply@hsrm.local>',
+      to: process.env.RECEPTIONIST_EMAIL || "reception@hsrm.local",
+      subject: `[HSRM] Invoice & Confirmation for Booking ${bookingId}`,
+      html: `<h2>New Booking Confirmed!</h2><p>Booking ID: ${bookingId}</p><p>Room: ${roomName}</p><p>Amount Paid: ${amount} VND</p><p>Please prepare the room for the upcoming check-in.</p>`,
+    });
+    console.log("Invoice email sent to receptionist: %s", info.messageId);
+    if (!process.env.SMTP_HOST) console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+  } catch (err) {
+    console.error("Failed to send invoice email:", err);
+  }
+}
 
 const app = express();
 app.use(cors());
@@ -157,6 +188,19 @@ app.post("/api/payment/webhook", async (req, res) => {
 
       // Clean up mapping
       orderMap.delete(orderCode);
+
+      // Trigger Email to Receptionist
+      // Fetch the actual amount from payments if needed or just pass a generic text
+      let amountPaid = "the required amount";
+      const { data: paymentInfo } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("transaction_ref", orderCode.toString())
+        .single();
+      if (paymentInfo) {
+        amountPaid = paymentInfo.amount;
+      }
+      await sendInvoiceEmail(bookingId, roomName || "Unknown Room", amountPaid);
     }
 
     return res.status(200).json({ success: true });

@@ -156,6 +156,31 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   ))}
                 </React.Fragment>
               ))}
+
+              {/* Auxiliary Charges: Experiences */}
+              {invoice.experience_charges && invoice.experience_charges.map((exp, i) => (
+                <tr key={`exp-${i}`} className="border-b border-neutral-100 dark:border-neutral-800">
+                  <td className="py-4 px-4 text-neutral-500">Ext-{i+1}</td>
+                  <td className="py-4 px-4">
+                    <div className="font-medium">Experience / Tour Booking</div>
+                    <div className="text-sm text-neutral-500">{exp.guests} Guests</div>
+                  </td>
+                  <td className="py-4 px-4 text-right font-medium">{formatMoney(exp.total)}</td>
+                </tr>
+              ))}
+
+              {/* Auxiliary Charges: Cars */}
+              {invoice.car_charges && invoice.car_charges.map((car, i) => (
+                <tr key={`car-${i}`} className="border-b border-neutral-100 dark:border-neutral-800">
+                  <td className="py-4 px-4 text-neutral-500">Car-{i+1}</td>
+                  <td className="py-4 px-4">
+                    <div className="font-medium">Car Rental</div>
+                    <div className="text-sm text-neutral-500">{car.car_type}</div>
+                  </td>
+                  <td className="py-4 px-4 text-right font-medium">{formatMoney(car.total)}</td>
+                </tr>
+              ))}
+
             </tbody>
           </table>
 
