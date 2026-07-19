@@ -95,16 +95,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           } else {
             setUser(mapSupabaseUserToSafeUser(session.user));
           }
+          setIsLoading(false);
         } else {
-          // Clear cookie on sign out
-          await fetch("/api/auth/session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session: null }),
-          });
-          setUser(null);
+          // Only clear and set loading false on active SIGNED_OUT event.
+          // For initial load (INITIAL_SESSION) with no Supabase session,
+          // we let initAuth() handle the local fallback check.
+          if (event === "SIGNED_OUT") {
+            await fetch("/api/auth/session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ session: null }),
+            });
+            setUser(null);
+            setIsLoading(false);
+          }
         }
-        setIsLoading(false);
       }
     );
 

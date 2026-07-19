@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
-const { PayOS } = require("@payos/node");
+const PayOS = require("@payos/node");
 require("dotenv").config({ path: "../.env.local" }); // Load project's env variables
 
 const app = express();
@@ -56,7 +56,10 @@ app.post("/api/payment/create-embedded-link", async (req, res) => {
 
     // Call PayOS SDK
     const domain = process.env.FRONTEND_URL || "http://localhost:3000";
-    const amountInVnd = Math.round(Number(totalPrice) * 23000); // Convert USD to VND (e.g. 1 USD = 23,000 VND)
+    // Convert to VND: if totalPrice is already large (e.g. > 10000), it's already in VND. Otherwise, convert from USD.
+    const amountInVnd = Number(totalPrice) > 10000 
+      ? Math.round(Number(totalPrice)) 
+      : Math.round(Number(totalPrice) * 23000);
 
     const paymentLinkData = {
       orderCode,
