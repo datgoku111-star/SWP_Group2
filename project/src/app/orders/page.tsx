@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import DashboardLayout from "../dashboard/layout";
 import { useRouter } from "next/navigation";
 import type { ServiceOrder, OrderStatus } from "@/types/hotel";
 import useRealtimeOrders from "@/hooks/useRealtimeOrders";
-import { Clock, CheckCircle2, ChefHat } from "lucide-react";
+import { Clock, CheckCircle2, ChefHat, Bell, BellOff, Utensils, Filter } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function OrdersQueuePage() {
@@ -16,23 +16,89 @@ export default function OrdersQueuePage() {
 
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<"ALL" | "FOOD_BEVERAGE">("ALL");
+  const [soundAlert, setSoundAlert] = useState(true);
+  const prevPendingCount = useRef<number>(-1);
+
+  // Auto switch to FOOD_BEVERAGE segmentation if logged-in user role is KITCHEN (Chef)
+  useEffect(() => {
+    if (user?.role === "KITCHEN") {
+      setCategoryFilter("FOOD_BEVERAGE");
+    }
+  }, [user]);
+
+  const playBellSound = useCallback(() => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+
+      const playTone = (freq: number, startTime: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0.35, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+
+      const now = ctx.currentTime;
+      playTone(880, now, 0.4); // A5 note
+      playTone(1174.66, now + 0.2, 0.6); // D6 note
+    } catch (e) {
+      console.warn("Could not play kitchen bell sound:", e);
+    }
+  }, []);
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await fetch("/api/orders?status=PENDING,IN_PROGRESS");
+      const url = `/api/orders?status=PENDING,IN_PROGRESS${
+        categoryFilter === "FOOD_BEVERAGE" ? "&category=FOOD,BEVERAGE" : ""
+      }`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
+
+        const currentPending = Array.isArray(data)
+          ? data.filter((o: any) => o.status === "PENDING").length
+          : 0;
+        if (
+          soundAlert &&
+          prevPendingCount.current !== -1 &&
+          currentPending > prevPendingCount.current
+        ) {
+          playBellSound();
+        }
+        prevPendingCount.current = currentPending;
       }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [categoryFilter, soundAlert, playBellSound]);
 
-  // Hook into Supabase realtime updates — stable callback prevents infinite re-subscriptions
-  useRealtimeOrders(fetchOrders);
+  // Hook into Supabase realtime updates
+  useRealtimeOrders(
+    useCallback(
+      (payload: any) => {
+        if (
+          soundAlert &&
+          payload &&
+          (payload.eventType === "INSERT" || payload?.new?.status === "PENDING")
+        ) {
+          playBellSound();
+        }
+        fetchOrders();
+      },
+      [soundAlert, playBellSound, fetchOrders]
+    )
+  );
 
   useEffect(() => {
     if (!isLoading) {
@@ -144,9 +210,59 @@ export default function OrdersQueuePage() {
   return (
     <DashboardLayout>
       <div className="container py-16 mb-24 lg:mb-32">
-      <h2 className="text-3xl font-semibold sm:text-4xl mb-10">
-        {t("ordersLiveOrderQueue")}
-      </h2>
+        <h2 className="text-3xl font-semibold sm:text-4xl mb-6">Live Order Queue</h2>
+
+        {/* Chef & F&B Segmentation Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-neutral-100 dark:bg-neutral-800/80 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-neutral-600 dark:text-neutral-300 flex items-center gap-1.5">
+              <Filter className="w-4 h-4" /> Lọc nghiệp vụ (Segmentation):
+            </span>
+            <div className="flex bg-white dark:bg-neutral-900 rounded-xl p-1 shadow-sm border border-neutral-200 dark:border-neutral-700">
+              <button
+                onClick={() => setCategoryFilter("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  categoryFilter === "ALL"
+                    ? "bg-primary-6000 text-white shadow-sm"
+                    : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                }`}
+              >
+                Tất cả dịch vụ
+              </button>
+              <button
+                onClick={() => setCategoryFilter("FOOD_BEVERAGE")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  categoryFilter === "FOOD_BEVERAGE"
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                }`}
+              >
+                <Utensils className="w-3.5 h-3.5" /> Ẩm thực Bếp (Chef Only)
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setSoundAlert(!soundAlert)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+              soundAlert
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                : "bg-neutral-200 dark:bg-neutral-800 text-neutral-500 border-neutral-300 dark:border-neutral-700"
+            }`}
+          >
+            {soundAlert ? (
+              <>
+                <Bell className="w-4 h-4 animate-bounce text-emerald-600 dark:text-emerald-400" />
+                <span>Chuông báo: BẬT (Sound ON)</span>
+              </>
+            ) : (
+              <>
+                <BellOff className="w-4 h-4" />
+                <span>Chuông báo: TẮT (Muted)</span>
+              </>
+            )}
+          </button>
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Pending Column */}

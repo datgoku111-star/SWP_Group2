@@ -35,6 +35,18 @@ export async function GET(
       .eq("booking_id", bookingId)
       .in("status", ["IN_PROGRESS", "COMPLETED"]);
 
+    // 2.5 Fetch experience bookings
+    const { data: experiences, error: eError } = await supabaseServer
+      .from("experience_bookings")
+      .select("id, experience_id, guests, total_price")
+      .eq("booking_id", bookingId);
+
+    // 2.6 Fetch car bookings
+    const { data: cars, error: cError } = await supabaseServer
+      .from("car_bookings")
+      .select("id, car_type, total_price")
+      .eq("booking_id", bookingId);
+
     // 3. Fetch payments
     const { data: payments, error: pError } = await supabaseServer
       .from("payments")
@@ -72,7 +84,23 @@ export async function GET(
     });
 
     const totalServices = serviceCharges.reduce((sum, sc) => sum + sc.total, 0);
-    const subtotal = roomCharges + totalServices + totalFineAmount;
+    
+    const experienceCharges = (experiences || []).map(exp => ({
+      id: exp.id,
+      experience_id: exp.experience_id,
+      guests: exp.guests,
+      total: Number(exp.total_price)
+    }));
+    const totalExperiences = experienceCharges.reduce((sum, exp) => sum + exp.total, 0);
+
+    const carCharges = (cars || []).map(car => ({
+      id: car.id,
+      car_type: car.car_type,
+      total: Number(car.total_price)
+    }));
+    const totalCars = carCharges.reduce((sum, car) => sum + car.total, 0);
+
+    const subtotal = roomCharges + totalServices + totalExperiences + totalCars + totalFineAmount;
     
     // Configurable VAT, usually 10%
     const vatRate = 0.1;
@@ -99,6 +127,8 @@ export async function GET(
         incidents: incidents || [],
         total_fine: totalFineAmount
       },
+      experience_charges: experienceCharges,
+      car_charges: carCharges,
       subtotal,
       vat_rate: vatRate,
       vat_amount: vatAmount,

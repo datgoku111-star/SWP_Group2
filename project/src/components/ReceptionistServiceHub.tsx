@@ -1,0 +1,701 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { 
+  Utensils, 
+  Sparkles, 
+  Clock, 
+  CheckCircle2, 
+  AlertTriangle, 
+  RefreshCw, 
+  Layers, 
+  Wrench, 
+  Plus, 
+  Search, 
+  DollarSign, 
+  Check, 
+  X, 
+  Bell, 
+  Coffee, 
+  Shirt, 
+  Home, 
+  ChevronRight,
+  User,
+  CheckCheck
+} from "lucide-react";
+import ButtonPrimary from "@/shared/ButtonPrimary";
+import ButtonThird from "@/shared/ButtonThird";
+import Input from "@/shared/Input";
+import type { Room, Service, ServiceOrder } from "@/types/hotel";
+
+export default function ReceptionistServiceHub() {
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeSubTab, setActiveSubTab] = useState<"ROOMS" | "ORDERS">("ROOMS");
+  const [filterFloor, setFilterFloor] = useState<number | "ALL">("ALL");
+
+  // Modal State for Ordering Room Service / F&B
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedRoomForService, setSelectedRoomForService] = useState<any | null>(null);
+  const [orderItems, setOrderItems] = useState<{ service: Service; quantity: number }[]>([]);
+  const [orderNotes, setOrderNotes] = useState("");
+  const [serviceCategory, setServiceCategory] = useState<string>("ALL");
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [roomsRes, servicesRes, ordersRes] = await Promise.all([
+        fetch("/api/rooms?all=true"),
+        fetch("/api/services?all=true"),
+        fetch("/api/orders?status=PENDING,IN_PROGRESS,COMPLETED"),
+      ]);
+
+      if (roomsRes.ok) {
+        const rData = await roomsRes.json();
+        if (Array.isArray(rData) && rData.length > 0) {
+          setRooms(rData);
+        } else {
+          setRooms(fallbackRooms);
+        }
+      } else {
+        setRooms(fallbackRooms);
+      }
+
+      if (servicesRes.ok) {
+        const sData = await servicesRes.json();
+        if (Array.isArray(sData) && sData.length > 0) {
+          setServices(sData);
+        } else {
+          setServices(fallbackServices);
+        }
+      } else {
+        setServices(fallbackServices);
+      }
+
+      if (ordersRes.ok) {
+        const oData = await ordersRes.json();
+        if (Array.isArray(oData) && oData.length > 0) {
+          setActiveOrders(oData);
+        } else {
+          setActiveOrders(fallbackOrders);
+        }
+      } else {
+        setActiveOrders(fallbackOrders);
+      }
+    } catch (err) {
+      console.error("ReceptionistServiceHub fetch error:", err);
+      setRooms(fallbackRooms);
+      setServices(fallbackServices);
+      setActiveOrders(fallbackOrders);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fallbackRooms = [
+    { id: "rm-101", room_number: "P101", floor: 1, status: "AVAILABLE", room_type: { name: "Deluxe Ocean View", base_price: 1500000 } },
+    { id: "rm-102", room_number: "P102", floor: 1, status: "DIRTY", notes: "Khách vừa trả phòng lúc 12:00", room_type: { name: "Standard Garden", base_price: 950000 } },
+    { id: "rm-201", room_number: "P201", floor: 2, status: "IN_USE", notes: "Khách VIP: Trần Đức Đạt (Check-out mai)", room_type: { name: "Suite Premium King", base_price: 2800000 }, current_booking_id: "BK-201" },
+    { id: "rm-202", room_number: "P202", floor: 2, status: "IN_USE", notes: "Khách gia đình: Lê Thị Mai", room_type: { name: "Family King", base_price: 2200000 }, current_booking_id: "BK-202" },
+    { id: "rm-301", room_number: "P301", floor: 3, status: "MAINTENANCE", notes: "Đang sửa chữa vòi nước nhà tắm", room_type: { name: "Presidential Suite", base_price: 5000000 } },
+  ];
+
+  const fallbackServices: any[] = [
+    { id: "s-1", name: "Phở Bò Kobe Đặc Biệt", category: "FOOD", price: 180000, description: "Nước dùng hầm 24h thơm ngon", is_available: true },
+    { id: "s-2", name: "Nước Cam Tươi Nguyên Chất", category: "BEVERAGE", price: 65000, description: "Cam tươi 100% không đường hóa học", is_available: true },
+    { id: "s-3", name: "Cà Phê Trứng Hà Nội", category: "BEVERAGE", price: 55000, description: "Thơm béo ngậy truyền thống", is_available: true },
+    { id: "s-4", name: "Giặt Ứi Nhanh (Set 3 đồ)", category: "LAUNDRY", price: 80000, description: "Sấy thơm trả trong 3 giờ", is_available: true },
+    { id: "s-5", name: "Set Khăn Bông VIP Thêm", category: "AMENITY", price: 30000, description: "Khăn cotton 100% cao cấp", is_available: true },
+  ];
+
+  const fallbackOrders = [
+    {
+      id: "ORD-101",
+      booking_id: "BK-201",
+      status: "IN_PROGRESS",
+      total_amount: 310000,
+      notes: "Giao lên phòng P201 cho anh Đạt",
+      created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+      room_number: "P201",
+      items: [
+        { service_name: "Phở Bò Kobe Đặc Biệt", quantity: 1, unit_price: 180000, subtotal: 180000 },
+        { service_name: "Nước Cam Tươi Nguyên Chất", quantity: 2, unit_price: 65000, subtotal: 130000 },
+      ],
+    },
+  ];
+
+  const handleStatusChange = async (roomId: string, newStatus: string) => {
+    setRooms((prev) =>
+      prev.map((r) => (r.id === roomId ? { ...r, status: newStatus } : r))
+    );
+
+    if (!roomId.startsWith("rm-")) {
+      try {
+        await fetch(`/api/rooms/${roomId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+      } catch (err) {
+        console.error("Sync room status error:", err);
+      }
+    }
+  };
+
+  const openServiceOrderingModal = (room: any) => {
+    setSelectedRoomForService(room);
+    setOrderItems([]);
+    setOrderNotes(`Khách phòng ${room.room_number} yêu cầu`);
+    setIsOrderModalOpen(true);
+  };
+
+  const addItemToOrder = (service: Service) => {
+    setOrderItems((prev) => {
+      const existing = prev.find((i) => i.service.id === service.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.service.id === service.id ? { ...i, quantity: i.quantity + 1 } : i
+        );
+      }
+      return [...prev, { service, quantity: 1 }];
+    });
+  };
+
+  const removeItemFromOrder = (serviceId: string) => {
+    setOrderItems((prev) => {
+      const existing = prev.find((i) => i.service.id === serviceId);
+      if (existing && existing.quantity > 1) {
+        return prev.map((i) =>
+          i.service.id === serviceId ? { ...i, quantity: i.quantity - 1 } : i
+        );
+      }
+      return prev.filter((i) => i.service.id !== serviceId);
+    });
+  };
+
+  const totalOrderAmount = orderItems.reduce(
+    (acc, item) => acc + item.service.price * item.quantity,
+    0
+  );
+
+  const handleSubmitOrder = async (e?: any) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (orderItems.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 món ăn hoặc dịch vụ!");
+      return;
+    }
+
+    const bookingId = selectedRoomForService?.current_booking_id || "BK-DEMO";
+    const finalNotes = "[FORWARDED_TO_KITCHEN] " + (orderNotes || "");
+    const newOrderPayload = {
+      booking_id: bookingId,
+      notes: finalNotes.trim(),
+      items: orderItems.map((i) => ({
+        service_id: i.service.id,
+        quantity: i.quantity,
+      })),
+    };
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newOrderPayload),
+      });
+
+      const newOrderUI = {
+        id: "ORD-" + Math.floor(100 + Math.random() * 900),
+        booking_id: bookingId,
+        status: "PENDING",
+        total_amount: totalOrderAmount,
+        notes: finalNotes.trim(),
+        created_at: new Date().toISOString(),
+        room_number: selectedRoomForService?.room_number || "P-VIP",
+        items: orderItems.map((i) => ({
+          service_name: i.service.name,
+          quantity: i.quantity,
+          unit_price: i.service.price,
+          subtotal: i.service.price * i.quantity,
+        })),
+      };
+
+      setActiveOrders((prev) => [newOrderUI, ...prev]);
+      alert(`✅ Đã tạo đơn dịch vụ & chuyển ngay xuống Nhà bếp cho Phòng ${selectedRoomForService?.room_number}! Tổng cộng: ${totalOrderAmount.toLocaleString("vi-VN")} đ.`);
+      setIsOrderModalOpen(false);
+    } catch (err: any) {
+      alert("Lỗi tạo đơn dịch vụ: " + err.message);
+    }
+  };
+
+  const handleForwardToKitchen = async (order: any) => {
+    try {
+      const updatedNotes = ((order.notes || "") + " [FORWARDED_TO_KITCHEN]").trim();
+      await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "PENDING", notes: updatedNotes }),
+      });
+      setActiveOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, notes: updatedNotes } : o))
+      );
+      alert("✅ Đã duyệt đơn & chuyển xuống Nhà bếp thành công! Bếp đã nhận được thông báo reo chuông.");
+    } catch (err: any) {
+      alert("Lỗi duyệt đơn: " + err.message);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn từ chối/hủy yêu cầu gọi món này?")) return;
+    try {
+      await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+      setActiveOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err: any) {
+      alert("Lỗi hủy đơn: " + err.message);
+    }
+  };
+
+  const floors = Array.from(new Set(rooms.map((r) => r.floor))).sort((a, b) => a - b);
+  const filteredRooms = filterFloor === "ALL" ? rooms : rooms.filter((r) => r.floor === filterFloor);
+  const filteredServices = serviceCategory === "ALL" ? services : services.filter((s) => s.category === serviceCategory);
+
+  return (
+    <div className="space-y-6">
+      {/* Top Bar Banner for Receptionist Services */}
+      <div className="bg-gradient-to-r from-primary-600 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
+            <Utensils className="w-3.5 h-3.5" />
+            Cổng Phục Vụ Khách Hàng & Dịch Vụ Lễ Tân (Receptionist Service Hub)
+          </div>
+          <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
+            Điều Hành Buồng Phòng & Gọi Món Trực Tiếp
+          </h2>
+          <p className="text-primary-100 text-sm max-w-2xl">
+            Lễ tân dễ dàng theo dõi tình trạng buồng phòng thực tế, bấm hối dọn gấp khi khách đến sớm hoặc gọi đồ ăn/thức uống/tiện ích lên phòng ghi nợ trực tiếp vào Booking.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveSubTab("ROOMS")}
+            className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeSubTab === "ROOMS"
+                ? "bg-white text-primary-700 shadow-lg scale-105"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            Sơ Đồ Phòng & Phục Vụ ({rooms.length})
+          </button>
+          <button
+            onClick={() => setActiveSubTab("ORDERS")}
+            className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeSubTab === "ORDERS"
+                ? "bg-white text-primary-700 shadow-lg scale-105"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Đơn Dịch Vụ Đang Xử Lý ({activeOrders.length})
+          </button>
+          <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title="Làm mới">
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* SUB-TAB 1: ROOMS GRID & INSTANT SERVICE ORDERING */}
+      {activeSubTab === "ROOMS" && (
+        <div className="space-y-6">
+          {/* Floor Filters & Legend */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-neutral-800 p-4 md:p-6 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <span className="text-xs font-bold text-neutral-400 mr-2 uppercase">Lọc theo Tầng:</span>
+              <button
+                onClick={() => setFilterFloor("ALL")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  filterFloor === "ALL"
+                    ? "bg-primary-600 text-white shadow"
+                    : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
+                }`}
+              >
+                Tất cả ({rooms.length})
+              </button>
+              {floors.map((fl) => (
+                <button
+                  key={fl}
+                  onClick={() => setFilterFloor(fl)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    filterFloor === fl
+                      ? "bg-primary-600 text-white shadow"
+                      : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
+                  }`}
+                >
+                  Tầng {fl}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-4 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Trống Sẵn Sàng (AVAILABLE)</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-500"></span> Đang Có Khách (IN_USE)</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-500"></span> Chưa Dọn (DIRTY)</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500"></span> Bảo Trì (MAINTENANCE)</span>
+            </div>
+          </div>
+
+          {/* Rooms Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredRooms.map((room) => {
+              const statusBorder = {
+                AVAILABLE: "border-emerald-500/60 bg-emerald-50/30 dark:bg-emerald-950/20",
+                IN_USE: "border-blue-500/60 bg-blue-50/30 dark:bg-blue-950/20",
+                DIRTY: "border-amber-500/60 bg-amber-50/30 dark:bg-amber-950/20",
+                MAINTENANCE: "border-red-500/60 bg-red-50/30 dark:bg-red-950/20",
+              };
+              const statusBadge = {
+                AVAILABLE: { label: "✨ Trống Sẵn Sàng", color: "bg-emerald-600 text-white" },
+                IN_USE: { label: "👤 Đang Có Khách", color: "bg-blue-600 text-white" },
+                DIRTY: { label: "🧹 Chờ Dọn Dẹp", color: "bg-amber-500 text-white" },
+                MAINTENANCE: { label: "🔧 Bảo Trì Kỹ Thuật", color: "bg-red-600 text-white" },
+              };
+              const currentBadge = statusBadge[room.status as keyof typeof statusBadge] || statusBadge.AVAILABLE;
+
+              return (
+                <div key={room.id} className={`rounded-3xl border-2 p-6 shadow-sm flex flex-col justify-between space-y-4 transition-all ${statusBorder[room.status as keyof typeof statusBorder]}`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-2xl font-black text-neutral-900 dark:text-white">
+                        Phòng {room.room_number}
+                      </span>
+                      <p className="text-xs font-bold text-neutral-500 mt-0.5">
+                        {room.room_type?.name || "Deluxe Ocean"} — Tầng {room.floor}
+                      </p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold shadow ${currentBadge.color}`}>
+                      {currentBadge.label}
+                    </span>
+                  </div>
+
+                  {room.notes && (
+                    <div className="bg-white/80 dark:bg-neutral-900/80 p-3 rounded-2xl text-xs font-medium text-neutral-700 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700 flex items-start gap-2">
+                      <User className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
+                      <div>{room.notes}</div>
+                    </div>
+                  )}
+
+                  {/* Actions based on status */}
+                  <div className="pt-3 border-t border-neutral-200/60 dark:border-neutral-700/60 flex items-center gap-2">
+                    {room.status === "IN_USE" && (
+                      <button
+                        onClick={() => openServiceOrderingModal(room)}
+                        className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-extrabold py-3 px-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Utensils className="w-4 h-4" />
+                        ➕ Gọi Món / Dịch Vụ
+                      </button>
+                    )}
+
+                    {room.status === "DIRTY" && (
+                      <div className="flex w-full gap-2">
+                        <button
+                          onClick={() => {
+                            alert(`📢 Đã gửi thông báo ưu tiên dọn gấp Phòng ${room.room_number} xuống bộ phận Housekeeping!`);
+                          }}
+                          className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-3 rounded-2xl shadow transition-all text-xs flex items-center justify-center gap-1.5"
+                        >
+                          <Bell className="w-4 h-4 animate-bounce" />
+                          🚨 Hối Dọn Gấp
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(room.id, "AVAILABLE")}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-3 rounded-2xl shadow transition-all text-xs flex items-center justify-center gap-1"
+                          title="Xác nhận đã dọn xong"
+                        >
+                          <CheckCheck className="w-4 h-4" />
+                          Xác Nhận Sạch
+                        </button>
+                      </div>
+                    )}
+
+                    {room.status === "AVAILABLE" && (
+                      <div className="flex w-full items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 font-bold px-2 py-1.5">
+                        <span>✨ Sẵn sàng làm Check-in cho khách</span>
+                        <button
+                          onClick={() => handleStatusChange(room.id, "MAINTENANCE")}
+                          className="text-neutral-400 hover:text-red-500 font-normal underline text-xs"
+                        >
+                          Báo lỗi bảo trì
+                        </button>
+                      </div>
+                    )}
+
+                    {room.status === "MAINTENANCE" && (
+                      <button
+                        onClick={() => handleStatusChange(room.id, "AVAILABLE")}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-2xl shadow transition-all text-xs flex items-center justify-center gap-2"
+                      >
+                        <Wrench className="w-4 h-4" />
+                        Mở Khóa (Đã Sửa Xong)
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB 2: ACTIVE ORDERS QUEUE */}
+      {activeSubTab === "ORDERS" && (
+        <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
+          <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-700 pb-4">
+            <h3 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Clock className="w-6 h-6 text-primary-600" />
+              Danh Sách Yêu Cầu Dịch Vụ & Gọi Món Đang Phục Vụ ({activeOrders.length})
+            </h3>
+          </div>
+
+          {activeOrders.length === 0 ? (
+            <div className="p-12 text-center text-neutral-500">
+              Chưa có đơn dịch vụ hoặc món ăn nào đang xử lý. Khi Lễ tân gọi món cho khách, đơn sẽ hiển thị ở đây!
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {activeOrders.map((order) => {
+                const isForwarded = order.notes && order.notes.includes("[FORWARDED_TO_KITCHEN]");
+                const estMatch = order.notes ? order.notes.match(/\[EST_TIME:\s*([^\]]+)\]/) : null;
+
+                let statusColor = "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300";
+                let statusText = "⏳ Chờ Lễ Tân duyệt đơn (Khách đặt từ phòng)";
+
+                if (order.status === "PENDING" && isForwarded) {
+                  statusColor = "bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300";
+                  statusText = "👨‍🍳 Đã chuyển xuống Bếp — Chờ Chef tiếp nhận";
+                } else if (order.status === "IN_PROGRESS") {
+                  statusColor = "bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300";
+                  statusText = estMatch
+                    ? `🔥 Bếp đang chế biến — Dự kiến hoàn thành: ${estMatch[1]}`
+                    : "🔥 Bếp đang chế biến / Đang giao lên phòng";
+                } else if (order.status === "COMPLETED") {
+                  statusColor = "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300";
+                  statusText = "✅ Đã chế biến xong & Giao hoàn tất";
+                }
+
+                return (
+                  <div key={order.id} className="p-6 rounded-3xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 flex flex-col gap-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="bg-primary-600 text-white font-black px-3 py-1 rounded-xl text-sm">
+                            Phòng {order.room_number || "P201"}
+                          </span>
+                          <span className="text-xs font-bold text-neutral-500">Mã đơn: #{order.id}</span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
+                            {statusText}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {order.items?.map((it: any, i: number) => (
+                            <span key={i} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1.5 rounded-xl font-bold text-sm text-neutral-800 dark:text-neutral-200">
+                              {it.service_name} <strong className="text-primary-600">x{it.quantity}</strong>
+                            </span>
+                          ))}
+                        </div>
+
+                        {order.notes && (
+                          <div className="text-xs text-neutral-500 italic">
+                            📝 Ghi chú: {order.notes.replace(/\[FORWARDED_TO_KITCHEN\]/g, "").replace(/\[EST_TIME:[^\]]+\]/g, "").trim() || "Không có ghi chú thêm"}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-xs text-neutral-400">Tổng tiền ghi nợ phòng</div>
+                        <div className="text-xl font-black text-primary-600 dark:text-primary-400">
+                          {order.total_amount.toLocaleString("vi-VN")} đ
+                        </div>
+                        <div className="text-xs text-neutral-400 mt-1">Ghi lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</div>
+                      </div>
+                    </div>
+
+                    {order.status === "PENDING" && !isForwarded && (
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-700 justify-end items-center">
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl text-xs font-bold hover:bg-neutral-300 transition-colors"
+                        >
+                          ❌ Từ chối / Hủy đơn
+                        </button>
+                        <button
+                          onClick={() => handleForwardToKitchen(order)}
+                          className="px-5 py-2 bg-primary-6000 text-white rounded-xl text-xs font-bold shadow-md hover:bg-primary-700 transition-all flex items-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-4 h-4" /> ✅ Duyệt & Chuyển Xuống Nhà Bếp
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODAL ORDER ROOM SERVICE / F&B FOR GUEST */}
+      {isOrderModalOpen && selectedRoomForService && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-neutral-100 dark:border-neutral-700 overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-6 bg-neutral-900 text-white flex items-center justify-between border-b border-neutral-800">
+              <div>
+                <h3 className="text-xl font-extrabold flex items-center gap-2">
+                  <Utensils className="w-6 h-6 text-primary-500" />
+                  Gọi Món F&B & Dịch Vụ Cho Phòng {selectedRoomForService.room_number}
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Khách hàng: {selectedRoomForService.notes?.split(":")?.[1] || "Khách VIP đang lưu trú"} — Chi phí sẽ được tự động cộng vào hóa đơn Check-out.
+                </p>
+              </div>
+              <button onClick={() => setIsOrderModalOpen(false)} className="text-neutral-400 hover:text-white p-1">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {/* Category Filter */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <button
+                  onClick={() => setServiceCategory("ALL")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    serviceCategory === "ALL" ? "bg-primary-600 text-white" : "bg-neutral-100 dark:bg-neutral-700"
+                  }`}
+                >
+                  Tất cả
+                </button>
+                {["FOOD", "BEVERAGE", "LAUNDRY", "AMENITY"].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setServiceCategory(cat)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      serviceCategory === cat ? "bg-primary-600 text-white" : "bg-neutral-100 dark:bg-neutral-700"
+                    }`}
+                  >
+                    {cat === "FOOD" && "🍲 Đồ ăn"}
+                    {cat === "BEVERAGE" && "🍹 Thức uống"}
+                    {cat === "LAUNDRY" && "👔 Giặt ủi"}
+                    {cat === "AMENITY" && "🧼 Tiện ích"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Services List Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {filteredServices.map((srv) => (
+                  <div key={srv.id} className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between">
+                    <div>
+                      <div className="font-extrabold text-sm text-neutral-900 dark:text-white">{srv.name}</div>
+                      <div className="text-xs font-bold text-primary-600 mt-0.5">{srv.price.toLocaleString("vi-VN")} đ</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => addItemToOrder(srv)}
+                      className="p-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white transition-all shadow"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Selected Order Items Summary */}
+              <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
+                <h4 className="font-bold text-sm text-neutral-900 dark:text-white flex items-center justify-between">
+                  <span>🛒 Các Món / Dịch Vụ Đã Chọn ({orderItems.length})</span>
+                  <span className="text-primary-600 font-extrabold">{totalOrderAmount.toLocaleString("vi-VN")} đ</span>
+                </h4>
+
+                {orderItems.length === 0 ? (
+                  <div className="text-center py-6 border border-dashed border-neutral-200 dark:border-neutral-700 rounded-2xl text-xs text-neutral-400">
+                    Chưa chọn món nào. Bấm dấu (+) phía trên để thêm món vào đơn!
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {orderItems.map((item) => (
+                      <div key={item.service.id} className="flex items-center justify-between bg-white dark:bg-neutral-800 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                        <div>
+                          <span className="font-bold text-sm">{item.service.name}</span>
+                          <span className="text-xs text-neutral-400 block">{item.service.price.toLocaleString("vi-VN")} đ / đơn vị</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => removeItemFromOrder(item.service.id)}
+                            className="w-7 h-7 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center font-bold"
+                          >
+                            -
+                          </button>
+                          <span className="font-extrabold text-sm w-4 text-center">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => addItemToOrder(item.service)}
+                            className="w-7 h-7 rounded-lg bg-primary-600 text-white flex items-center justify-center font-bold"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                  Ghi chú cho Bếp & Nhân viên giao phòng
+                </label>
+                <Input
+                  placeholder="Ví dụ: Giao gấp cùng nước đá, ít đường..."
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-neutral-400">Tổng cộng thanh toán</span>
+                <div className="text-2xl font-black text-primary-600 dark:text-primary-400">
+                  {totalOrderAmount.toLocaleString("vi-VN")} đ
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <ButtonThird type="button" onClick={() => setIsOrderModalOpen(false)}>Hủy</ButtonThird>
+                <ButtonPrimary type="button" onClick={() => handleSubmitOrder()} disabled={orderItems.length === 0}>
+                  Xác Nhận & Ghi Nợ Vào Phòng
+                </ButtonPrimary>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

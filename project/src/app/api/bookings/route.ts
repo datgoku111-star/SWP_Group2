@@ -27,6 +27,8 @@ export async function GET() {
   }
 }
 
+import { sendReceptionistInvoiceEmail } from "@/lib/mail";
+
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
@@ -56,6 +58,14 @@ export async function POST(request: Request) {
       total_amount: data.total_amount || 0,
       special_requests: data.special_requests,
     });
+
+    // Notify receptionist asynchronously
+    sendReceptionistInvoiceEmail(
+      booking.id, 
+      `Room ID: ${booking.room_id}`, 
+      booking.total_amount, 
+      booking.total_amount
+    ).catch(console.error);
 
     return NextResponse.json(booking, { status: 201 });
   } catch (error: any) {

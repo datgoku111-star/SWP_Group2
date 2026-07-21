@@ -247,6 +247,33 @@ export interface CreateServiceOrderRequest {
   notes?: string;
 }
 
+export interface ExperienceBooking {
+  id: string;
+  booking_id: string;
+  experience_id: string;
+  guests: number;
+  total_price: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  booking?: Booking;
+}
+
+export interface CarBooking {
+  id: string;
+  booking_id: string;
+  car_type: string;
+  pickup_date: string;
+  dropoff_date: string;
+  total_price: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  booking?: Booking;
+}
+
 export interface InvoiceData {
   booking: Booking;
   room_charges: number;
@@ -259,6 +286,17 @@ export interface InvoiceData {
     incidents: any[];
     total_fine: number;
   };
+  experience_charges?: {
+    id: string;
+    experience_id: string;
+    guests: number;
+    total: number;
+  }[];
+  car_charges?: {
+    id: string;
+    car_type: string;
+    total: number;
+  }[];
   subtotal: number;
   vat_rate: number;
   vat_amount: number;
