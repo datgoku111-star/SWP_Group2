@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { updateRoomStatus, getRoomById } from "@/lib/db/rooms";
 import { getCurrentUser } from "@/lib/auth-server";
+import { supabaseServer } from "@/lib/supabase";
 
 
 export async function PATCH(
@@ -13,7 +14,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { status } = await request.json();
+    const { status, notes } = await request.json();
     if (!status) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
     }
@@ -41,17 +42,44 @@ export async function PATCH(
         );
       }
       if (currentRoom.status !== "DIRTY" && currentRoom.status !== "CLEANING") {
-        return NextResponse.json(
-          { error: `Housekeeping cannot update rooms with status ${currentRoom.status}. Only DIRTY or CLEANING rooms can be processed.` },
-          { status: 403 }
-        );
+        // Allow if housekeeping is only updating notes/stayover without changing status
+        if (status !== currentRoom.status) {
+          return NextResponse.json(
+            { error: `Housekeeping cannot update rooms with status ${currentRoom.status}. Only DIRTY or CLEANING rooms can be processed.` },
+            { status: 403 }
+          );
+        }
       }
     }
     // Receptionist & Admin can override room status to any state at any time
 
-    const room = await updateRoomStatus(params.id, status);
-    
-    // In a full implementation, we'd also create an audit_logs entry here
+    const nowIso = new Date().toISOString();
+    const updatePayload: any = { status, updated_at: nowIso, status_updated_at: nowIso };
+    if (notes !== undefined) {
+      updatePayload.notes = notes;
+    }
+
+    let { data: room, error } = await supabaseServer
+      .from("rooms")
+      .update(updatePayload)
+      .eq("id", params.id)
+      .select("*, room_type:room_types(*)")
+      .single();
+
+    if (error && error.message && error.message.includes("status_updated_at")) {
+      const fallbackPayload = { ...updatePayload };
+      delete fallbackPayload.status_updated_at;
+      const fallback = await supabaseServer
+        .from("rooms")
+        .update(fallbackPayload)
+        .eq("id", params.id)
+        .select("*, room_type:room_types(*)")
+        .single();
+      room = fallback.data;
+      error = fallback.error;
+    }
+
+    if (error) throw error;
 
     return NextResponse.json(room);
   } catch (error) {

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Wrench, Check, ArrowRight, BedDouble, Clock, CheckCheck, Plus, ClipboardList } from "lucide-react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 export interface RoomTurnover {
   id: string;
@@ -18,9 +20,19 @@ export interface RoomTurnover {
 }
 
 export default function HousekeepingDashboardHub() {
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW">("DIRTY_FLOW");
   const [rooms, setRooms] = useState<RoomTurnover[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || !["ADMIN", "HOUSEKEEPING", "RECEPTIONIST"].includes(user.role)) {
+        router.push("/dashboard");
+      }
+    }
+  }, [user, authLoading, router]);
 
   const fetchRooms = async () => {
     setLoading(true);
@@ -60,12 +72,15 @@ export default function HousekeepingDashboardHub() {
   }, []);
 
   const changeStatus = async (roomId: string, newStatus: RoomTurnover["status"], additionalNotes?: string) => {
+    const backupRooms = [...rooms];
+    const updatedNotes = additionalNotes !== undefined ? additionalNotes : "";
+
     setRooms((prev) =>
       prev.map((r) => {
         if (r.id === roomId) {
-          const updatedNotes = additionalNotes !== undefined ? additionalNotes : r.notes;
+          const finalNotes = additionalNotes !== undefined ? additionalNotes : r.notes;
           const updatedTime = newStatus === "AVAILABLE" ? "Vừa xong (" + new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + ")" : r.last_cleaned;
-          return { ...r, status: newStatus, notes: updatedNotes, last_cleaned: updatedTime };
+          return { ...r, status: newStatus, notes: finalNotes, last_cleaned: updatedTime };
         }
         return r;
       })
@@ -73,13 +88,20 @@ export default function HousekeepingDashboardHub() {
 
     if (!roomId.startsWith("r-")) {
       try {
-        await fetch(`/api/rooms/${roomId}/status`, {
+        const res = await fetch(`/api/rooms/${roomId}/status`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ status: newStatus, notes: updatedNotes }),
         });
+        if (!res.ok) {
+          const errData = await res.json();
+          setRooms(backupRooms);
+          alert(`Lỗi cập nhật: ${errData.error || "Yêu cầu bị hệ thống từ chối."}`);
+        }
       } catch (err) {
         console.error("Failed status change:", err);
+        setRooms(backupRooms);
+        alert("Lỗi kết nối mạng, không thể lưu trạng thái mới.");
       }
     }
   };
@@ -359,13 +381,19 @@ export default function HousekeepingDashboardHub() {
                   </div>
 
                   <div className="flex items-center gap-3 pt-2">
-                    <button
-                      onClick={() => changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ")}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
-                    >
-                      <CheckCheck className="w-5 h-5" />
-                      🛠️ NGHIỆM THU SỬA CHỮA XONG (➔ AVAILABLE)
-                    </button>
+                    {user?.role === "HOUSEKEEPING" ? (
+                      <div className="text-[11px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
+                        Chỉ Kỹ thuật viên / Giám sát mới được Nghiệm thu bảo trì
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ")}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
+                      >
+                        <CheckCheck className="w-5 h-5" />
+                        🛠️ NGHIỆM THU SỬA CHỮA XONG (➔ AVAILABLE)
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -483,20 +511,26 @@ export default function HousekeepingDashboardHub() {
                     {room.notes && <div className="mt-1 text-emerald-800 dark:text-emerald-300 font-medium">✓ {room.notes}</div>}
                   </div>
 
-                  <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800/40 flex justify-between gap-2">
-                    <button
-                      onClick={() => changeStatus(room.id, "DIRTY", "Yêu cầu dọn lại trước khi đón khách đoàn")}
-                      className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 py-2 px-3 rounded-xl transition-all"
-                    >
-                      Dọn Lại (➔ DIRTY)
-                    </button>
-                    <button
-                      onClick={() => changeStatus(room.id, "MAINTENANCE", "Phát hiện lỗi kỹ thuật đột xuất")}
-                      className="text-xs font-semibold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 py-2 px-3 rounded-xl transition-all"
-                    >
-                      Khóa Bảo Trì
-                    </button>
-                  </div>
+                  {user?.role === "HOUSEKEEPING" ? (
+                    <div className="text-[11px] text-neutral-550 italic text-center w-full py-2 bg-emerald-100/40 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/30">
+                      Chỉ Giám sát/Lễ tân mới được đổi trạng thái phòng Sẵn sàng
+                    </div>
+                  ) : (
+                    <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800/40 flex justify-between gap-2 w-full">
+                      <button
+                        onClick={() => changeStatus(room.id, "DIRTY", "Yêu cầu dọn lại trước khi đón khách đoàn")}
+                        className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 py-2 px-3 rounded-xl transition-all"
+                      >
+                        Dọn Lại (➔ DIRTY)
+                      </button>
+                      <button
+                        onClick={() => changeStatus(room.id, "MAINTENANCE", "Phát hiện lỗi kỹ thuật đột xuất")}
+                        className="text-xs font-semibold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 py-2 px-3 rounded-xl transition-all"
+                      >
+                        Khóa Bảo Trì
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
