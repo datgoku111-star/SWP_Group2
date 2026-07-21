@@ -44,7 +44,17 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const categoryParam = searchParams.get("category") || "Hotel room";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "2";
-  const isExperience = categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience");
+  const isExperience = categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience") || categoryParam.toLowerCase().includes("climbing") || categoryParam.toLowerCase().includes("hiking");
+  const isRoomBooking = 
+    typeParam !== "service" &&
+    typeParam !== "experience" &&
+    typeParam !== "car" &&
+    categoryParam && 
+    !categoryParam.toLowerCase().includes("tour") &&
+    !categoryParam.toLowerCase().includes("experience") &&
+    !categoryParam.toLowerCase().includes("climbing") &&
+    !categoryParam.toLowerCase().includes("hiking") &&
+    !categoryParam.toLowerCase().includes("car");
   const specialRequestsValue = isExperience
     ? JSON.stringify({ isExperience: true, title: titleParam, category: categoryParam })
     : "";
@@ -142,6 +152,20 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         const checkInStr = startDate ? startDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
         const checkOutStr = endDate ? endDate.toISOString().split("T")[0] : new Date(Date.now() + 24*60*60*1000).toISOString().split("T")[0];
         
+        if (!isRoomBooking) {
+          // For non-room bookings (experiences/cars), we bypass availability checks and locks.
+          // We just fetch any room to satisfy the DB bookings schema foreign key constraint.
+          const roomsRes = await fetch("/api/rooms?all=true");
+          if (!roomsRes.ok) throw new Error("Failed to load room details.");
+          const rooms = await roomsRes.json();
+          if (rooms && rooms.length > 0) {
+            setLockedRoom({ room_id: rooms[0].id, dummy: true });
+          } else {
+            throw new Error("No rooms found in database to link the booking.");
+          }
+          return;
+        }
+
         // 1. Fetch available rooms
         const roomsRes = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
         if (!roomsRes.ok) throw new Error("Failed to check room availability.");
@@ -180,19 +204,16 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         });
 
         if (!lockRes.ok) {
-          const lockData = await lockRes.json();
-          alert(lockData.error || "Phòng đã bị giữ bởi người khác. Vui lòng chọn ngày khác hoặc phòng khác!");
-          router.back();
-          return;
+          const errData = await lockRes.json();
+          throw new Error(errData.error || "Failed to lock room.");
         }
 
         const lockData = await lockRes.json();
-        setLockedRoom(targetRoom);
+        setLockedRoom(lockData.lock);
         activeRoomId = targetRoom.id;
       } catch (err: any) {
-        console.error("Locking failed on checkout load:", err);
-        alert(err.message || "Đã xảy ra lỗi khi giữ phòng tạm thời.");
-        router.back();
+        console.error("Lock room error:", err);
+        setError(err.message || "Không thể thực hiện đặt chỗ. Vui lòng thử lại!");
       }
     };
 
@@ -209,11 +230,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         }).catch(console.error);
       }
     };
-  }, [typeParam, user, startDate, endDate, router]);
+  }, [roomIdParam, titleParam, startDate, endDate, user, router, typeParam, isRoomBooking]);
 
   // Tab Close / Page Refresh Event Listener to unlock room
   useEffect(() => {
-    if (!lockedRoom) return;
+    if (!lockedRoom || lockedRoom.dummy) return;
 
     const handleBeforeUnload = () => {
       fetch("/api/rooms/unlock", {
@@ -289,7 +310,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            room_id: targetRoom.id,
+            room_id: targetRoom.room_id || targetRoom.id,
             check_in_date: checkInStr,
             check_out_date: checkOutStr,
             num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
@@ -454,7 +475,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         <h2 className="text-3xl lg:text-4xl font-semibold">
           {t("checkoutConfirmAndPay")}
         </h2>
-        {lockedRoom && (
+        {isRoomBooking && lockedRoom && !lockedRoom.dummy && (
           <div className="p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-2xl text-orange-800 dark:text-orange-300 text-sm flex justify-between items-center animate-pulse">
             <span className="font-semibold flex items-center">
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
