@@ -149,18 +149,23 @@ const templatesChildrenMenus: NavItemType[] = [
       },
     ],
   },
-  //
   { id: ncNanoId(), href: "/checkout", name: "Checkout" },
   { id: ncNanoId(), href: "/pay-done", name: "Pay done" },
-  //
+  { id: ncNanoId(), href: "/services?category=FOOD" as Route, name: "Food Services" },
+  { id: ncNanoId(), href: "/services?category=LAUNDRY" as Route, name: "Laundry Services" },
   { id: ncNanoId(), href: "/author", name: "Author page" },
   { id: ncNanoId(), href: "/account", name: "Account page" },
-  //
   {
     id: ncNanoId(),
     href: "/subscription",
     name: "Subscription",
   },
+];
+
+// Thêm module Admin Management vào menu
+const adminManagementMenus: NavItemType[] = [
+  { id: ncNanoId(), href: "/admin/incidents/create" as Route, name: "Sự cố phòng" },
+  { id: ncNanoId(), href: "/admin/lost-found/create" as Route, name: "Đồ thất lạc" },
 ];
 
 export const NAVIGATION_DEMO: NavItemType[] = [
@@ -200,8 +205,6 @@ export const NAVIGATION_DEMO: NavItemType[] = [
           { id: ncNanoId(), href: "/listing-stay-detail", name: "Stay Detail" },
         ],
       },
-
-      //
       {
         id: ncNanoId(),
         href: "/listing-experiences",
@@ -225,8 +228,6 @@ export const NAVIGATION_DEMO: NavItemType[] = [
           },
         ],
       },
-
-      //
       {
         id: ncNanoId(),
         href: "/listing-car",
@@ -238,8 +239,6 @@ export const NAVIGATION_DEMO: NavItemType[] = [
           { id: ncNanoId(), href: "/listing-car-detail", name: "Car Detail" },
         ],
       },
-
-      //
       {
         id: ncNanoId(),
         href: "/listing-real-estate",
@@ -258,7 +257,6 @@ export const NAVIGATION_DEMO: NavItemType[] = [
           },
         ],
       },
-      //
       {
         id: ncNanoId(),
         href: "/listing-flights",
@@ -273,7 +271,14 @@ export const NAVIGATION_DEMO: NavItemType[] = [
     type: "dropdown",
     children: templatesChildrenMenus,
   },
-
+  // Module mới thêm
+  {
+    id: ncNanoId(),
+    href: "/admin/incidents/create" as Route,
+    name: "Admin",
+    type: "dropdown",
+    children: adminManagementMenus,
+  },
   {
     id: ncNanoId(),
     href: "/blog",
@@ -292,8 +297,6 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
     children: demoChildMenus,
     isNew: true,
   },
-
-  //
   {
     id: ncNanoId(),
     href: "/listing-stay",
@@ -306,8 +309,8 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
         name: "Stay listings (map)",
       },
       { id: ncNanoId(), href: "/listing-stay-detail", name: "Stay detail" },
-
-      //
+      { id: ncNanoId(), href: "/services?category=FOOD" as Route, name: "Food Services" }, 
+      { id: ncNanoId(), href: "/services?category=LAUNDRY" as Route, name: "Laundry Services" }, 
       {
         id: ncNanoId(),
         href: "/listing-experiences",
@@ -333,8 +336,6 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
       { id: ncNanoId(), href: "/listing-car", name: "Cars listings" },
       { id: ncNanoId(), href: "/listing-car-map", name: "Cars listings (map)" },
       { id: ncNanoId(), href: "/listing-car-detail", name: "Car detail" },
-
-      //
       {
         id: ncNanoId(),
         href: "/listing-real-estate",
@@ -345,7 +346,6 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
         href: "/listing-real-estate-map",
         name: "Real estate (map)",
       },
-      //
       {
         id: ncNanoId(),
         href: "/listing-flights",
@@ -353,8 +353,6 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
       },
     ],
   },
-
-  //
   {
     id: ncNanoId(),
     href: "/author",
@@ -362,8 +360,14 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
     type: "dropdown",
     children: templatesChildrenMenus,
   },
-
-  //
+  // Module mới thêm
+  {
+    id: ncNanoId(),
+    href: "/admin/incidents" as Route,
+    name: "Admin",
+    type: "dropdown",
+    children: adminManagementMenus,
+  },
   {
     id: ncNanoId(),
     href: "/blog",

@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Check-In / Out", href: "/checkin", icon: CalendarCheck, roles: ["ADMIN", "RECEPTIONIST"] },
     { name: "All Bookings", href: "/bookings", icon: ClipboardList, roles: ["ADMIN", "RECEPTIONIST"] },
     { name: "Service Orders", href: "/orders", icon: UtensilsCrossed, roles: ["ADMIN", "KITCHEN", "RECEPTIONIST"] },
-    { name: "Housekeeping", href: "/housekeeping", icon: SprayCan, roles: ["ADMIN", "HOUSEKEEPING"] },
+    { name: "Housekeeping", href: "/housekeeping", icon: SprayCan, roles: ["ADMIN", "HOUSEKEEPING", "RECEPTIONIST"] },
     
     // Customer
     { name: "My Bookings", href: "/bookings", icon: CalendarCheck, roles: ["CUSTOMER"] },

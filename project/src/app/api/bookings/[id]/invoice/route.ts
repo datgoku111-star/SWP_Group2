@@ -28,12 +28,24 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // 2. Fetch completed service orders
+    // 2. Fetch completed or in-progress (paid) service orders
     const { data: orders, error: oError } = await supabaseServer
       .from("service_orders")
       .select("id, status, items:service_order_items(*, service:services(*))")
       .eq("booking_id", bookingId)
-      .in("status", ["COMPLETED"]);
+      .in("status", ["IN_PROGRESS", "COMPLETED"]);
+
+    // 2.5 Fetch experience bookings
+    const { data: experiences, error: eError } = await supabaseServer
+      .from("experience_bookings")
+      .select("id, experience_id, guests, total_price")
+      .eq("booking_id", bookingId);
+
+    // 2.6 Fetch car bookings
+    const { data: cars, error: cError } = await supabaseServer
+      .from("car_bookings")
+      .select("id, car_type, total_price")
+      .eq("booking_id", bookingId);
 
     // 3. Fetch payments
     const { data: payments, error: pError } = await supabaseServer
@@ -41,6 +53,23 @@ export async function GET(
       .select("*")
       .eq("booking_id", bookingId)
       .eq("status", "COMPLETED");
+
+    // 4. Fetch room incidents that are chargeable and not resolved/closed/cancelled
+    const { data: incidents } = await supabaseServer
+      .from("room_incidents")
+      .select("*")
+      .eq("booking_id", bookingId)
+      .eq("is_chargeable", true)
+      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+
+    const totalFineAmount = incidents
+      ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
+      : 0;
+
+    // Convert base_price of room type from USD to VND for invoice display
+    if (booking.room?.room_type) {
+      booking.room.room_type.base_price = Math.round(Number(booking.room.room_type.base_price) * 26320);
+    }
 
     // Calculations
     const ciDate = new Date(booking.check_in_date);
@@ -55,25 +84,56 @@ export async function GET(
     });
 
     const totalServices = serviceCharges.reduce((sum, sc) => sum + sc.total, 0);
-    const subtotal = roomCharges + totalServices;
+    
+    const experienceCharges = (experiences || []).map(exp => ({
+      id: exp.id,
+      experience_id: exp.experience_id,
+      guests: exp.guests,
+      total: Number(exp.total_price)
+    }));
+    const totalExperiences = experienceCharges.reduce((sum, exp) => sum + exp.total, 0);
+
+    const carCharges = (cars || []).map(car => ({
+      id: car.id,
+      car_type: car.car_type,
+      total: Number(car.total_price)
+    }));
+    const totalCars = carCharges.reduce((sum, car) => sum + car.total, 0);
+
+    const subtotal = roomCharges + totalServices + totalExperiences + totalCars + totalFineAmount;
     
     // Configurable VAT, usually 10%
     const vatRate = 0.1;
     const vatAmount = subtotal * vatRate;
     const grandTotal = subtotal + vatAmount;
 
-    const totalPaid = (payments || []).reduce((sum, p) => sum + p.amount, 0);
+    // Convert room booking payments from USD to VND, leaving service orders (which are already in VND) untouched
+    const convertedPayments = (payments || []).map(p => {
+      const isService = p.transaction_ref && p.transaction_ref.includes("_service_");
+      return {
+        ...p,
+        amount: isService ? Number(p.amount) : Math.round(Number(p.amount) * 26320)
+      };
+    });
+
+    const totalPaid = convertedPayments.reduce((sum, p) => sum + p.amount, 0);
     const balanceDue = grandTotal - totalPaid;
 
     const invoiceData: InvoiceData = {
       booking,
       room_charges: roomCharges,
       service_charges: serviceCharges,
+      incident_charges: {
+        incidents: incidents || [],
+        total_fine: totalFineAmount
+      },
+      experience_charges: experienceCharges,
+      car_charges: carCharges,
       subtotal,
       vat_rate: vatRate,
       vat_amount: vatAmount,
       grand_total: grandTotal,
-      payments: payments || [],
+      payments: convertedPayments,
       balance_due: balanceDue,
     };
 

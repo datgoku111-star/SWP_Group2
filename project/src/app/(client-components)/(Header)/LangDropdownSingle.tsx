@@ -4,44 +4,16 @@ import { Popover, Transition } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/24/solid";
 import { GlobeAltIcon } from "@heroicons/react/24/outline";
 import { FC, Fragment } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 export const headerLanguage = [
   {
-    id: "English",
-    name: "English",
-    description: "United State",
-    href: "##",
+    id: "vn",
     active: true,
   },
   {
-    id: "Vietnamese",
-    name: "Vietnamese",
-    description: "Vietnamese",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Belgique",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Canada",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Belgique",
-    href: "##",
-  },
-  {
-    id: "Francais",
-    name: "Francais",
-    description: "Canada",
-    href: "##",
+    id: "en",
   },
 ];
 
@@ -52,6 +24,8 @@ interface LangDropdownProps {
 const LangDropdown: FC<LangDropdownProps> = ({
   panelClassName = "z-10 w-screen max-w-[280px] px-4 mt-4 right-0 sm:px-0",
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="LangDropdown">
       <Popover className="relative">
@@ -64,7 +38,9 @@ const LangDropdown: FC<LangDropdownProps> = ({
             >
               <GlobeAltIcon className="w-[18px] h-[18px] opacity-80" />
 
-              <span className="ml-2 select-none">Language</span>
+              <span className="ml-2 select-none">
+                {i18n.language === "vn" ? t("vietnamese") : t("english")}
+              </span>
               <ChevronDownIcon
                 className={`${open ? "-rotate-180" : "text-opacity-70"}
                   ml-2 h-4 w-4  group-hover:text-opacity-80 transition ease-in-out duration-150`}
@@ -84,23 +60,25 @@ const LangDropdown: FC<LangDropdownProps> = ({
                 <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
                   <div className="relative grid gap-8 bg-white dark:bg-neutral-800 p-7 lg:grid-cols-2">
                     {headerLanguage.map((item, index) => (
-                      <a
+                      <button
                         key={index}
-                        href={item.href}
-                        onClick={() => close()}
+                        type="button"
+                        onClick={() => {
+                          i18n.changeLanguage(item.id);
+                          close();
+                        }}
                         className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
-                          item.active
+                          i18n.language === item.id
                             ? "bg-gray-100 dark:bg-neutral-700"
                             : "opacity-80"
                         }`}
                       >
                         <div className="">
-                          <p className="text-sm font-medium ">{item.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-neutral-400">
-                            {item.description}
+                          <p className="text-sm font-medium ">
+                            {item.id === "vn" ? t("vietnamese") : t("english")}
                           </p>
                         </div>
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>

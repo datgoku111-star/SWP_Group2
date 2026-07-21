@@ -2,6 +2,7 @@ import React, { FC } from "react";
 import { DEMO_CAR_LISTINGS } from "@/data/listings";
 import { CarDataType } from "@/data/types";
 import StartRating from "@/components/StartRating";
+import { useCurrency } from "@/hooks/useCurrency";
 import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
 import Badge from "@/shared/Badge";
@@ -21,6 +22,7 @@ const CarCard: FC<CarCardProps> = ({
   className = "",
   data = DEMO_DATA,
 }) => {
+  const { formatPrice } = useCurrency();
   const {
     featuredImage,
     title,
@@ -80,6 +82,12 @@ const CarCard: FC<CarCardProps> = ({
             </h2>
           </div>
           <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-2">
+            {data.type && (
+              <>
+                <span className="">{data.type}</span>
+                <span>-</span>
+              </>
+            )}
             <span className="">{seats} seats</span>
             <span>-</span>
             <span className="">{gearshift} </span>
@@ -88,7 +96,7 @@ const CarCard: FC<CarCardProps> = ({
         <div className="w-14  border-b border-neutral-100 dark:border-neutral-800"></div>
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            {formatPrice(parseFloat(price.toString().replace('$', '')) || 0, 'USD')}
             {` `}
             {size === "default" && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">

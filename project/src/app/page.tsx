@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import SectionHero from "@/app/(server-components)/SectionHero";
+import { useTranslation } from "react-i18next";
 import BgGlassmorphism from "@/components/BgGlassmorphism";
 import { TaxonomyType } from "@/data/types";
 import SectionSliderNewCategories from "@/components/SectionSliderNewCategories";
@@ -147,6 +150,8 @@ const DEMO_CATS_2: TaxonomyType[] = [
 ];
 
 function PageHome() {
+  const { t } = useTranslation();
+
   return (
     <main className="nc-PageHome relative overflow-hidden">
       {/* GLASSMOPHIN */}
@@ -161,7 +166,11 @@ function PageHome() {
 
         <SectionOurFeatures />
 
-        <SectionGridFeaturePlaces cardType="card2" />
+        <SectionGridFeaturePlaces 
+          cardType="card2" 
+          heading="Các hạng phòng nghỉ nổi bật" 
+          subHeading="Khám phá các lựa chọn phòng nghỉ sang trọng tại Fis Hotel"
+        />
 
         <SectionHowItWork />
 
@@ -171,8 +180,8 @@ function PageHome() {
             categories={DEMO_CATS_2}
             categoryCardType="card4"
             itemPerRow={4}
-            heading="Suggestions for discovery"
-            subHeading="Popular places to stay that Chisfis recommends for you"
+            heading={t("homeSuggestionHeading")}
+            subHeading={t("homeSuggestionSubHeading")}
             sliderStyle="style2"
           />
         </div>
@@ -192,8 +201,8 @@ function PageHome() {
         </div>
 
         <SectionSliderNewCategories
-          heading="Explore by types of stays"
-          subHeading="Explore houses based on 10 types of stays"
+          heading={t("homeExploreByTypesHeading")}
+          subHeading={t("homeExploreByTypesSubHeading")}
           categoryCardType="card5"
           itemPerRow={5}
         />

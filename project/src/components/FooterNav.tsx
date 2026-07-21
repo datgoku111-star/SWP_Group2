@@ -11,6 +11,7 @@ import MenuBar from "@/shared/MenuBar";
 import isInViewport from "@/utils/isInViewport";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 let WIN_PREV_POSITION = 0;
 if (typeof window !== "undefined") {
@@ -23,30 +24,35 @@ interface NavItem {
   icon: any;
 }
 
-const NAV: NavItem[] = [
+const NAV: Array<NavItem & { labelKey: string }> = [
   {
     name: "Explore",
+    labelKey: "footerNavExplore",
     link: "/",
     icon: MagnifyingGlassIcon,
   },
   {
     name: "Wishlists",
+    labelKey: "footerNavWishlists",
     link: "/account-savelists",
     icon: HeartIcon,
   },
   {
     name: "Log in",
+    labelKey: "footerNavLogIn",
     link: "/account",
     icon: UserCircleIcon,
   },
   {
     name: "Menu",
+    labelKey: "footerNavMenu",
     icon: MenuBar,
   },
 ];
 
 const FooterNav = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   const pathname = usePathname();
 
@@ -111,7 +117,9 @@ const FooterNav = () => {
             isActive ? "text-red-600" : ""
           }`}
         >
-          {item.name}
+          {"labelKey" in item
+            ? t((item as NavItem & { labelKey: string }).labelKey)
+            : item.name}
         </span>
       </Link>
     ) : (
@@ -122,7 +130,11 @@ const FooterNav = () => {
         }`}
       >
         <item.icon iconClassName="w-6 h-6" className={``} />
-        <span className="text-[11px] leading-none mt-1">{item.name}</span>
+        <span className="text-[11px] leading-none mt-1">
+          {"labelKey" in item
+            ? t((item as NavItem & { labelKey: string }).labelKey)
+            : item.name}
+        </span>
       </div>
     );
   };

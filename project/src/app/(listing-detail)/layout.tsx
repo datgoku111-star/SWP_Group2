@@ -12,6 +12,8 @@ import { imageGallery as listingCarImageGallery } from "./listing-car-detail/con
 import { imageGallery as listingExperienceImageGallery } from "./listing-experiences-detail/constant";
 import { Route } from "next";
 
+import { DEMO_CAR_LISTINGS } from "@/data/listings";
+
 const DetailtLayout = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const thisPathname = usePathname();
@@ -34,6 +36,18 @@ const DetailtLayout = ({ children }: { children: ReactNode }) => {
       return listingStayImageGallery;
     }
     if (thisPathname?.includes("/listing-car-detail")) {
+      const titleParam = searchParams?.get("title");
+      if (titleParam) {
+        const currentCar = DEMO_CAR_LISTINGS.find(
+          (car) => car.title.toLowerCase() === titleParam.toLowerCase()
+        );
+        if (currentCar && currentCar.galleryImgs && currentCar.galleryImgs.length > 0) {
+          return currentCar.galleryImgs.map((img, index) => ({
+            id: index,
+            url: typeof img === "string" ? img : (img as any)?.src || "",
+          }));
+        }
+      }
       return listingCarImageGallery;
     }
     if (thisPathname?.includes("/listing-experiences-detail")) {

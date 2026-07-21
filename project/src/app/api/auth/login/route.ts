@@ -55,8 +55,15 @@ export async function POST(request: Request) {
       message: "Login successful",
       user: safeUser,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login error:", error);
+    const errMsg = error?.message || "";
+    if (errMsg.includes("ENOTFOUND") || errMsg.includes("fetch failed") || errMsg.includes("fetch")) {
+      return NextResponse.json(
+        { error: "Không thể kết nối đến cơ sở dữ liệu Supabase. Dự án Supabase có thể đã bị tạm dừng (Paused do không hoạt động) hoặc bị cấu hình sai URL trong .env.local. Vui lòng đăng nhập Supabase Dashboard để kích hoạt lại dự án." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

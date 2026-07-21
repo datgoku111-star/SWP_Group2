@@ -12,6 +12,8 @@ import { ChevronDownIcon } from "@heroicons/react/24/solid";
 import SwitchDarkMode from "@/shared/SwitchDarkMode";
 import Link from "next/link";
 import LangDropdown from "@/app/(client-components)/(Header)/LangDropdown";
+import CurrencyDropdown from "@/app/(client-components)/(Header)/CurrencyDropdown";
+import { useTranslation } from "react-i18next";
 
 export interface NavMobileProps {
   data?: NavItemType[];
@@ -22,21 +24,21 @@ const NavMobile: React.FC<NavMobileProps> = ({
   data = NAVIGATION_DEMO,
   onClickClose,
 }) => {
+  const { t } = useTranslation();
+
   const _renderMenuChild = (item: NavItemType) => {
     return (
       <ul className="nav-mobile-sub-menu pl-6 pb-1 text-base">
         {item.children?.map((i, index) => (
           <Disclosure key={i.href + index} as="li">
             <Link
-              href={{
-                pathname: i.href || undefined,
-              }}
+              href={i.href || ""}
               className="flex px-4 text-neutral-900 dark:text-neutral-200 text-sm font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 mt-0.5"
             >
               <span
                 className={`py-2.5 pr-3 ${!i.children ? "block w-full" : ""}`}
               >
-                {i.name}
+                {t(i.name)}
               </span>
               {i.children && (
                 <span
@@ -73,14 +75,12 @@ const NavMobile: React.FC<NavMobileProps> = ({
       >
         <Link
           className="flex w-full px-4 font-medium uppercase tracking-wide text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
-          href={{
-            pathname: item.href || undefined,
-          }}
+          href={item.href || ""}
         >
           <span
             className={`py-2.5 pr-3 ${!item.children ? "block w-full" : ""}`}
           >
-            {item.name}
+            {t(item.name)}
           </span>
           {item.children && (
             <span className="flex-1 flex" onClick={(e) => e.preventDefault()}>
@@ -108,10 +108,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
       <div className="py-6 px-5">
         <Logo />
         <div className="flex flex-col mt-5 text-neutral-700 dark:text-neutral-300 text-sm">
-          <span>
-            Discover the most outstanding articles on all topics of life. Write
-            your stories and share them
-          </span>
+          <span>{t("navMobileDescription")}</span>
 
           <div className="flex justify-between items-center mt-4">
             <SocialsList itemClass="w-9 h-9 flex items-center justify-center rounded-full bg-neutral-100 text-xl dark:bg-neutral-800 dark:text-neutral-300" />
@@ -134,13 +131,16 @@ const NavMobile: React.FC<NavMobileProps> = ({
           target="_blank"
           rel="noopener noreferrer"
         >
-          <ButtonPrimary>Get Template</ButtonPrimary>
+          <ButtonPrimary>{t("getTemplate")}</ButtonPrimary>
         </a>
 
-        <LangDropdown
-          className="flex"
-          panelClassName="z-10 w-screen max-w-[280px] px-4 mb-3 right-3 bottom-full sm:px-0"
-        />
+        <div className="flex space-x-2 items-center">
+          <LangDropdown
+            className="flex"
+            panelClassName="z-10 w-screen max-w-[280px] px-4 mb-3 right-3 bottom-full sm:px-0"
+          />
+          <CurrencyDropdown />
+        </div>
       </div>
     </div>
   );

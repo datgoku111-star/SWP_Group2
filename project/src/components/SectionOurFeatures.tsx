@@ -1,7 +1,10 @@
+"use client";
+
 import React, { FC } from "react";
 import rightImgPng from "@/images/our-features.png";
 import Image, { StaticImageData } from "next/image";
 import Badge from "@/shared/Badge";
+import { useTranslation } from "react-i18next";
 
 export interface SectionOurFeaturesProps {
   className?: string;
@@ -14,6 +17,8 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
   rightImg = rightImgPng,
   type = "type1",
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div
       className={`nc-SectionOurFeatures relative flex flex-col items-center ${
@@ -30,39 +35,36 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
         }`}
       >
         <span className="uppercase text-sm text-gray-400 tracking-widest">
-          BENnefits
+          {t("ourFeaturesEyebrow")}
         </span>
-        <h2 className="font-semibold text-4xl mt-5">Happening cities </h2>
+        <h2 className="font-semibold text-4xl mt-5">{t("ourFeaturesTitle")}</h2>
 
         <ul className="space-y-10 mt-16">
           <li className="space-y-4">
-            <Badge name="Advertising" />
+            <Badge name={t("ourFeaturesBadgeAdvertising")} />
             <span className="block text-xl font-semibold">
-              Cost-effective advertising
+              {t("ourFeaturesAdvertisingTitle")}
             </span>
             <span className="block mt-5 text-neutral-500 dark:text-neutral-400">
-              With a free listing, you can advertise your rental with no upfront
-              costs
+              {t("ourFeaturesAdvertisingDesc")}
             </span>
           </li>
           <li className="space-y-4">
-            <Badge color="green" name="Exposure " />
+            <Badge color="green" name={t("ourFeaturesBadgeExposure")} />
             <span className="block text-xl font-semibold">
-              Reach millions with Chisfis
+              {t("ourFeaturesExposureTitle")}
             </span>
             <span className="block mt-5 text-neutral-500 dark:text-neutral-400">
-              Millions of people are searching for unique places to stay around
-              the world
+              {t("ourFeaturesExposureDesc")}
             </span>
           </li>
           <li className="space-y-4">
-            <Badge color="red" name="Secure" />
+            <Badge color="red" name={t("ourFeaturesBadgeSecure")} />
             <span className="block text-xl font-semibold">
-              Secure and simple
+              {t("ourFeaturesSecureTitle")}
             </span>
             <span className="block mt-5 text-neutral-500 dark:text-neutral-400">
-              A Holiday Lettings listing gives you a secure and easy way to take
-              bookings and payments online
+              {t("ourFeaturesSecureDesc")}
             </span>
           </li>
         </ul>

@@ -13,8 +13,44 @@ export async function GET(request: Request) {
     const statusParams = searchParams.get("status");
 
     // Staff wants pending queue
-    if (statusParams && ["ADMIN", "KITCHEN", "RECEPTIONIST"].includes(user.role)) {
-      const orders = await getPendingOrders();
+    if (["ADMIN", "KITCHEN", "RECEPTIONIST"].includes(user.role)) {
+      const statuses = statusParams
+        ? statusParams.split(",").map((s) => s.trim().toUpperCase())
+        : ["PENDING", "IN_PROGRESS", "COMPLETED"];
+      let orders = await getPendingOrders(statuses);
+
+      // Food/Beverage Segmentation for Chef / Kitchen role or explicit query parameter
+      const categoryParam = searchParams.get("category");
+      if (categoryParam || user.role === "KITCHEN") {
+        const allowedCategories = categoryParam
+          ? categoryParam.split(",").map((c) => c.trim().toUpperCase())
+          : ["FOOD", "BEVERAGE"];
+
+        orders = orders
+          .map((order: any) => {
+            const filteredItems = (order.items || []).filter(
+              (item: any) =>
+                item.service?.category &&
+                allowedCategories.includes(item.service.category.toUpperCase())
+            );
+            return {
+              ...order,
+              items: filteredItems,
+            };
+          })
+          .filter((order: any) => order.items && order.items.length > 0);
+      }
+
+      // If viewing specifically as KITCHEN role, hide PENDING orders that have not yet been approved/forwarded by Receptionist
+      if (user.role === "KITCHEN") {
+        orders = orders.filter((order: any) => {
+          if (order.status === "PENDING") {
+            return order.notes && order.notes.includes("[FORWARDED_TO_KITCHEN]");
+          }
+          return true;
+        });
+      }
+
       return NextResponse.json(orders);
     }
 

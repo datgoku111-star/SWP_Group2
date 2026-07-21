@@ -1,9 +1,10 @@
 "use client";
 
-import React, { FC, Fragment, useState, useEffect, Suspense } from "react";
+import React, { FC, Fragment, useState, useEffect, Suspense, useMemo } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/lib/auth-context";
+import { useCurrency } from "@/hooks/useCurrency";
 import CommentListing from "@/components/CommentListing";
 import FiveStartIconForRate from "@/components/FiveStartIconForRate";
 import StartRating from "@/components/StartRating";
@@ -17,15 +18,20 @@ import Input from "@/shared/Input";
 import LikeSaveBtns from "@/components/LikeSaveBtns";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Amenities_demos, PHOTOS } from "./constant";
 import StayDatesRangeInput from "./StayDatesRangeInput";
 import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
+import { supabaseBrowser } from "@/lib/supabase";
+import { GuestsObject } from "../../(client-components)/type";
 
 export interface ListingStayDetailPageProps {}
 
 const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
+  const { formatPrice } = useCurrency();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const titleParam = searchParams.get("title") || "Beach House in Collingwood";
   const priceParam = searchParams.get("price") || "119";
@@ -35,8 +41,138 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const bedsParam = searchParams.get("beds") || "6";
   const galleryParam = searchParams.get("gallery")?.split(",") || PHOTOS;
 
-  const [startDate, setStartDate] = useState<Date | null>(new Date("2023/02/06"));
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
+  const [guests, setGuests] = useState<GuestsObject>({
+    guestAdults: 2,
+    guestChildren: 1,
+    guestInfants: 1,
+  });
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>("");
+  const [hotelRoomData, setHotelRoomData] = useState<any>(null);
+  const [occupancyData, setOccupancyData] = useState<any[]>([]);
+  const [liveRoom, setLiveRoom] = useState<any>(null);
+
+  // 1. Fetch static hotel product data (available_rooms capacity) from DB
+  useEffect(() => {
+    const fetchHotelRoom = async () => {
+      try {
+        const { data, error } = await supabaseBrowser
+          .from("hotel_rooms")
+          .select("*")
+          .eq("title", titleParam)
+          .single();
+        if (data) {
+          setHotelRoomData(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch hotel room info:", err);
+      }
+    };
+    fetchHotelRoom();
+  }, [titleParam]);
+
+  // 2. Fetch occupancy calendar for all rooms
+  const fetchOccupancyData = async () => {
+    try {
+      const res = await fetch("/api/rooms/occupancy");
+      if (res.ok) {
+        const data = await res.json();
+        setOccupancyData(data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch room occupancy:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOccupancyData();
+  }, []);
+
+  // 2.5 Fetch specific live room info matching the title
+  useEffect(() => {
+    const fetchLiveRoom = async () => {
+      try {
+        const res = await fetch("/api/rooms?all=true");
+        if (res.ok) {
+          const rooms = await res.json();
+          const getRoomNumberByTitle = (title: string): string => {
+            const t = title.toLowerCase();
+            if (t.includes("cedars")) return "101";
+            if (t.includes("ship & castle") || t.includes("ship and castle")) return "102";
+            if (t.includes("bell")) return "103";
+            if (t.includes("windmill")) return "201";
+            if (t.includes("holiday inn")) return "202";
+            if (t.includes("half moon")) return "203";
+            if (t.includes("white horse")) return "301";
+            if (t.includes("unicorn")) return "302";
+            return "101";
+          };
+          const num = getRoomNumberByTitle(titleParam);
+          const found = (rooms || []).find((r: any) => r.room_number === num);
+          if (found) {
+            setLiveRoom(found);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load live room info for detail page:", err);
+      }
+    };
+    fetchLiveRoom();
+  }, [titleParam]);
+
+  // 3. Check live rooms available for selected dates
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+    const checkInStr = startDate.toISOString().split("T")[0];
+    const checkOutStr = endDate.toISOString().split("T")[0];
+
+    const checkAvailability = async () => {
+      setCheckingAvailability(true);
+      try {
+        const res = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
+        if (res.ok) {
+          const data = await res.json();
+          
+          const getRoomTypeNameFromTitle = (title: string): string => {
+            const t = title.toLowerCase();
+            if (t.includes("suite")) return "Suite";
+            if (t.includes("deluxe")) return "Deluxe";
+            if (t.includes("family")) return "Family";
+            return "Standard";
+          };
+
+          const targetCategory = getRoomTypeNameFromTitle(titleParam);
+          const filtered = (data || []).filter((r: any) => 
+            r.room_type?.name?.toLowerCase() === targetCategory.toLowerCase()
+          );
+          
+          const roomsToUse = filtered.length > 0 ? filtered : (data || []);
+          setAvailableRooms(roomsToUse);
+
+          if (roomsToUse && roomsToUse.length > 0) {
+            // Keep selected room if it is still available, otherwise default to first available
+            setSelectedRoomId((prevId) => {
+              const stillAvailable = roomsToUse.some((r: any) => r.id === prevId);
+              return stillAvailable ? prevId : roomsToUse[0].id;
+            });
+          } else {
+            setSelectedRoomId("");
+          }
+        }
+        // Refresh occupancy calendar too
+        fetchOccupancyData();
+      } catch (err) {
+        console.error("Failed to check room availability:", err);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    };
+
+    checkAvailability();
+  }, [startDate, endDate]);
 
   let [isOpenModalAmenities, setIsOpenModalAmenities] = useState(false);
 
@@ -48,11 +184,15 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const [commentInput, setCommentInput] = useState("");
   const [ratingInput, setRatingInput] = useState(5);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [hotelLocation, setHotelLocation] = useState<string>("");
+  const [hotelMapUrl, setHotelMapUrl] = useState<string>("");
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const res = await fetch(`/api/feedbacks?title=${encodeURIComponent(titleParam)}`);
+        const res = await fetch(
+          `/api/feedbacks?title=${encodeURIComponent(titleParam)}`,
+        );
         if (res.ok) {
           const data = await res.json();
           setFeedbacks(data);
@@ -64,13 +204,63 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     fetchFeedbacks();
   }, [titleParam]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchHotelLocation = async () => {
+      try {
+        let query = supabaseBrowser.from("hotel_rooms").select("title, location, google_map_url");
+
+        if (titleParam) {
+          query = query.ilike("title", `%${titleParam}%`);
+        } else if (addressParam) {
+          query = query.ilike("location", `%${addressParam}%`);
+        }
+
+        const { data, error } = await query.limit(1);
+
+        if (error) throw error;
+
+        if (!isMounted || !data?.[0]) return;
+
+        const matchedHotel = data[0] as { title?: string; location?: string; google_map_url?: string | null };
+        const nextLocation = matchedHotel.location || matchedHotel.title || "";
+        const nextMapUrl = matchedHotel.google_map_url || "";
+
+        setHotelLocation(nextLocation);
+        setHotelMapUrl(nextMapUrl);
+      } catch (err) {
+        console.warn("Could not load hotel location from Supabase, using fallback values:", err);
+      }
+    };
+
+    fetchHotelLocation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [titleParam, addressParam]);
+
+  const displayAddress = useMemo(() => {
+    return hotelLocation || addressParam || "Tokyo, Japan";
+  }, [hotelLocation, addressParam]);
+
+  const mapQuery = useMemo(() => {
+    const rawQuery = hotelMapUrl || displayAddress || `${titleParam} ${addressParam}`;
+    return rawQuery.trim() || "Tokyo, Japan";
+  }, [hotelMapUrl, displayAddress, titleParam, addressParam]);
+
+  const mapEmbedUrl = useMemo(() => {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+  }, [mapQuery]);
+
   const handleSubmitFeedback = async () => {
     if (!user) {
-      alert("Vui lòng đăng nhập để gửi nhận xét!");
+      alert(t("listingDetailLoginToComment"));
       return;
     }
     if (!commentInput.trim()) {
-      alert("Vui lòng nhập nội dung nhận xét!");
+      alert(t("listingDetailCommentRequired"));
       return;
     }
 
@@ -88,14 +278,14 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || "Gửi nhận xét thất bại.");
+        throw new Error(errData.error || t("listingDetailCommentSubmitError"));
       }
 
       const newFeedback = await res.json();
       setFeedbacks((prev) => [newFeedback, ...prev]);
       setCommentInput("");
     } catch (err: any) {
-      alert(err.message || "Đã xảy ra lỗi khi gửi nhận xét.");
+      alert(err.message || t("listingDetailCommentGeneralError"));
     } finally {
       setSubmitLoading(false);
     }
@@ -108,7 +298,6 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   function openModalAmenities() {
     setIsOpenModalAmenities(true);
   }
-
 
   const handleOpenModalImageGallery = () => {
     router.push(`${thisPathname}/?modal=PHOTO_TOUR_SCROLLABLE` as Route);
@@ -134,7 +323,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           <span>·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
-            <span className="ml-1"> {addressParam}</span>
+            <span className="ml-1"> {displayAddress}</span>
           </span>
         </div>
 
@@ -142,7 +331,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         <div className="flex items-center">
           <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
           <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
-            Hosted by{" "}
+            {t("listingDetailHostedBy")}{" "}
             <span className="text-neutral-900 dark:text-neutral-200 font-medium">
               Kevin Francis
             </span>
@@ -154,7 +343,6 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
         {/* 6 */}
         <div className="flex items-center justify-between xl:justify-start space-x-8 xl:space-x-12 text-sm text-neutral-700 dark:text-neutral-300">
-
           <div className="flex items-center space-x-3">
             <i className=" las la-door-closed text-2xl"></i>
             <span className=" ">
@@ -165,13 +353,19 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           <div className="flex items-center space-x-3">
             <i className=" las la-bath text-2xl"></i>
             <span className=" ">
-              3 <span className="hidden sm:inline-block">baths</span>
+              3{" "}
+              <span className="hidden sm:inline-block">
+                {t("listingDetailBaths")}
+              </span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <i className=" las la-door-open text-2xl"></i>
             <span className=" ">
-              2 <span className="hidden sm:inline-block">bedrooms</span>
+              2{" "}
+              <span className="hidden sm:inline-block">
+                {t("listingDetailBedrooms")}
+              </span>
             </span>
           </div>
         </div>
@@ -181,9 +375,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
   const getStayDescription = () => {
     const p1 = `Welcome to ${titleParam}, a delightful ${categoryParam.toLowerCase()} nestled in ${addressParam}. Offering a harmonious blend of modern convenience and local charm, this property provides the perfect escape. Experience excellent amenities and warm hospitality starting from $${priceParam} per night.`;
-    
+
     const p2 = `This well-appointed space accommodates guests comfortably with its ${bedsParam} beds, making it ideal for both short getaways and extended stays. Each unit is equipped with a private bathroom, clean linens, a hairdryer, and complimentary toiletries to ensure a seamless and restful stay.`;
-    
+
     const p3 = `Guests at ${titleParam} can enjoy access to unique property highlights such as a scenic terrace, a cozy shared lounge, and a tranquil garden area. Conveniently located near local attractions, it serves as the perfect base for exploring the rich culture and activities nearby.`;
 
     return { p1, p2, p3 };
@@ -193,7 +387,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     const { p1, p2, p3 } = getStayDescription();
     return (
       <div className="listingSection__wrap">
-        <h2 className="text-2xl font-semibold">Stay information</h2>
+        <h2 className="text-2xl font-semibold">
+          {t("listingDetailStayInformation")}
+        </h2>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
         <div className="text-neutral-6000 dark:text-neutral-300 space-y-4">
           <p>{p1}</p>
@@ -208,9 +404,11 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     return (
       <div className="listingSection__wrap">
         <div>
-          <h2 className="text-2xl font-semibold">Amenities </h2>
+          <h2 className="text-2xl font-semibold">
+            {t("listingDetailAmenities")}
+          </h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            {` About the property's amenities and services`}
+            {t("listingDetailAmenitiesSubtitle")}
           </span>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
@@ -228,7 +426,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         <div className="w-14 border-b border-neutral-200"></div>
         <div>
           <ButtonSecondary onClick={openModalAmenities}>
-            View more 20 amenities
+            {t("listingDetailViewMoreAmenities")}
           </ButtonSecondary>
         </div>
         {renderMotalAmenities()}
@@ -352,6 +550,103 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     );
   };
 
+  const renderSectionOccupancySchedule = () => {
+    return (
+      <div className="listingSection__wrap !space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold">Lịch hoạt động & Trạng thái phòng trống</h2>
+          <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
+            Xem chi tiết danh sách phòng và các khoảng thời gian đã được đặt để dễ dàng lên kế hoạch
+          </span>
+        </div>
+        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
+        
+        <div className="overflow-x-auto rounded-2xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm">
+          <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800 text-left text-sm text-neutral-500 dark:text-neutral-400">
+            <thead className="bg-neutral-50 dark:bg-neutral-800/80 text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+              <tr>
+                <th scope="col" className="px-6 py-3.5">Mã phòng / Tầng</th>
+                <th scope="col" className="px-6 py-3.5">Loại phòng</th>
+                <th scope="col" className="px-6 py-3.5">Hôm nay</th>
+                <th scope="col" className="px-6 py-3.5">Lịch đã đặt sắp tới</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 bg-white dark:bg-neutral-900/40">
+              {occupancyData.length > 0 ? (
+                occupancyData.map((room) => {
+                  const todayStr = new Date().toISOString().split("T")[0];
+                  const isOccupiedToday = room.bookedRanges?.some((b: any) => {
+                    return todayStr >= b.checkIn && todayStr < b.checkOut;
+                  });
+
+                  return (
+                    <tr key={room.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/20 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
+                        Phòng {room.room_number} <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-1 font-normal">(Tầng {room.floor})</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
+                          {room.room_type || "Standard"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {isOccupiedToday ? (
+                          <span className="inline-flex items-center text-xs font-semibold text-red-600 dark:text-red-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400 mr-1.5 animate-pulse"></span>
+                            Đang bận
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center text-xs font-semibold text-green-600 dark:text-green-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 mr-1.5"></span>
+                            Trống
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {room.bookedRanges && room.bookedRanges.length > 0 ? (
+                            room.bookedRanges.map((b: any, idx: number) => {
+                              const checkInFormatted = new Date(b.checkIn).toLocaleDateString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit"
+                              });
+                              const checkOutFormatted = new Date(b.checkOut).toLocaleDateString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit"
+                              });
+                              return (
+                                <span 
+                                  key={idx} 
+                                  className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-mono font-medium bg-red-50 text-red-700 border border-red-100 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30"
+                                >
+                                  {checkInFormatted} - {checkOutFormatted}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <span className="text-xs text-neutral-400 dark:text-neutral-500 italic">
+                              ✓ Trống lịch (Không có booking sắp tới)
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center text-sm text-neutral-400 dark:text-neutral-500">
+                    Đang tải lịch hoạt động phòng...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   const renderSection5 = () => {
     return (
       <div className="listingSection__wrap">
@@ -455,7 +750,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     return (
       <div className="listingSection__wrap">
         {/* HEADING */}
-        <h2 className="text-2xl font-semibold">Reviews ({feedbacks.length} reviews)</h2>
+        <h2 className="text-2xl font-semibold">
+          Reviews ({feedbacks.length} reviews)
+        </h2>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
         {/* Content */}
@@ -471,7 +768,11 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               fontClass=""
               sizeClass="h-16 px-4 py-3"
               rounded="rounded-3xl"
-              placeholder={user ? "Share your thoughts ..." : "Đăng nhập để viết đánh giá..."}
+              placeholder={
+                user
+                  ? "Share your thoughts ..."
+                  : "Đăng nhập để viết đánh giá..."
+              }
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
               disabled={!user || submitLoading}
@@ -495,12 +796,15 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                 key={item.id}
                 className="py-8"
                 data={{
-                  name: item.user?.full_name || item.user?.email?.split("@")[0] || "Người dùng",
+                  name:
+                    item.user?.full_name ||
+                    item.user?.email?.split("@")[0] ||
+                    "Người dùng",
                   avatar: "",
                   date: new Date(item.created_at).toLocaleDateString("vi-VN", {
                     day: "numeric",
                     month: "long",
-                    year: "numeric"
+                    year: "numeric",
                   }),
                   comment: item.comment,
                   starPoint: item.rating,
@@ -508,7 +812,10 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               />
             ))
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của bạn!</p>
+            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">
+              Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của
+              bạn!
+            </p>
           )}
         </div>
       </div>
@@ -522,7 +829,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         <div>
           <h2 className="text-2xl font-semibold">Location</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            San Diego, CA, United States of America (SAN-San Diego Intl.)
+            {displayAddress}
           </span>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
@@ -536,7 +843,8 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               loading="lazy"
               allowFullScreen
               referrerPolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY&q=Eiffel+Tower,Paris+France"
+              src={mapEmbedUrl}
+              title={`Map for ${titleParam}`}
             ></iframe>
           </div>
         </div>
@@ -600,7 +908,15 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
   const renderSidebar = () => {
     const priceVal = Number(priceParam) || 119;
-    const nights = startDate && endDate ? Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))) : 1;
+    const nights =
+      startDate && endDate
+        ? Math.max(
+            1,
+            Math.ceil(
+              (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+            ),
+          )
+        : 1;
     const subtotal = priceVal * nights;
     const total = subtotal;
 
@@ -609,7 +925,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
-            ${priceVal}
+            {formatPrice(priceVal, "USD")}
             <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
               /night
             </span>
@@ -629,28 +945,106 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
             }}
           />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <GuestsInput className="flex-1" />
+          <GuestsInput className="flex-1" defaultValue={guests} onChange={(val) => setGuests(val)} />
         </form>
 
         {/* SUM */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>${priceVal} x {nights} night{nights > 1 ? "s" : ""}</span>
-            <span>${subtotal}</span>
+            <span>{formatPrice(priceVal, "USD")} x {nights} night{nights > 1 ? "s" : ""}</span>
+            <span>{formatPrice(subtotal, "USD")}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>Service charge</span>
-            <span>$0</span>
+            <span>{formatPrice(0, "USD")}</span>
           </div>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>${total}</span>
+            <span>{formatPrice(total, "USD")}</span>
           </div>
         </div>
 
+        {/* AVAILABILITY INFO */}
+        <div className="bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-2xl border border-neutral-100 dark:border-neutral-800 space-y-2.5 text-sm">
+          {checkingAvailability ? (
+            <div className="flex items-center justify-center space-x-2 py-1 text-neutral-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-6000 border-t-transparent"></div>
+              <span>Đang kiểm tra phòng trống...</span>
+            </div>
+          ) : (() => {
+            const maxAvailable = hotelRoomData ? Math.min(hotelRoomData.available_rooms, availableRooms.length) : availableRooms.length;
+            if (maxAvailable > 0) {
+              return (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-green-600 font-semibold">
+                    <span>✓ Còn phòng trống</span>
+                    <span className="bg-green-50 dark:bg-green-900/20 text-xs px-2.5 py-1 rounded-lg">
+                      {maxAvailable} phòng sẵn sàng
+                    </span>
+                  </div>
+                  
+                  {liveRoom && (
+                    <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                      <div className="flex justify-between">
+                        <span>Mã số phòng:</span>
+                        <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                          Phòng {liveRoom.room_number} (Tầng {liveRoom.floor})
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Trạng thái phòng hiện tại:</span>
+                        {(() => {
+                          const labelMap: Record<string, string> = {
+                            AVAILABLE: "Trống (Sẵn sàng)",
+                            IN_USE: "Đang sử dụng",
+                            DIRTY: "Chưa dọn",
+                            CLEANING: "Đang dọn",
+                            MAINTENANCE: "Bảo trì",
+                          };
+                          const classMap: Record<string, string> = {
+                            AVAILABLE: "text-green-600 font-bold",
+                            IN_USE: "text-blue-600 font-bold",
+                            DIRTY: "text-red-600 font-bold",
+                            CLEANING: "text-purple-600 font-bold",
+                            MAINTENANCE: "text-amber-600 font-bold",
+                          };
+                          return (
+                            <span className={classMap[liveRoom.status] || "font-bold"}>
+                              {labelMap[liveRoom.status] || liveRoom.status}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            } else {
+              return (
+                <div className="text-red-600 font-semibold py-1">
+                  ⚠️ Không còn phòng trống trong thời gian đã chọn!
+                </div>
+              );
+            }
+          })()}
+        </div>
+
         {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&beds=${bedsParam}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}` as any}>Reserve</ButtonPrimary>
+        {(() => {
+          const maxAvailable = hotelRoomData ? Math.min(hotelRoomData.available_rooms, availableRooms.length) : availableRooms.length;
+          return maxAvailable > 0 ? (
+            <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&beds=${bedsParam}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}&adults=${guests.guestAdults}&children=${guests.guestChildren}&infants=${guests.guestInfants}&roomId=${selectedRoomId}` as any}>Reserve</ButtonPrimary>
+          ) : (
+            <button 
+              type="button" 
+              disabled 
+              className="w-full py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 rounded-3xl font-semibold cursor-not-allowed text-center text-sm"
+            >
+              Không còn phòng trống
+            </button>
+          );
+        })()}
       </div>
     );
   };
@@ -718,6 +1112,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           {renderSection2()}
           {renderSection3()}
           {renderSection4()}
+          {renderSectionOccupancySchedule()}
           <SectionDateRange />
           {renderSection5()}
           {renderSection6()}

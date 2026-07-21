@@ -18,9 +18,7 @@ export default function TemplatesDropdown() {
           target={item.targetBlank ? "_blank" : undefined}
           rel="noopener noreferrer"
           className="font-normal text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-white"
-          href={{
-            pathname: item.href || undefined,
-          }}
+          href={item.href || ""}
           onClick={close}
         >
           {item.name}

@@ -40,6 +40,13 @@ const solutions: SolutionItem[] = [
     href: "/listing-experiences",
     icon: IconFour,
   },
+  {
+    name: "Food & Services",
+    description: "Order food & drinks directly",    
+    href: "/services",
+    icon: IconFive, 
+  },
+  //tay them
 ];
 
 export default function DropdownTravelers() {
@@ -347,3 +354,22 @@ function IconOne() {
     </svg>
   );
 }
+function IconFive() {
+  return (
+    <svg
+      className="w-7 h-7"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"   
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+{/* tay them */}

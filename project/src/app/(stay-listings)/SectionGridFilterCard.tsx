@@ -1,6 +1,7 @@
 "use client";
 
 import React, { FC, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { DEMO_STAY_LISTINGS } from "@/data/listings";
 import { StayDataType } from "@/data/types";
 import Pagination from "@/shared/Pagination";
@@ -20,6 +21,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
   className = "",
   data = DEMO_STAY_LISTINGS,
 }) => {
+  const { t } = useTranslation();
   const [stayData, setStayData] = useState<StayDataType[]>(data);
   const [typeOfPlace, setTypeOfPlace] = useState<string[]>([]);
   const [rangePrices, setRangePrices] = useState<number[]>([0, 1000]);
@@ -115,7 +117,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
 
   const filteredData = stayData.filter((stay) => {
     // 1. Price
-    const priceNum = Number(stay.price.replace('$', '').trim());
+    const priceNum = Number(stay.price.replace("$", "").trim());
     if (priceNum < rangePrices[0] || priceNum > rangePrices[1]) {
       return false;
     }
@@ -161,7 +163,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
       </div>
       {filteredData.length === 0 ? (
         <div className="text-center py-20 text-neutral-500">
-          No stays match your selected filters. Please try resetting your filters.
+          {t("listingNoStaysMatch")}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

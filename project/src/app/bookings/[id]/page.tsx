@@ -15,6 +15,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"CARD" | "CASH" | "BANK_TRANSFER">("CARD");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -49,7 +50,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          payment_method: "CARD", // Hardcoded for demo
+          payment_method: selectedPaymentMethod,
           amount: invoice.balance_due,
           transaction_ref: "TXN-" + Math.random().toString(36).substring(7).toUpperCase()
         })
@@ -155,6 +156,45 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   ))}
                 </React.Fragment>
               ))}
+
+              {/* Incident Charges */}
+              {invoice.incident_charges && invoice.incident_charges.incidents.length > 0 && (
+                <React.Fragment>
+                  {invoice.incident_charges.incidents.map((incident, i) => (
+                    <tr key={`incident-${i}`} className="text-red-600 dark:text-red-400">
+                      <td className="py-4 px-4">
+                        <div className="font-medium">Sự cố / Phạt đền: {incident.description}</div>
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400">Mã: {incident.incident_code} | Trạng thái: {incident.status}</div>
+                      </td>
+                      <td className="py-4 px-4 text-right font-medium">
+                        {formatMoney(Number(incident.approved_charge || incident.estimated_charge || 0))}
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              )}
+
+              {/* Auxiliary Charges: Experiences */}
+              {invoice.experience_charges && invoice.experience_charges.map((exp, i) => (
+                <tr key={`exp-${i}`} className="border-b border-neutral-100 dark:border-neutral-800">
+                  <td className="py-4 px-4">
+                    <div className="font-medium">Experience / Tour Booking</div>
+                    <div className="text-sm text-neutral-500">{exp.guests} Guests</div>
+                  </td>
+                  <td className="py-4 px-4 text-right font-medium">{formatMoney(exp.total)}</td>
+                </tr>
+              ))}
+
+              {/* Auxiliary Charges: Cars */}
+              {invoice.car_charges && invoice.car_charges.map((car, i) => (
+                <tr key={`car-${i}`} className="border-b border-neutral-100 dark:border-neutral-800">
+                  <td className="py-4 px-4">
+                    <div className="font-medium">Car Rental</div>
+                    <div className="text-sm text-neutral-500">{car.car_type}</div>
+                  </td>
+                  <td className="py-4 px-4 text-right font-medium">{formatMoney(car.total)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
 
@@ -194,15 +234,49 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
         {/* Checkout Action (Staff Only) */}
         {canCheckout && (
-          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 rounded-3xl flex justify-between items-center print:hidden">
-            <div>
-              <h3 className="font-semibold text-lg">Ready for Checkout?</h3>
-              <p className="text-neutral-500 text-sm">Process payment and complete checkout.</p>
+          <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 sm:p-8 rounded-3xl space-y-6 print:hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-700">
+              <div>
+                <h3 className="font-extrabold text-xl text-neutral-900 dark:text-white">Front Desk Payment Settlement & Checkout</h3>
+                <p className="text-neutral-500 text-sm mt-0.5">Select guest payment method and confirm check-out to release room to housekeeping.</p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-neutral-400 block uppercase font-bold">Balance Due</span>
+                <span className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{formatMoney(invoice.balance_due)}</span>
+              </div>
             </div>
-            <ButtonPrimary onClick={handleCheckout} loading={checkoutLoading} disabled={checkoutLoading || invoice.balance_due < 0}>
-              <CreditCard className="w-5 h-5 mr-2" /> 
-              Pay {formatMoney(invoice.balance_due)} & Checkout
-            </ButtonPrimary>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">Choose Payment Method</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(["CARD", "CASH", "BANK_TRANSFER"] as const).map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => setSelectedPaymentMethod(method)}
+                    className={`py-3 px-4 rounded-2xl border text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                      selectedPaymentMethod === method
+                        ? "border-amber-600 bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 ring-2 ring-amber-500/30"
+                        : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    <span>{method === "CARD" ? "💳 POS / Credit Card" : method === "CASH" ? "💵 Cash at Counter" : "🏦 Bank Transfer / QR"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <ButtonPrimary
+                onClick={handleCheckout}
+                loading={checkoutLoading}
+                disabled={checkoutLoading || invoice.balance_due < 0}
+                className="w-full sm:w-auto px-8 h-12 text-base font-bold bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-600/25"
+              >
+                <CreditCard className="w-5 h-5 mr-2" />
+                <span>Confirm Check-Out ({selectedPaymentMethod})</span>
+              </ButtonPrimary>
+            </div>
           </div>
         )}
       </div>

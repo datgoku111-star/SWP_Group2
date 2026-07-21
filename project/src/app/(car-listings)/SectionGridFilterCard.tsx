@@ -15,13 +15,7 @@ export interface SectionGridFilterCardProps {
 
 const DEMO_DATA: CarDataType[] = DEMO_CAR_LISTINGS;
 
-const carTypes = ["Small", "Medium", "Large", "SUV", "Van", "Luxury"];
-const getCarType = (listingCategoryId: number | string): string => {
-  const idNum = typeof listingCategoryId === "number" 
-    ? listingCategoryId 
-    : parseInt(String(listingCategoryId).replace(/[^0-9]/g, "")) || 0;
-  return carTypes[idNum % carTypes.length];
-};
+// carTypes and getCarType removed because we now use data.type directly
 
 const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
   className = "",
@@ -39,8 +33,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
 
     // 2. Car Type filter
     if (typeOfCarSelected.length > 0) {
-      const catId = car.listingCategory?.id || 0;
-      const carType = getCarType(catId);
+      const carType = car.type || "";
       if (!typeOfCarSelected.includes(carType)) {
         return false;
       }

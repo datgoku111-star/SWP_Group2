@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { FC, Fragment, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // <--- NavItemType --->
 export interface MegamenuItem {
@@ -34,6 +35,7 @@ type NavigationItemWithRouterProps = NavigationItemProps;
 
 const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
   const [menuCurrentHovers, setMenuCurrentHovers] = useState<string[]>([]);
+  const { t } = useTranslation();
 
   // CLOSE ALL MENU OPENING WHEN CHANGE HISTORY
   const locationPathName = usePathname();
@@ -99,7 +101,7 @@ const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
                           </div>
                         </div>
                         <p className="font-medium text-neutral-900 dark:text-neutral-200 py-1 px-2 my-2">
-                          {item.title}
+                          {t(item.title)}
                         </p>
                         <ul className="grid space-y-1">
                           {item.items.map(renderMegaMenuNavlink)}
@@ -124,7 +126,7 @@ const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
           className="inline-flex items-center py-1 px-2 rounded hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 font-normal text-neutral-6000 dark:text-neutral-300"
           href={item.href || ""}
         >
-          {item.name}
+          {t(item.name)}
         </Link>
       </li>
     );
@@ -239,7 +241,7 @@ const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
         className="flex items-center font-normal text-neutral-6000 dark:text-neutral-300 py-2 px-4 rounded-md hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 "
         href={item.href || ""}
       >
-        {item.name}
+        {t(item.name)}
         {item.type && (
           <ChevronDownIcon
             className="ml-2 h-4 w-4 text-neutral-500"
@@ -258,7 +260,7 @@ const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
         className="inline-flex items-center text-sm xl:text-base font-normal text-neutral-700 dark:text-neutral-300 py-2 px-4 xl:px-5 rounded-full hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
         href={item.href || "/"}
       >
-        {item.name}
+        {t(item.name)}
         {item.type && (
           <ChevronDownIcon
             className="ml-1 -mr-1 h-4 w-4 text-neutral-400"

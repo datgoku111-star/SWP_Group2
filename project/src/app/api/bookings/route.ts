@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
-import { createBooking, getAllBookings } from "@/lib/db/bookings";
+import { createBooking, getAllBookings, getBookingsByUser } from "@/lib/db/bookings";
 import { getCurrentUser } from "@/lib/auth-server";
 
 
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user || !["ADMIN", "RECEPTIONIST"].includes(user.role)) {
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (user.role === "CUSTOMER") {
+      const bookings = await getBookingsByUser(user.sub);
+      return NextResponse.json(bookings);
+    }
+
+    if (!["ADMIN", "RECEPTIONIST"].includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -18,6 +27,8 @@ export async function GET() {
   }
 }
 
+import { sendReceptionistInvoiceEmail } from "@/lib/mail";
+
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
@@ -26,6 +37,12 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+
+    try {
+      const fs = require("fs");
+      const logMsg = `[${new Date().toISOString()}] User: ${JSON.stringify(user)}\nData: ${JSON.stringify(data)}\n\n`;
+      fs.appendFileSync("D:/Pho/Pho/project/bookings_log.txt", logMsg);
+    } catch (e) {}
     
     // Basic validation
     if (!data.room_id || !data.check_in_date || !data.check_out_date) {
@@ -42,6 +59,14 @@ export async function POST(request: Request) {
       special_requests: data.special_requests,
     });
 
+    // Notify receptionist asynchronously
+    sendReceptionistInvoiceEmail(
+      booking.id, 
+      `Room ID: ${booking.room_id}`, 
+      booking.total_amount, 
+      booking.total_amount
+    ).catch(console.error);
+
     return NextResponse.json(booking, { status: 201 });
   } catch (error: any) {
     console.error("POST booking error:", error);
@@ -49,6 +74,6 @@ export async function POST(request: Request) {
     if (error.message && error.message.includes("no longer available")) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }

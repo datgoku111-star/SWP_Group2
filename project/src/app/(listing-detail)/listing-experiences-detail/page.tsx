@@ -3,6 +3,7 @@
 import React, { FC, useState, useEffect, Suspense } from "react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/lib/auth-context";
+import { useCurrency } from "@/hooks/useCurrency";
 import CommentListing from "@/components/CommentListing";
 import FiveStartIconForRate from "@/components/FiveStartIconForRate";
 import Avatar from "@/shared/Avatar";
@@ -21,11 +22,14 @@ import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
 
+import { GuestsObject } from "../../(client-components)/type";
+
 export interface ListingExperiencesDetailPageProps {}
 
 const ListingExperiencesDetailPage: FC<
   ListingExperiencesDetailPageProps
 > = ({}) => {
+  const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
   const titleParam = searchParams.get("title") || "Trang An Boat Tour & Mua Cave";
   const priceParam = searchParams.get("price") || "199";
@@ -33,8 +37,13 @@ const ListingExperiencesDetailPage: FC<
   const categoryParam = searchParams.get("category") || "Specific Tour";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
 
-  const [startDate, setStartDate] = useState<Date | null>(new Date("2023/02/06"));
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
+  const [guests, setGuests] = useState<GuestsObject>({
+    guestAdults: 2,
+    guestChildren: 1,
+    guestInfants: 1,
+  });
 
   const thisPathname = usePathname();
   const router = useRouter();
@@ -547,7 +556,7 @@ const ListingExperiencesDetailPage: FC<
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
-            ${priceVal}
+            {formatPrice(priceVal, "USD")}
             <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
               /person
             </span>
@@ -566,29 +575,28 @@ const ListingExperiencesDetailPage: FC<
               setEndDate(dates[1]);
             }}
           />
-          <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <GuestsInput className="flex-1" />
+          <GuestsInput className="flex-1" defaultValue={guests} onChange={(val) => setGuests(val)} />
         </form>
 
         {/* SUM */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>${priceVal} x {nights} day{nights > 1 ? "s" : ""}</span>
-            <span>${subtotal}</span>
+            <span>{formatPrice(priceVal, "USD")} x {nights} day{nights > 1 ? "s" : ""}</span>
+            <span>{formatPrice(subtotal, "USD")}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>Service charge</span>
-            <span>$0</span>
+            <span>{formatPrice(0, "USD")}</span>
           </div>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>${total}</span>
+            <span>{formatPrice(total, "USD")}</span>
           </div>
         </div>
 
         {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}` as any}>Reserve</ButtonPrimary>
+        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}&adults=${guests.guestAdults}&children=${guests.guestChildren}&infants=${guests.guestInfants}` as any}>Reserve</ButtonPrimary>
       </div>
     );
   };

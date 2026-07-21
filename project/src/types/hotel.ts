@@ -11,7 +11,7 @@ export type UserRole =
   | "KITCHEN"
   | "CUSTOMER";
 
-export type RoomStatus = "AVAILABLE" | "IN_USE" | "DIRTY" | "MAINTENANCE";
+export type RoomStatus = "AVAILABLE" | "IN_USE" | "DIRTY" | "CLEANING" | "MAINTENANCE";
 
 export type BookingStatus =
   | "PENDING"
@@ -59,8 +59,8 @@ export interface User {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  loyalty_points: number;  
 }
-
 /** User without password hash — safe for client */
 export type SafeUser = Omit<User, "password_hash">;
 
@@ -95,6 +95,7 @@ export interface Room {
   room_type_id: string;
   status: RoomStatus;
   notes?: string;
+  status_updated_at?: string;
   created_at: string;
   updated_at: string;
   // Joined
@@ -246,12 +247,54 @@ export interface CreateServiceOrderRequest {
   notes?: string;
 }
 
+export interface ExperienceBooking {
+  id: string;
+  booking_id: string;
+  experience_id: string;
+  guests: number;
+  total_price: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  booking?: Booking;
+}
+
+export interface CarBooking {
+  id: string;
+  booking_id: string;
+  car_type: string;
+  pickup_date: string;
+  dropoff_date: string;
+  total_price: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  booking?: Booking;
+}
+
 export interface InvoiceData {
   booking: Booking;
   room_charges: number;
   service_charges: {
     order_id: string;
     items: ServiceOrderItem[];
+    total: number;
+  }[];
+  incident_charges?: {
+    incidents: any[];
+    total_fine: number;
+  };
+  experience_charges?: {
+    id: string;
+    experience_id: string;
+    guests: number;
+    total: number;
+  }[];
+  car_charges?: {
+    id: string;
+    car_type: string;
     total: number;
   }[];
   subtotal: number;
@@ -280,4 +323,24 @@ export interface OcrResult {
   nationality?: string;
   address?: string;
   confidence: number;
+}
+
+ 
+export type IncidentType = "LOST_ITEM" | "DAMAGE";
+export type IncidentStatus = "PENDING" | "RESOLVED";
+
+export interface RoomIncident {
+  id: string;
+  room_id: string;
+  booking_id: string;
+  reporter_id: string | null;
+  type: IncidentType;
+  description: string;
+  fine_amount: number;
+  status: IncidentStatus;
+  created_at: string;
+  resolved_at: string | null;
+  updated_at: string;
+  room?: Room;
+  booking?: Booking;
 }

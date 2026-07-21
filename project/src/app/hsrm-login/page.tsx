@@ -38,7 +38,13 @@ export default function HSRMLoginPage() {
       }
 
       login(data.user);
-      router.push(callbackUrl as Route);
+      const targetUrl =
+        data.user.role === "ADMIN" ? "/admin/dashboard" :
+        data.user.role === "RECEPTIONIST" ? "/dashboard/receptionist" :
+        data.user.role === "HOUSEKEEPING" ? "/housekeeping" :
+        data.user.role === "KITCHEN" ? "/orders" :
+        callbackUrl;
+      router.push(targetUrl as Route);
     } catch (err: any) {
       setError(err.message);
     } finally {

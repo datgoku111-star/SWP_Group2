@@ -13,18 +13,29 @@ import {
   Users,
   LogOut, 
   Home,
-  Compass
+  Compass,
+  CreditCard,
+  UtensilsCrossed
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { logout } = useAuth();
 
+  const isCreateRoute = pathname?.startsWith("/admin/incidents/create") || pathname?.startsWith("/admin/lost-found/create");
+
+  if (isCreateRoute) {
+    return <div className="container py-12">{children}</div>;
+  }
+
   const menuItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Hotels & Rooms", href: "/admin/rooms", icon: BedDouble },
     { name: "Experiences", href: "/admin/experiences", icon: Compass },
     { name: "Bookings", href: "/admin/bookings", icon: CalendarCheck },
+    { name: "Payments", href: "/admin/payments", icon: CreditCard },
+    { name: "Service Orders (Food)", href: "/orders", icon: UtensilsCrossed },
+    { name: "Services Catalog", href: "/admin/services", icon: UtensilsCrossed },
     { name: "User Management", href: "/admin/users", icon: Users },
   ];
 

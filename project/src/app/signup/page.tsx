@@ -9,42 +9,44 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { Route } from "@/routers/types";
 
 const loginSocials = [
   {
-    name: "Continue with Facebook",
+    nameKey: "signupSocialFacebook",
     href: "#",
     icon: facebookSvg,
   },
   {
-    name: "Continue with Twitter",
+    nameKey: "signupSocialTwitter",
     href: "#",
     icon: twitterSvg,
   },
   {
-    name: "Continue with Google",
+    nameKey: "signupSocialGoogle",
     href: "#",
     icon: googleSvg,
   },
 ];
 
 const SignUpPageContent = () => {
+  const { t } = useTranslation();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  
+
   const callbackUrl = searchParams?.get("callbackUrl") || "/";
 
   // Redirect if already logged in
@@ -61,17 +63,17 @@ const SignUpPageContent = () => {
 
     // 1. Basic validation
     if (!email || !password || !confirmPassword || !fullName) {
-      setError("Please fill out all fields.");
+      setError(t("signupCompleteAllFields"));
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError(t("signupPasswordHint"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("signupPasswordsMismatch"));
       return;
     }
 
@@ -95,12 +97,12 @@ const SignUpPageContent = () => {
 
       // Check if user is auto-confirmed or requires email confirmation
       if (data.session) {
-        setMessage("Sign up successful! Redirecting...");
+        setMessage(t("signupSuccessRedirect"));
         setTimeout(() => {
           router.push(callbackUrl as Route);
         }, 1500);
       } else {
-        setMessage("Registration successful! Please check your email for the confirmation link.");
+        setMessage(t("signupConfirmationMessage"));
         // Clear form fields
         setFullName("");
         setEmail("");
@@ -109,7 +111,7 @@ const SignUpPageContent = () => {
       }
     } catch (err: any) {
       console.error("Sign up failed:", err);
-      setError(err.message || "An error occurred during registration.");
+      setError(err.message || t("signupRegistrationError"));
     } finally {
       setLoading(false);
     }
@@ -119,7 +121,7 @@ const SignUpPageContent = () => {
     <div className={`nc-PageSignUp`}>
       <div className="container mb-24 lg:mb-32">
         <h2 className="my-20 flex items-center text-3xl leading-[115%] md:text-5xl md:leading-[115%] font-semibold text-neutral-900 dark:text-neutral-100 justify-center">
-          Signup
+          {t("signUp")}
         </h2>
         <div className="max-w-md mx-auto space-y-6">
           <div className="grid gap-3">
@@ -132,10 +134,10 @@ const SignUpPageContent = () => {
                 <Image
                   className="flex-shrink-0"
                   src={item.icon}
-                  alt={item.name}
+                  alt={t(item.nameKey)}
                 />
                 <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
-                  {item.name}
+                  {t(item.nameKey)}
                 </h3>
               </a>
             ))}
@@ -143,7 +145,7 @@ const SignUpPageContent = () => {
           {/* OR */}
           <div className="relative text-center">
             <span className="relative z-10 inline-block px-4 font-medium text-sm bg-white dark:text-neutral-400 dark:bg-neutral-900">
-              OR
+              {t("loginOr")}
             </span>
             <div className="absolute left-0 w-full top-1/2 transform -translate-y-1/2 border border-neutral-100 dark:border-neutral-800"></div>
           </div>
@@ -159,14 +161,14 @@ const SignUpPageContent = () => {
                 {message}
               </div>
             )}
-            
+
             <label className="block">
               <span className="text-neutral-800 dark:text-neutral-200">
-                Full Name
+                {t("signupFullName")}
               </span>
               <Input
                 type="text"
-                placeholder="John Doe"
+                placeholder={t("signupFullNamePlaceholder")}
                 className="mt-1"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -176,11 +178,11 @@ const SignUpPageContent = () => {
 
             <label className="block">
               <span className="text-neutral-800 dark:text-neutral-200">
-                Email address
+                {t("signupEmailAddress")}
               </span>
               <Input
                 type="email"
-                placeholder="example@example.com"
+                placeholder={t("signupEmailPlaceholder")}
                 className="mt-1"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -190,7 +192,7 @@ const SignUpPageContent = () => {
 
             <label className="block">
               <span className="text-neutral-800 dark:text-neutral-200">
-                Password (at least 6 characters)
+                {t("signupPasswordLabel")}
               </span>
               <Input
                 type="password"
@@ -203,7 +205,7 @@ const SignUpPageContent = () => {
 
             <label className="block">
               <span className="text-neutral-800 dark:text-neutral-200">
-                Confirm Password
+                {t("signupConfirmPassword")}
               </span>
               <Input
                 type="password"
@@ -214,14 +216,16 @@ const SignUpPageContent = () => {
               />
             </label>
 
-            <ButtonPrimary type="submit" loading={loading} disabled={loading}>Continue</ButtonPrimary>
+            <ButtonPrimary type="submit" loading={loading} disabled={loading}>
+              {t("loginContinue")}
+            </ButtonPrimary>
           </form>
 
           {/* ==== */}
           <span className="block text-center text-neutral-700 dark:text-neutral-300">
-            Already have an account? {` `}
+            {t("signupAlreadyHaveAccount")} {` `}
             <Link href="/login" className="font-semibold underline">
-              Sign in
+              {t("signupSignIn")}
             </Link>
           </span>
         </div>
@@ -232,7 +236,13 @@ const SignUpPageContent = () => {
 
 export default function PageSignUp() {
   return (
-    <Suspense fallback={<div className="container py-20 text-center">Loading signup page...</div>}>
+    <Suspense
+      fallback={
+        <div className="container py-20 text-center">
+          Loading signup page...
+        </div>
+      }
+    >
       <SignUpPageContent />
     </Suspense>
   );

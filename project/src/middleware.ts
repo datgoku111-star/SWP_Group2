@@ -43,6 +43,26 @@ const templatePaths = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 0. Smart Role Redirect for staff accessing root or login pages while authenticated
+  const initialToken = request.cookies.get("auth_token")?.value;
+  if (initialToken && (pathname === "/" || pathname === "/login" || pathname === "/hsrm-login" || pathname === "/signup")) {
+    const payload = await verifyToken(initialToken);
+    if (payload && payload.role && payload.role !== "CUSTOMER") {
+      if (payload.role === "RECEPTIONIST") {
+        return NextResponse.redirect(new URL("/dashboard/receptionist", request.url));
+      }
+      if (payload.role === "ADMIN") {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      }
+      if (payload.role === "HOUSEKEEPING") {
+        return NextResponse.redirect(new URL("/housekeeping", request.url));
+      }
+      if (payload.role === "KITCHEN") {
+        return NextResponse.redirect(new URL("/orders", request.url));
+      }
+    }
+  }
+
   // 1. Allow public paths and template paths
   if (
     publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
@@ -81,7 +101,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // 4. Role-based access control
-  if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
+  if (
+    pathname.startsWith("/admin") &&
+    payload.role !== "ADMIN" &&
+    !pathname.startsWith("/admin/incidents/create") &&
+    !pathname.startsWith("/admin/lost-found/create")
+  ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -90,6 +115,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/checkin") && !["ADMIN", "RECEPTIONIST"].includes(payload.role)) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  if (pathname.startsWith("/orders") && !["ADMIN", "KITCHEN", "RECEPTIONIST"].includes(payload.role)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

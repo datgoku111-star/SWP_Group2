@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (user: SafeUser) => void;
   logout: () => Promise<void>;
   updateUser: (user: Partial<SafeUser>) => void;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: async () => {},
   updateUser: () => {},
+  refreshUserData: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -38,7 +40,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       is_active: sbUser.user_metadata?.is_active ?? true,
       created_at: sbUser.created_at || new Date().toISOString(),
       updated_at: sbUser.updated_at || new Date().toISOString(),
+      loyalty_points: sbUser.user_metadata?.loyalty_points ?? 0, // ✨ fallback mặc định
     };
+  };
+
+  // ✨ Hàm kéo profile đầy đủ (bao gồm loyalty_points) từ bảng "users" trong Supabase
+  const fetchUserData = async (userId: string) => {
+    try {
+      const { data, error } = await supabaseBrowser
+        .from("users")
+        .select(
+          "id, email, full_name, phone, role, is_active, created_at, updated_at, loyalty_points"
+        )
+        .eq("id", userId)
+        .single();
+
+      if (!error && data) {
+        // Merge để không mất các field khác đang có trong state hiện tại
+        setUser((prev) => ({ ...(prev as SafeUser), ...data }));
+      } else if (error) {
+        console.error("Failed to fetch user profile:", error);
+      }
+    } catch (error) {
+      console.error("fetchUserData error:", error);
+    }
   };
 
   useEffect(() => {
@@ -60,12 +85,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           } else {
             setUser(mapSupabaseUserToSafeUser(session.user));
           }
+          // ✨ Đồng bộ thêm loyalty_points và các field mới nhất từ bảng users
+          await fetchUserData(session.user.id);
         } else {
           // Try fetching local fallback session if no Supabase session
           const res = await fetch("/api/auth/me");
           if (res.ok) {
             const data = await res.json();
             setUser(data.user);
+            if (data.user?.id) {
+              await fetchUserData(data.user.id);
+            }
           } else {
             setUser(null);
           }
@@ -95,6 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           } else {
             setUser(mapSupabaseUserToSafeUser(session.user));
           }
+          // ✨ Đồng bộ thêm loyalty_points sau mỗi lần đổi session
+          await fetchUserData(session.user.id);
         } else {
           // Clear cookie on sign out
           await fetch("/api/auth/session", {
@@ -139,8 +171,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // ✨ Cho phép component ngoài chủ động gọi lại để refresh loyalty_points (ví dụ sau khi đặt phòng, tích điểm...)
+  const refreshUserData = async () => {
+    if (user?.id) {
+      await fetchUserData(user.id);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser, refreshUserData }}>
       {children}
     </AuthContext.Provider>
   );
