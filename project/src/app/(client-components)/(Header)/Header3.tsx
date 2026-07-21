@@ -5,6 +5,8 @@ import Logo from "@/shared/Logo";
 import useOutsideAlerter from "@/hooks/useOutsideAlerter";
 import NotifyDropdown from "./NotifyDropdown";
 import AvatarDropdown from "./AvatarDropdown";
+import LangDropdown from "./LangDropdown";
+import CurrencyDropdown from "./CurrencyDropdown";
 import MenuBar from "@/shared/MenuBar";
 import { SearchTab } from "../(HeroSearchForm)/HeroSearchForm";
 import HeroSearchForm2MobileFactory from "../(HeroSearchForm2Mobile)/HeroSearchForm2MobileFactory";
@@ -222,6 +224,8 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
                   </Link>
                 )}
 
+                <LangDropdown />
+                <CurrencyDropdown />
                 {user ? (
                   <>
                     <NotifyDropdown />

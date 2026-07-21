@@ -64,8 +64,8 @@ export default function AdminHotelsRoomsPage() {
   const fallbackRooms: Room[] = [
     {
       id: "mock-1",
-      title: "Best Western Cedars Hotel",
-      location: "1 Anzinger Court",
+      title: "Phòng Standard - Cedars (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 26,
       image_url: "https://images.pexels.com/photos/5191371/pexels-photo-5191371.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
       beds: 10,
@@ -75,8 +75,8 @@ export default function AdminHotelsRoomsPage() {
     },
     {
       id: "mock-2",
-      title: "Bell by Greene King Inns",
-      location: "32923 Judy Hill",
+      title: "Phòng Deluxe - Bell (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 250,
       image_url: "https://images.pexels.com/photos/3201735/pexels-photo-3201735.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
       beds: 6,
@@ -86,8 +86,8 @@ export default function AdminHotelsRoomsPage() {
     },
     {
       id: "mock-3",
-      title: "Half Moon, Sherborne by Marston's Inns",
-      location: "6731 Killdeer Park",
+      title: "Phòng Executive Suite - Half Moon (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 278,
       image_url: "https://images.pexels.com/photos/6434634/pexels-photo-6434634.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
       beds: 9,
@@ -97,8 +97,8 @@ export default function AdminHotelsRoomsPage() {
     },
     {
       id: "mock-4",
-      title: "White Horse Hotel by Greene King Inns",
-      location: "35 Sherman Park",
+      title: "Phòng Family Suite - White Horse (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 40,
       image_url: "https://images.pexels.com/photos/2506988/pexels-photo-2506988.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
       beds: 7,
@@ -108,8 +108,8 @@ export default function AdminHotelsRoomsPage() {
     },
     {
       id: "mock-5",
-      title: "Ship and Castle Hotel",
-      location: "3 Crest Line Park",
+      title: "Phòng Standard - Ship & Castle (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 147,
       image_url: "https://images.pexels.com/photos/261327/pexels-photo-261327.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
       beds: 3,
@@ -119,8 +119,8 @@ export default function AdminHotelsRoomsPage() {
     },
     {
       id: "mock-6",
-      title: "The Windmill Family & Commercial Hotel",
-      location: "55974 Waxwing Junction",
+      title: "Phòng Family Room - Windmill (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 90,
       image_url: "https://images.pexels.com/photos/2373201/pexels-photo-2373201.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
       beds: 7,
@@ -130,8 +130,8 @@ export default function AdminHotelsRoomsPage() {
     },
     {
       id: "mock-7",
-      title: "Unicorn, Gunthorpe by Marston's Inns",
-      location: "79361 Chinook Place",
+      title: "Phòng Presidential Suite - Unicorn (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 282,
       image_url: "https://images.pexels.com/photos/3068519/pexels-photo-3068519.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
       beds: 2,
@@ -141,8 +141,8 @@ export default function AdminHotelsRoomsPage() {
     },
     {
       id: "mock-8",
-      title: "Holiday Inn Express Ramsgate Minster, an IHG Hotel",
-      location: "6 Chive Avenue",
+      title: "Phòng Premium Deluxe - Holiday Inn (Fis Hotel)",
+      location: "Khách sạn Fis Hotel, Hà Nội, Việt Nam",
       price_per_night: 79,
       image_url: "https://images.pexels.com/photos/2343466/pexels-photo-2343466.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
       beds: 7,

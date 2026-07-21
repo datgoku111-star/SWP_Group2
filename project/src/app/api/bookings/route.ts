@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
-import { createBooking, getAllBookings } from "@/lib/db/bookings";
+import { createBooking, getAllBookings, getBookingsByUser } from "@/lib/db/bookings";
 import { getCurrentUser } from "@/lib/auth-server";
 
 
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user || !["ADMIN", "RECEPTIONIST"].includes(user.role)) {
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (user.role === "CUSTOMER") {
+      const bookings = await getBookingsByUser(user.sub);
+      return NextResponse.json(bookings);
+    }
+
+    if (!["ADMIN", "RECEPTIONIST"].includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

@@ -9,6 +9,7 @@ import MenuBar from "@/shared/MenuBar";
 import SwitchDarkMode from "@/shared/SwitchDarkMode";
 import HeroSearchForm2MobileFactory from "../(HeroSearchForm2Mobile)/HeroSearchForm2MobileFactory";
 import LangDropdown from "./LangDropdown";
+import CurrencyDropdown from "./CurrencyDropdown";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import NotifyDropdown from "./NotifyDropdown";
@@ -38,9 +39,11 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
         </div>
 
         <div className="hidden md:flex flex-shrink-0 justify-end flex-1 lg:flex-none text-neutral-700 dark:text-neutral-100">
-          <div className="hidden xl:flex items-center space-x-0.5">
+          <div className="hidden xl:flex items-center space-x-1.5">
             <SwitchDarkMode />
             <SearchDropdown className="flex items-center" />
+            <LangDropdown />
+            <CurrencyDropdown />
             <div className="px-1" />
 
             {user ? (

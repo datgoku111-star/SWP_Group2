@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
+import DashboardLayout from "../dashboard/layout";
 import { useRouter } from "next/navigation";
 import type { ServiceOrder, OrderStatus } from "@/types/hotel";
 import useRealtimeOrders from "@/hooks/useRealtimeOrders";
@@ -141,7 +142,8 @@ export default function OrdersQueuePage() {
   );
 
   return (
-    <div className="container py-16 mb-24 lg:mb-32">
+    <DashboardLayout>
+      <div className="container py-16 mb-24 lg:mb-32">
       <h2 className="text-3xl font-semibold sm:text-4xl mb-10">
         {t("ordersLiveOrderQueue")}
       </h2>
@@ -188,5 +190,6 @@ export default function OrdersQueuePage() {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 }

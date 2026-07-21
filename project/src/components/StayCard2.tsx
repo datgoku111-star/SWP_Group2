@@ -64,18 +64,36 @@ const StayCard2: FC<StayCard2Props> = ({
       <div className={size === "default" ? "mt-3 space-y-3" : "mt-2 space-y-2"}>
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-1 text-sm text-neutral-500 dark:text-neutral-400">
-            <span>
-              {listingCategory.name}
+            <span className="flex items-center gap-1.5">
+              <span>{listingCategory.name}</span>
+              {(data as any).room_number && (
+                <span className="text-[10px] bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded font-mono font-bold text-neutral-700 dark:text-neutral-300">
+                  P.{(data as any).room_number}
+                </span>
+              )}
             </span>
-            {availableRooms !== undefined && (
-              <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-md ${
-                availableRooms > 0 
-                  ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" 
-                  : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-              }`}>
-                {availableRooms > 0 ? `Còn ${availableRooms} phòng` : "Hết phòng"}
-              </span>
-            )}
+            {(() => {
+              const status = (data as any).room_status || "AVAILABLE";
+              const labelMap: Record<string, string> = {
+                AVAILABLE: "Trống (Sẵn sàng)",
+                IN_USE: "Đang sử dụng",
+                DIRTY: "Chưa dọn",
+                CLEANING: "Đang dọn",
+                MAINTENANCE: "Bảo trì",
+              };
+              const classMap: Record<string, string> = {
+                AVAILABLE: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
+                IN_USE: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+                DIRTY: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+                CLEANING: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+                MAINTENANCE: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+              };
+              return (
+                <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md ${classMap[status] || classMap.AVAILABLE}`}>
+                  {labelMap[status] || status}
+                </span>
+              );
+            })()}
           </div>
           <div className="flex items-center space-x-2">
             {isAds && <Badge name="ADS" color="green" />}

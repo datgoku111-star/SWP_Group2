@@ -32,12 +32,12 @@ export async function getAvailableRooms(
     query = query.eq("room_type_id", roomTypeId);
   }
 
-  // 3. Filter out overlapping bookings (Status NOT CANCELLED, e.g. PENDING, CONFIRMED, CHECKED_IN)
+  // 3. Filter out overlapping bookings (Only active bookings block the room)
   if (checkIn && checkOut) {
     const { data: bookedRoomIds, error: bookingError } = await supabaseServer
       .from("bookings")
       .select("room_id")
-      .neq("status", "CANCELLED")
+      .in("status", ["PENDING", "CONFIRMED", "CHECKED_IN"])
       .lt("check_in_date", checkOut)
       .gt("check_out_date", checkIn);
 

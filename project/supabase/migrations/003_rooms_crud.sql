@@ -59,8 +59,8 @@ TRUNCATE TABLE public.hotel_rooms CASCADE;
 
 INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, beds, guests, rating, available_rooms) VALUES
   (
-    'Best Western Cedars Hotel', 
-    '1 Anzinger Court', 
+    'Phòng Standard - Cedars (Fis Hotel)', 
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam', 
     26.00, 
     'https://images.pexels.com/photos/5191371/pexels-photo-5191371.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500', 
     10, 
@@ -69,8 +69,8 @@ INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, bed
     5
   ),
   (
-    'Bell by Greene King Inns', 
-    '32923 Judy Hill', 
+    'Phòng Deluxe - Bell (Fis Hotel)', 
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam', 
     250.00, 
     'https://images.pexels.com/photos/3201735/pexels-photo-3201735.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500', 
     6, 
@@ -79,8 +79,8 @@ INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, bed
     3
   ),
   (
-    'Half Moon, Sherborne by Marston''s Inns', 
-    '6731 Killdeer Park', 
+    'Phòng Executive Suite - Half Moon (Fis Hotel)', 
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam', 
     278.00, 
     'https://images.pexels.com/photos/6434634/pexels-photo-6434634.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500', 
     9, 
@@ -89,8 +89,8 @@ INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, bed
     2
   ),
   (
-    'White Horse Hotel by Greene King Inns', 
-    '35 Sherman Park', 
+    'Phòng Family Suite - White Horse (Fis Hotel)', 
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam', 
     40.00, 
     'https://images.pexels.com/photos/2506988/pexels-photo-2506988.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500', 
     7, 
@@ -99,8 +99,8 @@ INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, bed
     4
   ),
   (
-    'Ship and Castle Hotel',
-    '3 Crest Line Park',
+    'Phòng Standard - Ship & Castle (Fis Hotel)',
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam',
     147.00,
     'https://images.pexels.com/photos/261327/pexels-photo-261327.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
     3,
@@ -109,8 +109,8 @@ INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, bed
     5
   ),
   (
-    'The Windmill Family & Commercial Hotel',
-    '55974 Waxwing Junction',
+    'Phòng Family Room - Windmill (Fis Hotel)',
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam',
     90.00,
     'https://images.pexels.com/photos/2373201/pexels-photo-2373201.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
     7,
@@ -119,8 +119,8 @@ INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, bed
     6
   ),
   (
-    'Unicorn, Gunthorpe by Marston''s Inns',
-    '79361 Chinook Place',
+    'Phòng Presidential Suite - Unicorn (Fis Hotel)',
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam',
     282.00,
     'https://images.pexels.com/photos/3068519/pexels-photo-3068519.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
     2,
@@ -129,8 +129,8 @@ INSERT INTO public.hotel_rooms (title, location, price_per_night, image_url, bed
     3
   ),
   (
-    'Holiday Inn Express Ramsgate Minster, an IHG Hotel',
-    '6 Chive Avenue',
+    'Phòng Premium Deluxe - Holiday Inn (Fis Hotel)',
+    'Khách sạn Fis Hotel, Hà Nội, Việt Nam',
     79.00,
     'https://images.pexels.com/photos/2343466/pexels-photo-2343466.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
     7,

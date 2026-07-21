@@ -5,14 +5,17 @@ import React, { FC, useState, useEffect, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAuth } from "@/lib/auth-context";
+import { Route } from "@/routers/types";
 
 export interface PayPageProps {}
 
 const PayPageContent: FC = () => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const bookingId = searchParams.get("bookingId");
   const serviceOrderId = searchParams.get("serviceOrderId");
   const type = searchParams.get("type");
@@ -22,11 +25,62 @@ const PayPageContent: FC = () => {
   const address = searchParams.get("address") || "Tokyo, Jappan";
 
   const { formatPrice } = useCurrency();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [bookingData, setBookingData] = useState<any>(null);
   const [orderData, setOrderData] = useState<any>(null);
   const [error, setError] = useState("");
+
+  // Incident Form state
+  const [showIncidentForm, setShowIncidentForm] = useState(false);
+  const [incidentType, setIncidentType] = useState<string>("MAINTENANCE");
+  const [incidentSeverity, setIncidentSeverity] = useState<string>("LOW");
+  const [description, setDescription] = useState("");
+  const [submittingIncident, setSubmittingIncident] = useState(false);
+  const [incidentSuccessMsg, setIncidentSuccessMsg] = useState("");
+  const [incidentErrorMsg, setIncidentErrorMsg] = useState("");
+
+  const handleIncidentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (description.length < 10) {
+      setIncidentErrorMsg("Mô tả sự cố phải có ít nhất 10 ký tự.");
+      return;
+    }
+    setSubmittingIncident(true);
+    setIncidentSuccessMsg("");
+    setIncidentErrorMsg("");
+
+    try {
+      const res = await fetch("/api/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking_id: bookingId,
+          room_id: bookingData?.room?.id,
+          customer_id: bookingData?.user_id || user?.id || null,
+          incident_type: incidentType,
+          severity: incidentSeverity,
+          description: description,
+          estimated_charge: 0,
+          is_chargeable: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Gửi báo cáo sự cố thất bại.");
+      }
+
+      setIncidentSuccessMsg("Gửi báo cáo sự cố thành công! Ban quản lý khách sạn đã nhận được thông tin và đang xử lý.");
+      setDescription("");
+    } catch (err: any) {
+      console.error(err);
+      setIncidentErrorMsg(err.message || "Đã xảy ra lỗi kết nối khi gửi báo cáo.");
+    } finally {
+      setSubmittingIncident(false);
+    }
+  };
 
   useEffect(() => {
     if (!bookingId) {
@@ -44,6 +98,11 @@ const PayPageContent: FC = () => {
         }
         const bData = await bookingRes.json();
         setBookingData(bData);
+
+        // Trigger automated fallback confirmation of payment and booking status update
+        await fetch(`/api/bookings/${bookingId}/confirm?serviceOrderId=${serviceOrderId || ""}`, {
+          method: "POST",
+        }).catch(err => console.error("Auto confirmation fallback error:", err));
 
         // 2. Fetch service order if type is service
         if (type === "service" && serviceOrderId) {
@@ -249,8 +308,115 @@ const PayPageContent: FC = () => {
             </div>
           </div>
         </div>
-        <div>
-          <ButtonPrimary href="/">{t("paydoneExploreMoreStays")}</ButtonPrimary>
+
+        {!isService && bookingData && bookingData.room && (
+          <div className="bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-700 rounded-3xl p-6 md:p-8 space-y-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div>
+                <h4 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  Báo cáo sự cố hoặc Yêu cầu đặc biệt
+                </h4>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                  Nếu bạn phát hiện sự cố phòng hoặc có yêu cầu dọn dẹp, bảo trì đặc biệt trước khi nhận phòng, vui lòng khai báo tại đây.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowIncidentForm(!showIncidentForm)}
+                className="flex-shrink-0 px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-full text-sm font-semibold transition"
+              >
+                {showIncidentForm ? "Đóng biểu mẫu" : "Khai báo ngay"}
+              </button>
+            </div>
+
+            {showIncidentForm && (
+              <form onSubmit={handleIncidentSubmit} className="space-y-4 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+                {incidentSuccessMsg && (
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-2xl text-sm font-medium">
+                    ✓ {incidentSuccessMsg}
+                  </div>
+                )}
+                {incidentErrorMsg && (
+                  <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-2xl text-sm font-medium">
+                    ⚠️ {incidentErrorMsg}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block">
+                      Phân loại yêu cầu / sự cố:
+                    </label>
+                    <select
+                      value={incidentType}
+                      onChange={(e) => setIncidentType(e.target.value)}
+                      className="w-full p-3 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-primary-500 text-neutral-900 dark:text-neutral-200"
+                    >
+                      <option value="MAINTENANCE">Bảo trì / Sửa chữa thiết bị (MAINTENANCE)</option>
+                      <option value="COMPLAINT">Yêu cầu / Khiếu nại dịch vụ phòng (COMPLAINT)</option>
+                      <option value="DAMAGE">Báo hỏng hóc đồ dùng (DAMAGE)</option>
+                      <option value="MISSING_HOTEL_ITEM">Thiếu vật phẩm trong phòng (MISSING_HOTEL_ITEM)</option>
+                      <option value="GUEST_LOST_ITEM">Báo thất lạc hành lý cá nhân (GUEST_LOST_ITEM)</option>
+                      <option value="OTHER">Yêu cầu đặc biệt khác (OTHER)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block">
+                      Mức độ khẩn cấp:
+                    </label>
+                    <select
+                      value={incidentSeverity}
+                      onChange={(e) => setIncidentSeverity(e.target.value)}
+                      className="w-full p-3 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-primary-500 text-neutral-900 dark:text-neutral-200"
+                    >
+                      <option value="LOW">Thấp (LOW)</option>
+                      <option value="MEDIUM">Trung bình (MEDIUM)</option>
+                      <option value="HIGH">Cao (HIGH)</option>
+                      <option value="CRITICAL">Khẩn cấp (CRITICAL)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider block">
+                    Nội dung mô tả chi tiết:
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Mô tả cụ thể sự cố hoặc yêu cầu (ví dụ: chuẩn bị thêm chăn ấm, chuẩn bị giường cũi em bé, vòi nước rò rỉ...)"
+                    className="w-full p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-primary-500 text-neutral-900 dark:text-neutral-200"
+                    required
+                  />
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    * Vui lòng nhập tối thiểu 10 ký tự.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingIncident}
+                  className="w-full md:w-auto px-6 py-3 bg-primary-6000 hover:bg-primary-700 text-white rounded-full text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submittingIncident ? "Đang gửi báo cáo..." : "Gửi yêu cầu sự cố"}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <ButtonPrimary href={`/bookings/${bookingId}` as Route}>
+            {isService ? "Xem chi tiết hóa đơn dịch vụ" : "Xem chi tiết hóa đơn đặt phòng"}
+          </ButtonPrimary>
+          <button
+            onClick={() => router.push("/")}
+            className="px-6 py-3 border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-full font-semibold transition text-sm"
+          >
+            Quay lại Trang chủ
+          </button>
         </div>
       </div>
     );

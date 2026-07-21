@@ -41,6 +41,19 @@ export default function ServicesPage() {
     }
   }, [user, isLoading, router]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && categories.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get("category");
+      if (cat) {
+        const found = categories.find((c) => c.toUpperCase() === cat.toUpperCase());
+        if (found) {
+          setActiveCategory(found);
+        }
+      }
+    }
+  }, [categories]);
+
   const fetchServices = async () => {
     try {
       const res = await fetch("/api/services");
@@ -57,20 +70,26 @@ export default function ServicesPage() {
 
   const fetchActiveBookings = async () => {
     try {
-      // For simplicity, we just fetch all user's bookings and filter client-side for now
-      // In a real app, you'd want a specific endpoint like /api/bookings/active
+      // Fetch all bookings and filter based on roles and active status
       const res = await fetch("/api/bookings");
       if (res.ok) {
         const data = await res.json();
-        // Assume user is a customer looking at their own bookings
-        // Or if staff, they might need a way to search for a guest's booking.
-        // For this UI, we'll focus on the Customer experience (UC06)
-        const myBookings = data.filter(
-          (b: Booking) => b.user_id === user?.id && b.status === "CHECKED_IN",
-        );
-        setBookings(myBookings);
-        if (myBookings.length > 0) {
-          setSelectedBookingId(myBookings[0].id);
+        
+        let activeBookings = [];
+        if (user?.role === "CUSTOMER") {
+          activeBookings = data.filter(
+            (b: Booking) => b.user_id === user?.id && ["CONFIRMED", "CHECKED_IN"].includes(b.status)
+          );
+        } else {
+          // Admin, receptionists can select from all active or confirmed bookings
+          activeBookings = data.filter(
+            (b: Booking) => ["CONFIRMED", "CHECKED_IN"].includes(b.status)
+          );
+        }
+
+        setBookings(activeBookings);
+        if (activeBookings.length > 0) {
+          setSelectedBookingId(activeBookings[0].id);
         }
       }
     } catch (err) {
@@ -105,12 +124,39 @@ export default function ServicesPage() {
       setError(t("servicesSelectRoomError"));
       return;
     }
+    
+    // Determine title, category, and image dynamically based on cart items
+    const cartEntries = Object.entries(cart);
+    let title = "Service Order";
+    let category = "Hotel Service";
+    let img = "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=500"; // neutral service img
+    
+    if (cartEntries.length > 0) {
+      const firstServiceId = cartEntries[0][0];
+      const firstService = services.find((s) => s.id === firstServiceId);
+      if (firstService) {
+        if (firstService.category.toUpperCase() === "LAUNDRY") {
+          title = "Laundry Order";
+          category = "Laundry Service";
+          img = "https://images.unsplash.com/photo-1545173168-9f1947eebd01?w=500"; // laundry service img
+        } else if (firstService.category.toUpperCase() === "FOOD") {
+          title = "Food Order";
+          category = "Food Service";
+          img = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500";
+        } else if (firstService.category.toUpperCase() === "BEVERAGE") {
+          title = "Beverage Order";
+          category = "Beverage Service";
+          img = "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500";
+        }
+      }
+    }
+
     // Gom các sản phẩm trong giỏ hàng lại
-    const items = Object.entries(cart).map(([service_id, quantity]) => ({ service_id, quantity }));
+    const items = cartEntries.map(([service_id, quantity]) => ({ service_id, quantity }));
     const itemsParam = encodeURIComponent(JSON.stringify(items));
     // Chuyển hướng tới trang checkout kèm tham số hóa đơn
     router.push(
-      `/checkout?type=service&bookingId=${selectedBookingId}&items=${itemsParam}&price=${cartTotal}&title=Food+Order&category=Food+Service&img=https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500` as Route
+      `/checkout?type=service&bookingId=${selectedBookingId}&items=${itemsParam}&price=${cartTotal}&title=${encodeURIComponent(title)}&category=${encodeURIComponent(category)}&img=${encodeURIComponent(img)}` as Route
     );
   };
 

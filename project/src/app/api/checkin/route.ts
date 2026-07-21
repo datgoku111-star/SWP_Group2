@@ -35,20 +35,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Cannot check in booking with status ${booking.status}` }, { status: 400 });
     }
 
-    // Upsert guest
-    const { data: guestData, error: gError } = await supabaseServer
+    // Find if guest with this id_card_number already exists (safe dynamic check-in lookup)
+    const { data: existingGuest, error: findError } = await supabaseServer
       .from("guests")
-      .upsert({
-        full_name: guest.full_name,
-        id_card_number: guest.id_card_number,
-        id_card_type: guest.id_card_type,
-        nationality: guest.nationality,
-        address: guest.address,
-      }, { onConflict: "id_card_number" })
       .select("id")
-      .single();
+      .eq("id_card_number", guest.id_card_number)
+      .maybeSingle();
 
-    if (gError) throw gError;
+    if (findError) throw findError;
+
+    let guestId: string;
+
+    if (existingGuest) {
+      guestId = existingGuest.id;
+      // Update existing guest details
+      const { error: updateError } = await supabaseServer
+        .from("guests")
+        .update({
+          full_name: guest.full_name,
+          id_card_type: guest.id_card_type,
+          nationality: guest.nationality,
+          address: guest.address,
+        })
+        .eq("id", guestId);
+      if (updateError) throw updateError;
+    } else {
+      // Insert new guest
+      const { data: newGuest, error: insertError } = await supabaseServer
+        .from("guests")
+        .insert({
+          full_name: guest.full_name,
+          id_card_number: guest.id_card_number,
+          id_card_type: guest.id_card_type,
+          nationality: guest.nationality,
+          address: guest.address,
+        })
+        .select("id")
+        .single();
+      if (insertError) throw insertError;
+      if (!newGuest) throw new Error("Failed to insert new guest");
+      guestId = newGuest.id;
+    }
 
     // Update booking status
     const nowIso = new Date().toISOString();
@@ -56,7 +83,7 @@ export async function POST(request: Request) {
       .from("bookings")
       .update({ 
         status: "CHECKED_IN",
-        guest_id: guestData.id,
+        guest_id: guestId,
         updated_at: nowIso
       })
       .eq("id", booking_id);
@@ -102,7 +129,7 @@ export async function POST(request: Request) {
       action: "CHECK_IN",
       entity_type: "BOOKING",
       entity_id: booking_id,
-      details: { guest_id: guestData.id, room_id: booking.room_id },
+      details: { guest_id: guestId, room_id: booking.room_id },
     });
 
     return NextResponse.json({ message: "Check-in completed successfully" });

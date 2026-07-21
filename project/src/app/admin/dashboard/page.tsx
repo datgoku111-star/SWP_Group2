@@ -83,21 +83,13 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { stats, monthlySignups, monthlyRevenue, roleDistribution = [] } = data || {
+  const { stats, monthlySignups, monthlyRevenue, roleDistribution = [], preferredRooms = [] } = data || {
     stats: { totalUsers: 0, totalRevenue: 0, activeBookings: 0 },
     monthlySignups: [],
     monthlyRevenue: [],
     roleDistribution: [],
+    preferredRooms: [],
   };
-
-  // Mock services data for "Preferred Products" in the image
-  const preferredRooms = [
-    { name: t("adminDashboardRoomDeluxe"), percentage: 89, value: "89%" },
-    { name: t("adminDashboardRoomSuite"), percentage: 71, value: "71%" },
-    { name: t("adminDashboardRoomStandard"), percentage: 47, value: "47%" },
-    { name: t("adminDashboardRoomFamily"), percentage: 36, value: "36%" },
-    { name: t("adminDashboardRoomPresident"), percentage: 16, value: "16%" },
-  ];
 
   return (
     <div className="p-8 space-y-8 bg-neutral-50/50 dark:bg-neutral-900/40 min-h-screen">
@@ -374,7 +366,7 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <div className="space-y-4">
-              {preferredRooms.map((room) => (
+              {preferredRooms.map((room: any) => (
                 <div key={room.name} className="space-y-2">
                   <div className="flex justify-between text-sm font-semibold">
                     <span className="text-neutral-700 dark:text-neutral-300">

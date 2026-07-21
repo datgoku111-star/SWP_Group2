@@ -7,9 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { CreateIncidentSchema, CreateIncidentInput } from "@/types/incident";
 import { INCIDENT_TYPES, INCIDENT_SEVERITY } from "@/contains/incident";
+import { useAuth } from "@/lib/auth-context";
 
 export default function IncidentForm() {
   const router = useRouter();
+  const { user } = useAuth();
   const [submitError, setSubmitError] = useState<string>("");
 
   const {
@@ -39,8 +41,12 @@ export default function IncidentForm() {
         return;
       }
 
-      // Tạo thành công, quay về trang danh sách và làm mới dữ liệu
-      router.push("/admin/incidents" as Route);
+      // Tạo thành công, quay về trang phù hợp và làm mới dữ liệu
+      if (user?.role === "ADMIN") {
+        router.push("/admin/incidents" as Route);
+      } else {
+        router.push("/bookings" as Route);
+      }
       router.refresh();
     } catch (error) {
       setSubmitError("Lỗi kết nối máy chủ. Vui lòng thử lại sau.");

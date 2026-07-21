@@ -1,0 +1,30 @@
+[2026-07-13T14:23:56.205Z] User: {"sub":"caa06bbc-5dd3-4398-9b60-cf54293fa985","email":"reception@hotel.com","role":"RECEPTIONIST","name":"Reception Staff","iat":1783952550,"exp":1784557350}
+Data: {"room_id":"2cbb307a-fdba-4523-86df-992b505dda37","check_in_date":"2026-07-13","check_out_date":"2026-07-14","num_guests":1,"total_amount":900000,"special_requests":"Instant Walk-In Reservation at Front Desk"}
+
+[2026-07-14T00:44:03.335Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1783989814,"exp":1784594614}
+Data: {"room_id":"3fc06105-910a-4023-82f5-32eb44eba439","check_in_date":"2026-07-14","check_out_date":"2026-07-19","num_guests":3,"total_amount":65,"special_requests":""}
+
+[2026-07-14T00:46:20.148Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1783989975,"exp":1784594775}
+Data: {"room_id":"5dec87a9-57fa-4e4b-850a-402a2af22dc5","check_in_date":"2026-07-14","check_out_date":"2026-07-19","num_guests":3,"total_amount":65,"special_requests":""}
+
+[2026-07-14T00:47:41.359Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1783990059,"exp":1784594859}
+Data: {"room_id":"236f4dfb-6639-41d2-8d2a-5c989448139d","check_in_date":"2026-07-14","check_out_date":"2026-07-19","num_guests":3,"total_amount":65,"special_requests":""}
+
+[2026-07-14T01:05:29.994Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1783991038,"exp":1784595838}
+Data: {"room_id":"acb0347d-22cf-4726-b8d3-887b9abdaf2f","check_in_date":"2026-07-15","check_out_date":"2026-07-16","num_guests":1,"total_amount":95,"special_requests":""}
+
+[2026-07-14T01:07:20.341Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1783991230,"exp":1784596030}
+Data: {"room_id":"4d35dceb-0649-42d2-b8a2-ae2f0d17ab39","check_in_date":"2026-07-14","check_out_date":"2026-07-19","num_guests":3,"total_amount":440,"special_requests":""}
+
+[2026-07-15T08:07:11.898Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1784102601,"exp":1784707401}
+Data: {"room_id":"15a4f7f0-7624-47ea-a6bc-3536b800825e","check_in_date":"2026-07-15","check_out_date":"2026-07-20","num_guests":3,"total_amount":440,"special_requests":""}
+
+[2026-07-21T14:32:39.819Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1784644356,"exp":1785249156}
+Data: {"room_id":"3fc06105-910a-4023-82f5-32eb44eba439","check_in_date":"2026-07-22","check_out_date":"2026-07-23","num_guests":3,"total_amount":1,"special_requests":""}
+
+[2026-07-21T14:34:45.757Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1784644473,"exp":1785249273}
+Data: {"room_id":"230f12cd-31a1-4832-a353-0301228066dc","check_in_date":"2026-07-21","check_out_date":"2026-07-26","num_guests":3,"total_amount":5,"special_requests":""}
+
+[2026-07-21T14:35:41.040Z] User: {"sub":"4b71de5b-714b-4735-a540-3a5ba22b3108","email":"datgoku111@gmail.com","role":"CUSTOMER","name":"dat","iat":1784644535,"exp":1785249335}
+Data: {"room_id":"79291d92-e391-4391-a1e9-8b4dca782028","check_in_date":"2026-07-21","check_out_date":"2026-07-26","num_guests":3,"total_amount":5,"special_requests":""}
+

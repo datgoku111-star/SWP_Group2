@@ -27,19 +27,19 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
   heading = "Featured places to stay",
   subHeading = "Popular places to stay that Chisfis recommends for you",
   headingIsCenter,
-  tabs = ["All", "New York", "Tokyo", "Paris", "London"],
+  tabs = ["Tất cả", "Standard", "Deluxe", "Suite", "Family"],
   cardType = "card2",
 }) => {
   const [stays, setStays] = useState<StayDataType[]>([]);
-  const [activeTab, setActiveTab] = useState("All");
+  const [activeTab, setActiveTab] = useState("Tất cả");
 
   useEffect(() => {
     if (initialStays && initialStays.length > 0) {
       const mappedInitial = initialStays.map((item, index) => {
-        let city = "New York";
-        if (index === 2 || index === 3) city = "Tokyo";
-        else if (index === 4 || index === 5) city = "Paris";
-        else if (index >= 6) city = "London";
+        let city = "Standard";
+        if (index === 1 || index === 7) city = "Deluxe";
+        else if (index === 2 || index === 6) city = "Suite";
+        else if (index === 3 || index === 5) city = "Family";
         return { ...item, city };
       });
       setStays(mappedInitial);
@@ -55,12 +55,41 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
 
         if (error) throw error;
 
+        // Fetch live rooms to get status
+        let liveRooms: any[] = [];
+        try {
+          const roomsRes = await fetch("/api/rooms?all=true");
+          if (roomsRes.ok) {
+            liveRooms = await roomsRes.json();
+          }
+        } catch (e) {
+          console.error("Failed to fetch live rooms for homepage:", e);
+        }
+
         if (dbData && dbData.length > 0) {
           const mapped = dbData.map((h: any, index: number) => {
-            let city = "New York";
-            if (index === 2 || index === 3) city = "Tokyo";
-            else if (index === 4 || index === 5) city = "Paris";
-            else if (index >= 6) city = "London";
+            let city = "Standard";
+            if (index === 1 || index === 7) city = "Deluxe";
+            else if (index === 2 || index === 6) city = "Suite";
+            else if (index === 3 || index === 5) city = "Family";
+
+            const getRoomNumberByTitle = (title: string): string => {
+              const t = title.toLowerCase();
+              if (t.includes("cedars")) return "101";
+              if (t.includes("ship & castle") || t.includes("ship and castle")) return "102";
+              if (t.includes("bell")) return "103";
+              if (t.includes("windmill")) return "201";
+              if (t.includes("holiday inn")) return "202";
+              if (t.includes("half moon")) return "203";
+              if (t.includes("white horse")) return "301";
+              if (t.includes("unicorn")) return "302";
+              return "101";
+            };
+
+            const roomNumber = getRoomNumberByTitle(h.title);
+            const liveRoom = (liveRooms || []).find((r: any) => r.room_number === roomNumber);
+            const liveStatus = liveRoom ? liveRoom.status : "AVAILABLE";
+            const liveRoomId = liveRoom ? liveRoom.id : h.id;
 
             return {
               id: h.id,
@@ -95,16 +124,20 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
               map: { 
                 lat: 55.2094559 + (index * 0.01) - 0.03, 
                 lng: 61.5594641 + (index * 0.01) - 0.03 
-              }
+              },
+              // Inject custom fields
+              room_number: roomNumber,
+              room_status: liveStatus,
+              room_id: liveRoomId
             };
           });
           setStays(mapped);
         } else {
           const mappedDemo = DEMO_STAY_LISTINGS.filter((_, i) => i < 8).map((item, index) => {
-            let city = "New York";
-            if (index === 2 || index === 3) city = "Tokyo";
-            else if (index === 4 || index === 5) city = "Paris";
-            else if (index >= 6) city = "London";
+            let city = "Standard";
+            if (index === 1 || index === 7) city = "Deluxe";
+            else if (index === 2 || index === 6) city = "Suite";
+            else if (index === 3 || index === 5) city = "Family";
             return { ...item, city };
           });
           setStays(mappedDemo);
@@ -112,20 +145,20 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
       } catch (err) {
         console.warn("Could not load dynamic rooms for homepage:", err);
         const mappedDemo = DEMO_STAY_LISTINGS.filter((_, i) => i < 8).map((item, index) => {
-          let city = "New York";
-          if (index === 2 || index === 3) city = "Tokyo";
-          else if (index === 4 || index === 5) city = "Paris";
-          else if (index >= 6) city = "London";
-          return { ...item, city };
-        });
-        setStays(mappedDemo);
+          let city = "Standard";
+        if (index === 1 || index === 7) city = "Deluxe";
+        else if (index === 2 || index === 6) city = "Suite";
+        else if (index === 3 || index === 5) city = "Family";
+        return { ...item, city };
+      });
+      setStays(mappedDemo);
       }
     };
     fetchHomeRooms();
   }, [initialStays]);
 
   const filteredStays = stays.filter((stay) => {
-    if (activeTab === "All") return true;
+    if (activeTab === "Tất cả") return true;
     return stay.city === activeTab;
   });
 

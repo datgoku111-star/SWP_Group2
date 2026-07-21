@@ -166,7 +166,11 @@ function PageHome() {
 
         <SectionOurFeatures />
 
-        <SectionGridFeaturePlaces cardType="card2" />
+        <SectionGridFeaturePlaces 
+          cardType="card2" 
+          heading="Các hạng phòng nghỉ nổi bật" 
+          subHeading="Khám phá các lựa chọn phòng nghỉ sang trọng tại Fis Hotel"
+        />
 
         <SectionHowItWork />
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import type { Room, RoomStatus } from "@/types/hotel";
+import DashboardLayout from "../dashboard/layout";
 
 export default function HousekeepingPage() {
   const { user, isLoading } = useAuth();
@@ -68,7 +69,8 @@ export default function HousekeepingPage() {
   };
 
   return (
-    <div className="container py-12 mb-24 lg:mb-32 space-y-8">
+    <DashboardLayout>
+      <div className="container py-12 mb-24 lg:mb-32 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-700 pb-6">
         <div>
           <h1 className="text-3xl font-extrabold sm:text-4xl text-neutral-900 dark:text-white">
@@ -149,6 +151,7 @@ export default function HousekeepingPage() {
         ))}
       </div>
     </div>
+    </DashboardLayout>
   );
 }
 

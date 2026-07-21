@@ -28,12 +28,12 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // 2. Fetch completed service orders
+    // 2. Fetch completed or in-progress (paid) service orders
     const { data: orders, error: oError } = await supabaseServer
       .from("service_orders")
       .select("id, status, items:service_order_items(*, service:services(*))")
       .eq("booking_id", bookingId)
-      .in("status", ["COMPLETED"]);
+      .in("status", ["IN_PROGRESS", "COMPLETED"]);
 
     // 3. Fetch payments
     const { data: payments, error: pError } = await supabaseServer
@@ -53,6 +53,11 @@ export async function GET(
     const totalFineAmount = incidents
       ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
       : 0;
+
+    // Convert base_price of room type from USD to VND for invoice display
+    if (booking.room?.room_type) {
+      booking.room.room_type.base_price = Math.round(Number(booking.room.room_type.base_price) * 26320);
+    }
 
     // Calculations
     const ciDate = new Date(booking.check_in_date);
@@ -74,7 +79,16 @@ export async function GET(
     const vatAmount = subtotal * vatRate;
     const grandTotal = subtotal + vatAmount;
 
-    const totalPaid = (payments || []).reduce((sum, p) => sum + p.amount, 0);
+    // Convert room booking payments from USD to VND, leaving service orders (which are already in VND) untouched
+    const convertedPayments = (payments || []).map(p => {
+      const isService = p.transaction_ref && p.transaction_ref.includes("_service_");
+      return {
+        ...p,
+        amount: isService ? Number(p.amount) : Math.round(Number(p.amount) * 26320)
+      };
+    });
+
+    const totalPaid = convertedPayments.reduce((sum, p) => sum + p.amount, 0);
     const balanceDue = grandTotal - totalPaid;
 
     const invoiceData: InvoiceData = {
@@ -89,7 +103,7 @@ export async function GET(
       vat_rate: vatRate,
       vat_amount: vatAmount,
       grand_total: grandTotal,
-      payments: payments || [],
+      payments: convertedPayments,
       balance_due: balanceDue,
     };
 

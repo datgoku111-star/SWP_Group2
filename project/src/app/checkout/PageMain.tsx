@@ -44,11 +44,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const categoryParam = searchParams.get("category") || "Hotel room";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "2";
-
-  const typeParam = searchParams.get("type");
-  const bookingIdParam = searchParams.get("bookingId");
-  const itemsParam = searchParams.get("items");
-
   const isExperience = categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience");
   const specialRequestsValue = isExperience
     ? JSON.stringify({ isExperience: true, title: titleParam, category: categoryParam })
@@ -158,7 +153,20 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           return;
         }
 
-        const targetRoom = rooms[0];
+        // Prefer the room ID passed from the detail page (roomIdParam) if still available
+        let targetRoom = (rooms || []).find((r: any) => r.id === roomIdParam);
+        if (!targetRoom) {
+          // Otherwise, find the room that matches the listing category in titleParam
+          const targetCategoryName = titleParam.toLowerCase().includes("suite") ? "Suite" :
+                                     titleParam.toLowerCase().includes("deluxe") ? "Deluxe" :
+                                     titleParam.toLowerCase().includes("family") ? "Family" : "Standard";
+          
+          const categoryRooms = (rooms || []).filter((r: any) => 
+            r.room_type?.name?.toLowerCase() === targetCategoryName.toLowerCase()
+          );
+          
+          targetRoom = categoryRooms.length > 0 ? categoryRooms[0] : rooms[0];
+        }
 
         // 2. Lock room
         const lockRes = await fetch("/api/rooms/lock", {
@@ -333,26 +341,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       // XỬ LÝ CHO ĐƠN DỊCH VỤ ĐỒ ĂN
       if (typeParam === "service") {
         const totalAmount = Number(priceParam);
-        if (activeTab === 2) {
-          // Cổng VietQR (PayOS)
-          await handlePayOSPayment(null, "", "", totalAmount);
-          return;
-        }
-        // Cổng Paypal / Credit Card (Mô phỏng)
-        const orderRes = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            booking_id: bookingIdParam,
-            items: JSON.parse(itemsParam || "[]"),
-            notes: `Paid via ${activeTab === 0 ? "Paypal" : "Credit Card"}`
-          }),
-        });
-        if (!orderRes.ok) {
-          const errData = await orderRes.json();
-          throw new Error(errData.error || "Failed to place food order.");
-        }
-        router.push("/pay-done");
+        await handlePayOSPayment(null, "", "", totalAmount);
         return;
       }
       // LUỒNG ĐẶT PHÒNG MỚI (Sử dụng phòng đã khóa trước đó)
@@ -368,40 +357,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
       const pricePerNight = Number(priceParam) || targetRoom.room_type?.base_price || 100;
       const totalAmount = pricePerNight * nights;
-      if (activeTab === 2) {
-        await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
-        return;
-      }
-      const bookingRes = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          room_id: targetRoom.id,
-          check_in_date: checkInStr,
-          check_out_date: checkOutStr,
-          num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
-          total_amount: totalAmount,
-          special_requests: specialRequestsValue,
-        }),
-      });
-      const bookingData = await bookingRes.json();
-      if (!bookingRes.ok) throw new Error(bookingData.error || "Failed to create booking.");
-
-      if (isExperience) {
-        fetch("/api/mail/send-experience-confirmation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: user.email,
-            customerName: user.full_name || "Customer",
-            title: titleParam,
-            checkInDate: checkInStr,
-            checkOutDate: checkOutStr,
-          }),
-        }).catch(err => console.error("Failed to send experience confirmation email:", err));
-      }
-
-      router.push(`/pay-done?bookingId=${bookingData.id}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
+      
+      await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
+      return;
     } catch (err: any) {
       console.error("Payment failed:", err);
       setError(err.message || t("checkoutGeneralError"));
@@ -579,121 +537,29 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           <div className="w-14 border-b border-neutral-200 dark:border-neutral-700 my-5"></div>
 
           <div className="mt-6">
+            <div className="flex my-5 gap-1">
+              <button
+                type="button"
+                className="px-6 py-2.5 rounded-full bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 focus:outline-none whitespace-nowrap font-semibold"
+              >
+                {t("checkoutVietQRPayOS")}
+              </button>
+            </div>
 
-            <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
-              <Tab.List className="flex my-5 gap-1 overflow-x-auto pb-1">
-                <Tab as={Fragment}>
-                  {({ selected }) => (
-                    <button
-                      className={`px-4 py-1.5 sm:px-6 sm:py-2.5 rounded-full focus:outline-none whitespace-nowrap ${
-                        selected
-                          ? "bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900"
-                          : "text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      }`}
-                    >
-                      {t("checkoutPayPal")}
-                    </button>
-                  )}
-                </Tab>
-                <Tab as={Fragment}>
-                  {({ selected }) => (
-                    <button
-                      className={`px-4 py-1.5 sm:px-6 sm:py-2.5  rounded-full flex items-center justify-center focus:outline-none whitespace-nowrap ${
-                        selected
-                          ? "bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900"
-                          : " text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      }`}
-                    >
-                      <span className="mr-2.5">{t("checkoutCreditCard")}</span>
-                      <Image className="w-8" src={visaPng} alt="visa" />
-                      <Image
-                        className="w-8"
-                        src={mastercardPng}
-                        alt="mastercard"
-                      />
-                    </button>
-                  )}
-                </Tab>
-                <Tab as={Fragment}>
-                  {({ selected }) => (
-                    <button
-                      className={`px-4 py-1.5 sm:px-6 sm:py-2.5 rounded-full focus:outline-none whitespace-nowrap ${
-                        selected
-                          ? "bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900"
-                          : "text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      }`}
-                    >
-                      {t("checkoutVietQRPayOS")}
-                    </button>
-                  )}
-                </Tab>
-              </Tab.List>
+            <div className="space-y-5">
+              <div className="p-5 bg-blue-50/50 dark:bg-neutral-800 rounded-2xl border border-blue-100/30 dark:border-neutral-700 space-y-3">
+                <div className="flex items-center space-x-3 text-neutral-800 dark:text-neutral-200">
+                  <span className="text-2xl">🇻🇳</span>
+                  <h4 className="font-semibold text-base">
+                    {t("checkoutPayWithVietQRDescription")}
+                  </h4>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                  {t("checkoutPayWithVietQRIntro")}
+                </p>
+              </div>
+            </div>
 
-              <Tab.Panels>
-                {/* Paypal */}
-                <Tab.Panel className="space-y-5">
-                  <div className="space-y-1">
-                    <Label>{t("checkoutEmailLabel")} </Label>
-                    <Input type="email" defaultValue="example@gmail.com" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>{t("checkoutPasswordLabel")} </Label>
-                    <Input type="password" defaultValue="***" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Messager for author </Label>
-                    <Textarea placeholder="..." />
-                    <span className="text-sm text-neutral-500 block">
-                      Write a few sentences about yourself.
-                    </span>
-                  </div>
-                </Tab.Panel>
-
-                {/* Credit Card */}
-                <Tab.Panel className="space-y-5">
-                  <div className="space-y-1">
-                    <Label>{t("checkoutCardNumber")} </Label>
-                    <Input defaultValue="111 112 222 999" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>{t("checkoutCardHolder")} </Label>
-                    <Input defaultValue="JOHN DOE" />
-                  </div>
-                  <div className="flex space-x-5  ">
-                    <div className="flex-1 space-y-1">
-                      <Label>{t("checkoutExpirationDate")} </Label>
-                      <Input type="date" defaultValue="MM/YY" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <Label>{t("checkoutCVC")} </Label>
-                      <Input />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Messager for author </Label>
-                    <Textarea placeholder="..." />
-                    <span className="text-sm text-neutral-500 block">
-                      Write a few sentences about yourself.
-                    </span>
-                  </div>
-                </Tab.Panel>
-
-                {/* VietQR (PayOS) */}
-                <Tab.Panel className="space-y-5">
-                  <div className="p-5 bg-blue-50/50 dark:bg-neutral-800 rounded-2xl border border-blue-100/30 dark:border-neutral-700 space-y-3">
-                    <div className="flex items-center space-x-3 text-neutral-800 dark:text-neutral-200">
-                      <span className="text-2xl">🇻🇳</span>
-                      <h4 className="font-semibold text-base">
-                        {t("checkoutPayWithVietQRDescription")}
-                      </h4>
-                    </div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                      {t("checkoutPayWithVietQRIntro")}
-                    </p>
-                  </div>
-                </Tab.Panel>
-              </Tab.Panels>
-            </Tab.Group>
             {error && (
               <div className="p-3 bg-red-100 text-red-800 rounded-lg text-sm mt-4">
                 {error}

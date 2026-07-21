@@ -4,6 +4,7 @@ import React, { FC } from "react";
 import Logo from "@/shared/Logo";
 import MenuBar from "@/shared/MenuBar";
 import LangDropdown from "./LangDropdown";
+import CurrencyDropdown from "./CurrencyDropdown";
 import NotifyDropdown from "./NotifyDropdown";
 import AvatarDropdown from "./AvatarDropdown";
 import DropdownTravelers from "./DropdownTravelers";
@@ -42,6 +43,7 @@ const MainNav2: FC<MainNav2Props> = ({ className = "" }) => {
           <div className="hidden lg:flex space-x-1">
             <TemplatesDropdown />
             <LangDropdown />
+            <CurrencyDropdown />
             {user?.role === "RECEPTIONIST" ? (
               <Link
                 href={"/dashboard/receptionist" as Route<string>}

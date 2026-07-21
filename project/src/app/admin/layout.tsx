@@ -21,6 +21,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const { logout } = useAuth();
 
+  const isCreateRoute = pathname?.startsWith("/admin/incidents/create") || pathname?.startsWith("/admin/lost-found/create");
+
+  if (isCreateRoute) {
+    return <div className="container py-12">{children}</div>;
+  }
+
   const menuItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Hotels & Rooms", href: "/admin/rooms", icon: BedDouble },

@@ -6,9 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { CreateLostFoundSchema, CreateLostFoundInput } from "@/types/lost-found";
 import { Route } from "@/routers/types";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LostFoundForm() {
   const router = useRouter();
+  const { user } = useAuth();
   const [submitError, setSubmitError] = useState<string>("");
 
   const {
@@ -43,8 +45,12 @@ export default function LostFoundForm() {
         return;
       }
 
-      // Về lại trang danh sách
-      router.push("/admin/lost-found" as Route);
+      // Về lại trang danh sách phù hợp
+      if (user?.role === "ADMIN") {
+        router.push("/admin/lost-found" as Route);
+      } else {
+        router.push("/bookings" as Route);
+      }
       router.refresh();
     } catch (error) {
       setSubmitError("Lỗi kết nối máy chủ. Vui lòng thử lại sau.");

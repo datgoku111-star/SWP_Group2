@@ -5,8 +5,8 @@ import { getCurrentUser } from "@/lib/auth-server";
 export async function GET(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user || !["ADMIN", "RECEPTIONIST"].includes(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -19,6 +19,12 @@ export async function GET(request: Request) {
       .select("*, room:rooms(*, room_type:room_types(*)), user:users(*), guest:guests(*)")
       .order("created_at", { ascending: false })
       .limit(200);
+
+    if (user.role === "CUSTOMER") {
+      dbQuery = dbQuery.eq("user_id", user.sub);
+    } else if (!["ADMIN", "RECEPTIONIST"].includes(user.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
 
     if (statusFilter) {
       dbQuery = dbQuery.eq("status", statusFilter);

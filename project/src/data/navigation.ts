@@ -151,7 +151,8 @@ const templatesChildrenMenus: NavItemType[] = [
   },
   { id: ncNanoId(), href: "/checkout", name: "Checkout" },
   { id: ncNanoId(), href: "/pay-done", name: "Pay done" },
-  { id: ncNanoId(), href: "/services", name: "Food Services" },
+  { id: ncNanoId(), href: "/services?category=FOOD" as Route, name: "Food Services" },
+  { id: ncNanoId(), href: "/services?category=LAUNDRY" as Route, name: "Laundry Services" },
   { id: ncNanoId(), href: "/author", name: "Author page" },
   { id: ncNanoId(), href: "/account", name: "Account page" },
   {
@@ -163,8 +164,8 @@ const templatesChildrenMenus: NavItemType[] = [
 
 // Thêm module Admin Management vào menu
 const adminManagementMenus: NavItemType[] = [
-  { id: ncNanoId(), href: "/admin/incidents" as Route, name: "Sự cố phòng" },
-  { id: ncNanoId(), href: "/admin/lost-found" as Route, name: "Đồ thất lạc" },
+  { id: ncNanoId(), href: "/admin/incidents/create" as Route, name: "Sự cố phòng" },
+  { id: ncNanoId(), href: "/admin/lost-found/create" as Route, name: "Đồ thất lạc" },
 ];
 
 export const NAVIGATION_DEMO: NavItemType[] = [
@@ -273,7 +274,7 @@ export const NAVIGATION_DEMO: NavItemType[] = [
   // Module mới thêm
   {
     id: ncNanoId(),
-    href: "/admin/incidents" as Route,
+    href: "/admin/incidents/create" as Route,
     name: "Admin",
     type: "dropdown",
     children: adminManagementMenus,
@@ -308,7 +309,8 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
         name: "Stay listings (map)",
       },
       { id: ncNanoId(), href: "/listing-stay-detail", name: "Stay detail" },
-      { id: ncNanoId(), href: "/services", name: "Food Services" }, 
+      { id: ncNanoId(), href: "/services?category=FOOD" as Route, name: "Food Services" }, 
+      { id: ncNanoId(), href: "/services?category=LAUNDRY" as Route, name: "Laundry Services" }, 
       {
         id: ncNanoId(),
         href: "/listing-experiences",

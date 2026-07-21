@@ -53,6 +53,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const [selectedRoomId, setSelectedRoomId] = useState<string>("");
   const [hotelRoomData, setHotelRoomData] = useState<any>(null);
   const [occupancyData, setOccupancyData] = useState<any[]>([]);
+  const [liveRoom, setLiveRoom] = useState<any>(null);
 
   // 1. Fetch static hotel product data (available_rooms capacity) from DB
   useEffect(() => {
@@ -90,6 +91,38 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     fetchOccupancyData();
   }, []);
 
+  // 2.5 Fetch specific live room info matching the title
+  useEffect(() => {
+    const fetchLiveRoom = async () => {
+      try {
+        const res = await fetch("/api/rooms?all=true");
+        if (res.ok) {
+          const rooms = await res.json();
+          const getRoomNumberByTitle = (title: string): string => {
+            const t = title.toLowerCase();
+            if (t.includes("cedars")) return "101";
+            if (t.includes("ship & castle") || t.includes("ship and castle")) return "102";
+            if (t.includes("bell")) return "103";
+            if (t.includes("windmill")) return "201";
+            if (t.includes("holiday inn")) return "202";
+            if (t.includes("half moon")) return "203";
+            if (t.includes("white horse")) return "301";
+            if (t.includes("unicorn")) return "302";
+            return "101";
+          };
+          const num = getRoomNumberByTitle(titleParam);
+          const found = (rooms || []).find((r: any) => r.room_number === num);
+          if (found) {
+            setLiveRoom(found);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load live room info for detail page:", err);
+      }
+    };
+    fetchLiveRoom();
+  }, [titleParam]);
+
   // 3. Check live rooms available for selected dates
   useEffect(() => {
     if (!startDate || !endDate) return;
@@ -102,12 +135,28 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         const res = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
         if (res.ok) {
           const data = await res.json();
-          setAvailableRooms(data || []);
-          if (data && data.length > 0) {
+          
+          const getRoomTypeNameFromTitle = (title: string): string => {
+            const t = title.toLowerCase();
+            if (t.includes("suite")) return "Suite";
+            if (t.includes("deluxe")) return "Deluxe";
+            if (t.includes("family")) return "Family";
+            return "Standard";
+          };
+
+          const targetCategory = getRoomTypeNameFromTitle(titleParam);
+          const filtered = (data || []).filter((r: any) => 
+            r.room_type?.name?.toLowerCase() === targetCategory.toLowerCase()
+          );
+          
+          const roomsToUse = filtered.length > 0 ? filtered : (data || []);
+          setAvailableRooms(roomsToUse);
+
+          if (roomsToUse && roomsToUse.length > 0) {
             // Keep selected room if it is still available, otherwise default to first available
             setSelectedRoomId((prevId) => {
-              const stillAvailable = data.some((r: any) => r.id === prevId);
-              return stillAvailable ? prevId : data[0].id;
+              const stillAvailable = roomsToUse.some((r: any) => r.id === prevId);
+              return stillAvailable ? prevId : roomsToUse[0].id;
             });
           } else {
             setSelectedRoomId("");
@@ -935,23 +984,40 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                     </span>
                   </div>
                   
-                  {/* Room selection dropdown */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 block">
-                      Chọn mã phòng & tầng mong muốn:
-                    </label>
-                    <select
-                      value={selectedRoomId}
-                      onChange={(e) => setSelectedRoomId(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-medium focus:ring-1 focus:ring-primary-500 text-neutral-900 dark:text-neutral-200"
-                    >
-                      {availableRooms.slice(0, maxAvailable).map((room) => (
-                        <option key={room.id} value={room.id}>
-                          Phòng {room.room_number} - Tầng {room.floor} ({room.room_type?.name || "Standard"})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {liveRoom && (
+                    <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                      <div className="flex justify-between">
+                        <span>Mã số phòng:</span>
+                        <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                          Phòng {liveRoom.room_number} (Tầng {liveRoom.floor})
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Trạng thái phòng hiện tại:</span>
+                        {(() => {
+                          const labelMap: Record<string, string> = {
+                            AVAILABLE: "Trống (Sẵn sàng)",
+                            IN_USE: "Đang sử dụng",
+                            DIRTY: "Chưa dọn",
+                            CLEANING: "Đang dọn",
+                            MAINTENANCE: "Bảo trì",
+                          };
+                          const classMap: Record<string, string> = {
+                            AVAILABLE: "text-green-600 font-bold",
+                            IN_USE: "text-blue-600 font-bold",
+                            DIRTY: "text-red-600 font-bold",
+                            CLEANING: "text-purple-600 font-bold",
+                            MAINTENANCE: "text-amber-600 font-bold",
+                          };
+                          return (
+                            <span className={classMap[liveRoom.status] || "font-bold"}>
+                              {labelMap[liveRoom.status] || liveRoom.status}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             } else {

@@ -24,6 +24,8 @@ import {
   DollarSign
 } from "lucide-react";
 
+import DashboardLayout from "../dashboard/layout";
+
 function CheckInContent() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -70,6 +72,8 @@ function CheckInContent() {
   const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH" | "BANK_TRANSFER">("CARD");
   const [transactionRef, setTransactionRef] = useState("");
   const [customAmount, setCustomAmount] = useState<number | null>(null);
+  const [checkoutDetails, setCheckoutDetails] = useState<any | null>(null);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   // Action Loading & Messages
   const [actionLoading, setActionLoading] = useState(false);
@@ -90,7 +94,7 @@ function CheckInContent() {
         handleSearchQuery("", activeTab === "checkout" ? "CHECKED_IN" : "CONFIRMED");
       }
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, walkInDates.check_in, walkInDates.check_out]);
 
   // Handle auto-selection if bookingId or roomId is passed in URL
   useEffect(() => {
@@ -120,6 +124,24 @@ function CheckInContent() {
       }
     } catch (err) {
       console.error("Error fetching rooms for walkin:", err);
+    }
+  };
+
+  const fetchCheckoutDetails = async (bookingId: string) => {
+    setLoadingCheckout(true);
+    try {
+      const res = await fetch(`/api/checkin/${bookingId}/checkout`);
+      if (res.ok) {
+        const data = await res.json();
+        setCheckoutDetails(data);
+        setCustomAmount(data.grand_total || 0);
+      } else {
+        console.error("Failed to fetch checkout details");
+      }
+    } catch (err) {
+      console.error("Error fetching checkout details:", err);
+    } finally {
+      setLoadingCheckout(false);
     }
   };
 
@@ -163,13 +185,28 @@ function CheckInContent() {
     // Switch tab automatically based on status if needed
     if (selected.status === "CHECKED_IN") {
       setActiveTab("checkout");
-      setCustomAmount(selected.total_amount || 0);
       setTransactionRef("TXN-" + Math.random().toString(36).substring(2, 9).toUpperCase());
+      fetchCheckoutDetails(selected.id);
     } else if (selected.status === "CONFIRMED" || selected.status === "PENDING") {
       setActiveTab("checkin");
-      const defaultName = selected.user?.full_name || selected.guest?.full_name || "";
-      if (defaultName && !guestForm.full_name) {
-        setGuestForm((prev) => ({ ...prev, full_name: defaultName }));
+      setCheckoutDetails(null);
+      if (selected.guest) {
+        setGuestForm({
+          full_name: selected.guest.full_name || "",
+          id_card_number: selected.guest.id_card_number || "",
+          id_card_type: selected.guest.id_card_type || "CCCD",
+          nationality: selected.guest.nationality || "Vietnam",
+          address: selected.guest.address || "",
+        });
+      } else {
+        const defaultName = selected.user?.full_name || "";
+        setGuestForm({
+          full_name: defaultName,
+          id_card_number: "",
+          id_card_type: "CCCD",
+          nationality: "Vietnam",
+          address: "",
+        });
       }
     }
   };
@@ -188,6 +225,10 @@ function CheckInContent() {
   // Action 1: Confirm Check-In
   const confirmCheckIn = async () => {
     if (!booking) return;
+    if (!guestForm.full_name || !guestForm.id_card_number) {
+      setError("Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!");
+      return;
+    }
     setActionLoading(true);
     setError("");
     setSuccess("");
@@ -261,7 +302,7 @@ function CheckInContent() {
       return;
     }
     if (!guestForm.full_name || !guestForm.id_card_number) {
-      setError("Please enter the guest full name and ID card number.");
+      setError("Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!");
       return;
     }
 
@@ -345,6 +386,22 @@ function CheckInContent() {
     }
   };
 
+  const resetAllSelectionAndErrors = (tab: "checkin" | "checkout" | "walkin") => {
+    setActiveTab(tab);
+    setBooking(null);
+    setSelectedRoom(null);
+    setError("");
+    setSuccess("");
+    setCheckoutDetails(null);
+    setGuestForm({
+      full_name: "",
+      id_card_number: "",
+      id_card_type: "CCCD",
+      nationality: "Vietnam",
+      address: "",
+    });
+  };
+
   if (isLoading) return <div className="container py-20 text-center">Loading...</div>;
 
   return (
@@ -363,7 +420,7 @@ function CheckInContent() {
         {/* Operating Mode Tabs */}
         <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1.5 rounded-2xl gap-1">
           <button
-            onClick={() => { setActiveTab("checkin"); setBooking(null); setError(""); setSuccess(""); }}
+            onClick={() => resetAllSelectionAndErrors("checkin")}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === "checkin"
                 ? "bg-primary-6000 text-white shadow-md shadow-primary-6000/20"
@@ -375,7 +432,7 @@ function CheckInContent() {
           </button>
 
           <button
-            onClick={() => { setActiveTab("checkout"); setBooking(null); setError(""); setSuccess(""); }}
+            onClick={() => resetAllSelectionAndErrors("checkout")}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === "checkout"
                 ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
@@ -387,7 +444,7 @@ function CheckInContent() {
           </button>
 
           <button
-            onClick={() => { setActiveTab("walkin"); setBooking(null); setError(""); setSuccess(""); }}
+            onClick={() => resetAllSelectionAndErrors("walkin")}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === "walkin"
                 ? "bg-green-600 text-white shadow-md shadow-green-600/20"
@@ -553,7 +610,6 @@ function CheckInContent() {
                     value={walkInDates.check_in}
                     onChange={(e) => {
                       setWalkInDates({ ...walkInDates, check_in: e.target.value });
-                      setTimeout(fetchAvailableRoomsForWalkIn, 100);
                     }}
                     className="h-10 text-sm"
                   />
@@ -565,7 +621,6 @@ function CheckInContent() {
                     value={walkInDates.check_out}
                     onChange={(e) => {
                       setWalkInDates({ ...walkInDates, check_out: e.target.value });
-                      setTimeout(fetchAvailableRoomsForWalkIn, 100);
                     }}
                     className="h-10 text-sm"
                   />
@@ -660,10 +715,59 @@ function CheckInContent() {
                   <span className="text-neutral-400">Primary Guest:</span>
                   <span className="font-bold text-primary-300">{booking.user?.full_name || booking.guest?.full_name || "Guest"}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-400">Total Room Charge:</span>
-                  <span className="font-extrabold text-white text-base">{formatMoney(booking.total_amount)}</span>
-                </div>
+                {activeTab === "checkout" ? (
+                  loadingCheckout ? (
+                    <div className="text-xs text-neutral-400 animate-pulse text-center py-2">
+                      Calculating Billing Details...
+                    </div>
+                  ) : checkoutDetails ? (
+                    <>
+                      <div className="flex justify-between pt-2 border-t border-neutral-700/40">
+                        <span className="text-neutral-400">Room Charges:</span>
+                        <span className="font-bold">{formatMoney(checkoutDetails.room_charges)}</span>
+                      </div>
+                      {checkoutDetails.incident_charges?.total_fine > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-red-400 font-semibold">Incident Fines:</span>
+                          <span className="font-bold text-red-300">{formatMoney(checkoutDetails.incident_charges.total_fine)}</span>
+                        </div>
+                      )}
+                      {/* List incidents if any */}
+                      {checkoutDetails.incident_charges?.incidents?.length > 0 && (
+                        <div className="pl-3 space-y-1 text-xs border-l border-red-500/30 my-1">
+                          {checkoutDetails.incident_charges.incidents.map((inc: any) => (
+                            <div key={inc.id} className="flex justify-between text-neutral-400">
+                              <span>• {inc.description || inc.incident_type || "Incident"}:</span>
+                              <span>{formatMoney(inc.approved_charge || inc.estimated_charge || 0)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex justify-between pt-2 border-t border-neutral-700/40">
+                        <span className="text-neutral-400">Subtotal:</span>
+                        <span className="font-bold">{formatMoney(checkoutDetails.subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-400">VAT (10%):</span>
+                        <span className="font-bold">{formatMoney(checkoutDetails.vat_amount)}</span>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t border-neutral-700/60 text-base font-extrabold">
+                        <span className="text-primary-300">Grand Total (Settle):</span>
+                        <span className="text-white">{formatMoney(checkoutDetails.grand_total)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between pt-2 border-t border-neutral-700/40">
+                      <span className="text-neutral-400">Total Room Charge:</span>
+                      <span className="font-extrabold text-white text-base">{formatMoney(booking.total_amount)}</span>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex justify-between pt-2 border-t border-neutral-700/40">
+                    <span className="text-neutral-400">Total Room Charge:</span>
+                    <span className="font-extrabold text-white text-base">{formatMoney(booking.total_amount)}</span>
+                  </div>
+                )}
               </div>
             </div>
           ) : activeTab === "walkin" && selectedRoom ? (
@@ -836,7 +940,7 @@ function CheckInContent() {
                       className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/25"
                       onClick={confirmWalkInCheckIn}
                       loading={actionLoading}
-                      disabled={actionLoading || !selectedRoom || !guestForm.full_name || !guestForm.id_card_number}
+                      disabled={actionLoading || !selectedRoom}
                     >
                       🚀 Create Walk-In Booking & Assign Room Now
                     </ButtonPrimary>
@@ -845,7 +949,7 @@ function CheckInContent() {
                       className="w-full h-12 text-base font-bold shadow-lg shadow-primary-6000/25"
                       onClick={confirmCheckIn}
                       loading={actionLoading}
-                      disabled={actionLoading || !booking || !guestForm.full_name || !guestForm.id_card_number}
+                      disabled={actionLoading || !booking}
                     >
                       Confirm Check-In & Assign Room
                     </ButtonPrimary>
@@ -863,7 +967,9 @@ function CheckInContent() {
 export default function CheckInPage() {
   return (
     <Suspense fallback={<div className="container py-20 text-center">Loading Check-In / Check-Out Console...</div>}>
-      <CheckInContent />
+      <DashboardLayout>
+        <CheckInContent />
+      </DashboardLayout>
     </Suspense>
   );
 }

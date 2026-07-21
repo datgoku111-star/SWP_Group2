@@ -101,7 +101,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // 4. Role-based access control
-  if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
+  if (
+    pathname.startsWith("/admin") &&
+    payload.role !== "ADMIN" &&
+    !pathname.startsWith("/admin/incidents/create") &&
+    !pathname.startsWith("/admin/lost-found/create")
+  ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

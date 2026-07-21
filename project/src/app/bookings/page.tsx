@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import DashboardLayout from "../dashboard/layout";
 import Link from "next/link";
 import type { Booking } from "@/types/hotel";
 import { Route } from "@/routers/types";
@@ -118,7 +119,8 @@ export default function BookingsPage() {
   const isStaff = ["ADMIN", "RECEPTIONIST"].includes(user?.role || "");
 
   return (
-    <div className="container py-12 mb-24 lg:mb-32 space-y-8">
+    <DashboardLayout>
+      <div className="container py-12 mb-24 lg:mb-32 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-700 pb-6">
         <div>
@@ -286,6 +288,7 @@ export default function BookingsPage() {
           </table>
         </div>
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
