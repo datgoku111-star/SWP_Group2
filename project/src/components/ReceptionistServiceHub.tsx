@@ -280,7 +280,7 @@ export default function ReceptionistServiceHub() {
   return (
     <div className="space-y-6">
       {/* Top Bar Banner for Receptionist Services */}
-      <div className="bg-gradient-to-r from-primary-600 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-primary-6000 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
             <Utensils className="w-3.5 h-3.5" />
@@ -345,7 +345,7 @@ export default function ReceptionistServiceHub() {
                 onClick={() => setFilterFloor("ALL")}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   filterFloor === "ALL"
-                    ? "bg-primary-600 text-white shadow"
+                    ? "bg-primary-6000 text-white shadow"
                     : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
                 }`}
               >
@@ -357,7 +357,7 @@ export default function ReceptionistServiceHub() {
                   onClick={() => setFilterFloor(fl)}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     filterFloor === fl
-                      ? "bg-primary-600 text-white shadow"
+                      ? "bg-primary-6000 text-white shadow"
                       : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
                   }`}
                 >
@@ -409,7 +409,7 @@ export default function ReceptionistServiceHub() {
 
                   {room.notes && (
                     <div className="bg-white/80 dark:bg-neutral-900/80 p-3 rounded-2xl text-xs font-medium text-neutral-700 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700 flex items-start gap-2">
-                      <User className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
+                      <User className="w-4 h-4 text-primary-6000 shrink-0 mt-0.5" />
                       <div>{room.notes}</div>
                     </div>
                   )}
@@ -419,7 +419,7 @@ export default function ReceptionistServiceHub() {
                     {room.status === "IN_USE" && (
                       <button
                         onClick={() => openServiceOrderingModal(room)}
-                        className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-extrabold py-3 px-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm"
+                        className="flex-1 bg-primary-6000 hover:bg-primary-700 text-white font-extrabold py-3 px-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm"
                       >
                         <Utensils className="w-4 h-4" />
                         ➕ Gọi Món / Dịch Vụ
@@ -482,7 +482,7 @@ export default function ReceptionistServiceHub() {
         <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
           <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h3 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Clock className="w-6 h-6 text-primary-600" />
+              <Clock className="w-6 h-6 text-primary-6000" />
               Danh Sách Yêu Cầu Dịch Vụ & Gọi Món Đang Phục Vụ ({activeOrders.length})
             </h3>
           </div>
@@ -518,7 +518,7 @@ export default function ReceptionistServiceHub() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-3">
-                          <span className="bg-primary-600 text-white font-black px-3 py-1 rounded-xl text-sm">
+                          <span className="bg-primary-6000 text-white font-black px-3 py-1 rounded-xl text-sm">
                             Phòng {order.room_number || "P201"}
                           </span>
                           <span className="text-xs font-bold text-neutral-500">Mã đơn: #{order.id}</span>
@@ -530,7 +530,7 @@ export default function ReceptionistServiceHub() {
                         <div className="flex flex-wrap gap-2 pt-1">
                           {order.items?.map((it: any, i: number) => (
                             <span key={i} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1.5 rounded-xl font-bold text-sm text-neutral-800 dark:text-neutral-200">
-                              {it.service_name} <strong className="text-primary-600">x{it.quantity}</strong>
+                              {it.service_name} <strong className="text-primary-6000">x{it.quantity}</strong>
                             </span>
                           ))}
                         </div>
@@ -544,7 +544,7 @@ export default function ReceptionistServiceHub() {
 
                       <div className="text-right">
                         <div className="text-xs text-neutral-400">Tổng tiền ghi nợ phòng</div>
-                        <div className="text-xl font-black text-primary-600 dark:text-primary-400">
+                        <div className="text-xl font-black text-primary-6000 dark:text-primary-400">
                           {order.total_amount.toLocaleString("vi-VN")} đ
                         </div>
                         <div className="text-xs text-neutral-400 mt-1">Ghi lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</div>
@@ -746,7 +746,7 @@ export default function ReceptionistServiceHub() {
                 <button
                   onClick={() => setServiceCategory("ALL")}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    serviceCategory === "ALL" ? "bg-primary-600 text-white" : "bg-neutral-100 dark:bg-neutral-700"
+                    serviceCategory === "ALL" ? "bg-primary-6000 text-white" : "bg-neutral-100 dark:bg-neutral-700"
                   }`}
                 >
                   Tất cả
@@ -756,7 +756,7 @@ export default function ReceptionistServiceHub() {
                     key={cat}
                     onClick={() => setServiceCategory(cat)}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      serviceCategory === cat ? "bg-primary-600 text-white" : "bg-neutral-100 dark:bg-neutral-700"
+                      serviceCategory === cat ? "bg-primary-6000 text-white" : "bg-neutral-100 dark:bg-neutral-700"
                     }`}
                   >
                     {cat === "FOOD" && "🍲 Đồ ăn"}
@@ -774,12 +774,12 @@ export default function ReceptionistServiceHub() {
                   <div key={srv.id} className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between">
                     <div>
                       <div className="font-extrabold text-sm text-neutral-900 dark:text-white">{srv.name}</div>
-                      <div className="text-xs font-bold text-primary-600 mt-0.5">{srv.price.toLocaleString("vi-VN")} đ</div>
+                      <div className="text-xs font-bold text-primary-6000 mt-0.5">{srv.price.toLocaleString("vi-VN")} đ</div>
                     </div>
                     <button
                       type="button"
                       onClick={() => addItemToOrder(srv)}
-                      className="p-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white transition-all shadow"
+                      className="p-2 rounded-xl bg-primary-6000 hover:bg-primary-700 text-white transition-all shadow"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -791,7 +791,7 @@ export default function ReceptionistServiceHub() {
               <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
                 <h4 className="font-bold text-sm text-neutral-900 dark:text-white flex items-center justify-between">
                   <span>🛒 Các Món / Dịch Vụ Đã Chọn ({orderItems.length})</span>
-                  <span className="text-primary-600 font-extrabold">{totalOrderAmount.toLocaleString("vi-VN")} đ</span>
+                  <span className="text-primary-6000 font-extrabold">{totalOrderAmount.toLocaleString("vi-VN")} đ</span>
                 </h4>
 
                 {orderItems.length === 0 ? (
@@ -818,7 +818,7 @@ export default function ReceptionistServiceHub() {
                           <button
                             type="button"
                             onClick={() => addItemToOrder(item.service)}
-                            className="w-7 h-7 rounded-lg bg-primary-600 text-white flex items-center justify-center font-bold"
+                            className="w-7 h-7 rounded-lg bg-primary-6000 text-white flex items-center justify-center font-bold"
                           >
                             +
                           </button>
@@ -846,7 +846,7 @@ export default function ReceptionistServiceHub() {
             <div className="p-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
               <div>
                 <span className="text-xs text-neutral-400">Tổng cộng thanh toán</span>
-                <div className="text-2xl font-black text-primary-600 dark:text-primary-400">
+                <div className="text-2xl font-black text-primary-6000 dark:text-primary-400">
                   {totalOrderAmount.toLocaleString("vi-VN")} đ
                 </div>
               </div>
