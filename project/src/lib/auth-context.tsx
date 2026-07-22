@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           // ✨ Đồng bộ thêm loyalty_points sau mỗi lần đổi session
           await fetchUserData(session.user.id);
-        } else {
+        } else if (event === "SIGNED_OUT") {
           // Clear cookie on sign out
           await fetch("/api/auth/session", {
             method: "POST",
@@ -135,8 +135,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             body: JSON.stringify({ session: null }),
           });
           setUser(null);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 

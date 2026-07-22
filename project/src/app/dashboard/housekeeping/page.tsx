@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Wrench, Check, ArrowRight, BedDouble, Clock, CheckCheck, Plus, ClipboardList } from "lucide-react";
+import { Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Wrench, Check, ArrowRight, BedDouble, Clock, CheckCheck, Plus, ClipboardList, Shirt, Truck } from "lucide-react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 import { useAuth } from "@/lib/auth-context";
@@ -22,9 +22,11 @@ export interface RoomTurnover {
 export default function HousekeepingDashboardHub() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW">("DIRTY_FLOW");
+  const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW">("DIRTY_FLOW");
   const [rooms, setRooms] = useState<RoomTurnover[]>([]);
   const [loading, setLoading] = useState(true);
+  const [laundryOrders, setLaundryOrders] = useState<any[]>([]);
+  const [laundryLoading, setLaundryLoading] = useState(true);
 
   useEffect(() => {
     if (!authLoading) {
@@ -67,8 +69,42 @@ export default function HousekeepingDashboardHub() {
     }
   };
 
+  const fetchLaundryOrders = async () => {
+    try {
+      const res = await fetch("/api/laundry-bookings");
+      if (res.ok) {
+        const data = await res.json();
+        setLaundryOrders(data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch laundry orders:", err);
+    } finally {
+      setLaundryLoading(false);
+    }
+  };
+
+  const handleUpdateLaundryStatus = async (id: string, status: string, statusText: string) => {
+    try {
+      const res = await fetch(`/api/laundry-bookings?id=${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, status_text: statusText }),
+      });
+      if (res.ok) {
+        fetchLaundryOrders();
+      } else {
+        alert("Không thể cập nhật trạng thái đơn giặt là.");
+      }
+    } catch (err) {
+      console.error("Failed to update laundry status:", err);
+    }
+  };
+
   useEffect(() => {
     fetchRooms();
+    fetchLaundryOrders();
+    const interval = setInterval(fetchLaundryOrders, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const changeStatus = async (roomId: string, newStatus: RoomTurnover["status"], additionalNotes?: string) => {
@@ -263,6 +299,18 @@ export default function HousekeepingDashboardHub() {
         >
           <CheckCheck className="w-4 h-4" />
           Luồng 4: Rà Soát Sẵn Sàng (AVAILABLE) ({availableRooms.length})
+        </button>
+
+        <button
+          onClick={() => setActiveWorkflow("LAUNDRY_FLOW")}
+          className={`px-5 py-3 rounded-2xl text-sm font-extrabold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeWorkflow === "LAUNDRY_FLOW"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+              : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100"
+          }`}
+        >
+          <Shirt className="w-4 h-4" />
+          Luồng 5: Dịch Vụ Giặt Là (Laundry Orders) ({laundryOrders.filter(o => ["assigned", "washing", "ready_to_receive", "delivering"].includes(o.status_text)).length})
         </button>
       </div>
 
@@ -533,6 +581,170 @@ export default function HousekeepingDashboardHub() {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* WORKFLOW 5: LAUNDRY SERVICES OPERATION FLOW */}
+      {activeWorkflow === "LAUNDRY_FLOW" && (
+        <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
+          <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Shirt className="w-5 h-5 text-indigo-500" />
+              👕 LUỒNG 5: QUY TRÌNH XỬ LÝ YÊU CẦU GIẶT LÀ (laundry Operations)
+            </h2>
+            <p className="text-xs text-neutral-500 mt-1">
+              Nhận đồ từ phòng khách, giặt hấp sấy ủi và bàn giao trả quần áo sạch cho khách. Mọi hoạt động được đồng bộ trực tiếp tới Lễ Tân và Khách Hàng.
+            </p>
+          </div>
+
+          {laundryLoading ? (
+            <div className="text-center py-10">
+              <div className="w-6 h-6 border-2 border-primary-6000 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-xs text-neutral-450">Đang tải danh sách đơn giặt là...</p>
+            </div>
+          ) : laundryOrders.length === 0 ? (
+            <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
+              Chưa có đơn yêu cầu giặt là nào trong hệ thống.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {laundryOrders.map((order) => {
+                const isAssigned = order.status_text === "assigned";
+                const isWashing = order.status_text === "washing";
+                const isWashed = order.status_text === "washed";
+                const isReadyToReceive = order.status_text === "ready_to_receive";
+                const isDelivering = order.status_text === "delivering";
+                const isDelivered = order.status_text === "delivered";
+                const isRejected = order.status_text === "rejected";
+
+                let statusBadge = "";
+                let cardBorder = "";
+
+                if (isAssigned) {
+                  statusBadge = "⏳ Chờ Buồng phòng thu gom đồ";
+                  cardBorder = "border-purple-300 dark:border-purple-800/50 bg-purple-50/20 dark:bg-purple-950/10";
+                } else if (isWashing) {
+                  statusBadge = "🌀 Đang giặt đồ (Washing)";
+                  cardBorder = "border-amber-300 dark:border-amber-800/50 bg-amber-50/20 dark:bg-amber-950/10";
+                } else if (isWashed) {
+                  statusBadge = "👕 Đã giặt xong — Chờ khách ở phòng báo";
+                  cardBorder = "border-indigo-300 dark:border-indigo-800/50 bg-indigo-50/20 dark:bg-indigo-950/10";
+                } else if (isReadyToReceive) {
+                  statusBadge = "⏳ Chờ Lễ tân duyệt trả đồ";
+                  cardBorder = "border-orange-300 dark:border-orange-800/50 bg-orange-50/20 dark:bg-orange-950/10 animate-pulse";
+                } else if (isDelivering) {
+                  statusBadge = "🚚 Đang trả đồ (Delivering)";
+                  cardBorder = "border-blue-300 dark:border-blue-800/50 bg-blue-50/20 dark:bg-blue-950/10 animate-bounce";
+                } else if (isDelivered) {
+                  statusBadge = "✅ Đã giao đồ thành công";
+                  cardBorder = "border-emerald-300 dark:border-emerald-800/50 bg-emerald-50/20 dark:bg-emerald-950/10";
+                } else {
+                  statusBadge = "❌ Bị từ chối";
+                  cardBorder = "border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/20";
+                }
+
+                return (
+                  <div key={order.id} className={`border-2 p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm transition-all ${cardBorder}`}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="bg-neutral-800 text-white dark:bg-neutral-900 font-extrabold px-3 py-1 rounded-2xl text-xs shadow">
+                          Phòng {order.room_number || "P-VIP"}
+                        </span>
+                        <h4 className="text-base font-bold text-neutral-900 dark:text-white mt-3">
+                          Mã đơn: #{order.id.slice(0, 8).toUpperCase()}
+                        </h4>
+                      </div>
+                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm text-neutral-600 dark:text-neutral-300">
+                        {statusBadge}
+                      </span>
+                    </div>
+
+                    <div className="text-xs space-y-2">
+                      <div className="font-semibold text-neutral-700 dark:text-neutral-300">
+                        Loại dịch vụ: <span className="text-indigo-600 dark:text-indigo-400 font-black">{order.service_type}</span>
+                      </div>
+                      
+                      {/* Items */}
+                      <div className="bg-white/80 dark:bg-neutral-900/60 p-3 rounded-2xl border border-neutral-100 dark:border-neutral-850 space-y-1">
+                        <span className="text-[9px] text-neutral-400 font-bold uppercase block tracking-wider mb-1">Đồ cần giặt:</span>
+                        {order.items?.map((it: any, i: number) => (
+                          <div key={i} className="flex justify-between items-center text-xs">
+                            <span className="font-semibold">{it.quantity}x {it.service?.name.replace("Laundry - ", "")}</span>
+                            <span className="text-neutral-500 font-mono text-[10px]">({(it.unit_price).toLocaleString("vi-VN")} đ/cái)</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {order.customer_notes && (
+                        <div className="p-3 bg-amber-500/10 rounded-2xl text-[11px] italic text-neutral-750 dark:text-neutral-300 border border-amber-500/20">
+                          <strong>Ghi chú của khách:</strong> {order.customer_notes}
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between text-[11px] text-neutral-400 pt-2 border-t border-neutral-100 dark:border-neutral-850">
+                        <span>Đặt lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN")} - {new Date(order.created_at).toLocaleDateString("vi-VN")}</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">Tổng cộng: {order.total_amount?.toLocaleString("vi-VN")} đ</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 pt-2">
+                      {isAssigned && (
+                        <button
+                          onClick={() => handleUpdateLaundryStatus(order.id, "PENDING", "washing")}
+                          className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900/50 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                        >
+                          🌀 NHẬN ĐỒ VÀ ĐANG GIẶT
+                        </button>
+                      )}
+
+                      {isWashing && (
+                        <button
+                          onClick={() => handleUpdateLaundryStatus(order.id, "PENDING", "washed")}
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-2 text-xs"
+                        >
+                          👕 ĐÃ GIẶT XONG & SẴN SÀNG GIAO
+                        </button>
+                      )}
+
+                      {isReadyToReceive && (
+                        <div className="text-[10px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
+                          ⏳ Chờ Lễ tân duyệt giao đồ...
+                        </div>
+                      )}
+
+                      {isDelivering && (
+                        <button
+                          onClick={() => handleUpdateLaundryStatus(order.id, "COMPLETED", "delivered")}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-2 text-xs animate-bounce"
+                        >
+                          <Truck className="w-4 h-4" /> BÀN GIAO ĐỒ XONG (Trả Đồ)
+                        </button>
+                      )}
+
+                      {isWashed && (
+                        <div className="text-[10px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
+                          ⏳ Đã giặt sạch. Đang đợi Khách hàng báo sẵn sàng ở phòng để mang lên trả...
+                        </div>
+                      )}
+
+                      {isDelivered && (
+                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center w-full py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                          ✓ Đã trả xong đồ & cộng nợ phòng thành công
+                        </div>
+                      )}
+
+                      {isRejected && (
+                        <div className="text-xs text-red-600 dark:text-red-400 font-bold text-center w-full py-2 bg-red-500/10 rounded-xl border border-red-500/20">
+                          Đơn hàng bị từ chối
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
