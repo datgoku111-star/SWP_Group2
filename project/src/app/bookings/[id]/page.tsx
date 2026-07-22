@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { Route } from "@/routers/types";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import type { InvoiceData } from "@/types/hotel";
-import { Printer, CreditCard } from "lucide-react";
+import { Dialog, Transition } from "@headlessui/react";
+import ButtonSecondary from "@/shared/ButtonSecondary";
+import { Printer, CreditCard, XCircle } from "lucide-react";
 
 export default function BookingDetailPage({ params }: { params: { id: string } }) {
   const { user, isLoading } = useAuth();
@@ -18,6 +20,10 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"CARD" | "CASH" | "BANK_TRANSFER">("CARD");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -70,11 +76,64 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
     }
   };
 
+  const handleCancelBooking = async () => {
+    if (isStaff && !cancelReason.trim()) {
+      alert("Vui lòng nhập lý do hủy phòng.");
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const res = await fetch(`/api/bookings/${params.id}/cancel`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: cancelReason })
+      });
+      if (res.ok) {
+        setCancelModalOpen(false);
+        setSuccess("Đã hủy đặt phòng thành công.");
+        fetchInvoice(); // Refresh data
+      } else {
+        const err = await res.json();
+        setError(err.error || "Failed to cancel booking.");
+      }
+    } catch (err: any) {
+      console.error("Cancel error:", err);
+      setError("An error occurred while cancelling the booking.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleConfirmBooking = async () => {
+    setIsConfirming(true);
+    try {
+      const res = await fetch(`/api/bookings/${params.id}/confirm`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        setSuccess("Đã xác nhận phòng thành công.");
+        fetchInvoice(); // Refresh data
+      } else {
+        const err = await res.json();
+        setError(err.error || "Failed to confirm booking.");
+      }
+    } catch (err: any) {
+      console.error("Confirm error:", err);
+      setError("An error occurred while confirming.");
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   if (isLoading || loading) return <div className="container py-20">Loading...</div>;
   if (!invoice) return <div className="container py-20">Invoice not found or error occurred.</div>;
 
   const b = invoice.booking;
-  const canCheckout = ["ADMIN", "RECEPTIONIST"].includes(user?.role || "") && b.status === "CHECKED_IN";
+  const isStaff = ["ADMIN", "RECEPTIONIST"].includes(user?.role || "");
+  const canCheckout = isStaff && b.status === "CHECKED_IN";
+  const canConfirm = isStaff && b.status === "PENDING";
+  const canCancel = (b.status === "PENDING" || (!isStaff && b.status === "CONFIRMED"));
   
   const formatMoney = (amount: number) => 
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -84,11 +143,30 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* Header Actions */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-3">
           <h2 className="text-3xl font-semibold sm:text-4xl">Booking Details</h2>
-          <button className="flex items-center text-primary-6000 hover:text-primary-700 font-medium bg-primary-50 px-4 py-2 rounded-lg" onClick={() => window.print()}>
-            <Printer className="w-5 h-5 mr-2" /> Print Invoice
-          </button>
+          <div className="flex gap-3">
+            {canConfirm && (
+              <button 
+                onClick={handleConfirmBooking}
+                disabled={isConfirming}
+                className="flex items-center text-white font-medium bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isConfirming ? "Đang xác nhận..." : "Xác nhận phòng"}
+              </button>
+            )}
+            {canCancel && (
+              <button 
+                onClick={() => setCancelModalOpen(true)}
+                className="flex items-center text-red-600 hover:text-red-700 font-medium bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition-colors"
+              >
+                <XCircle className="w-5 h-5 mr-2" /> Hủy phòng
+              </button>
+            )}
+            <button className="flex items-center text-primary-6000 hover:text-primary-700 font-medium bg-primary-50 px-4 py-2 rounded-lg" onClick={() => window.print()}>
+              <Printer className="w-5 h-5 mr-2" /> Print Invoice
+            </button>
+          </div>
         </div>
 
         {error && <div className="p-4 bg-red-100 text-red-800 rounded-xl">{error}</div>}
@@ -280,6 +358,77 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
           </div>
         )}
       </div>
+
+      {/* CANCEL MODAL */}
+      <Transition appear show={cancelModalOpen} as={React.Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => !isCancelling && setCancelModalOpen(false)}>
+          <div className="min-h-screen px-4 text-center">
+            <Transition.Child
+              as={React.Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-40" />
+            </Transition.Child>
+
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+
+            <Transition.Child
+              as={React.Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-neutral-900 shadow-xl rounded-2xl">
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+                  Xác nhận hủy đặt phòng
+                </Dialog.Title>
+                <div className="mt-2 text-sm text-gray-500 dark:text-neutral-400">
+                  Bạn có chắc chắn muốn hủy đặt phòng{" "}
+                  <span className="font-bold text-gray-800 dark:text-gray-200">
+                    {b?.id.split("-")[0].toUpperCase()}
+                  </span>
+                  ?
+                  {isStaff ? (
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-xl font-medium text-left">
+                      Lưu ý: Tiền cọc sẽ được hoàn trả lại cho khách hàng.
+                      <textarea
+                        className="w-full mt-3 p-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-neutral-900 text-sm font-normal text-neutral-700 dark:text-neutral-300"
+                        placeholder="Nhập lý do hủy phòng..."
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl font-medium">
+                      Lưu ý: Hủy phòng sẽ làm bạn mất khoản tiền cọc là 10% tổng giá trị ban đầu (
+                      <span className="font-bold">{formatMoney((b?.total_amount || invoice?.grand_total || 0) * 0.1)}</span>
+                      ). Hành động này không thể hoàn tác.
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <ButtonSecondary onClick={() => setCancelModalOpen(false)} disabled={isCancelling}>
+                    Không, giữ lại
+                  </ButtonSecondary>
+                  <ButtonPrimary onClick={handleCancelBooking} loading={isCancelling} className="bg-red-600 hover:bg-red-700">
+                    Đồng ý hủy
+                  </ButtonPrimary>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 }

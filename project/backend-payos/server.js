@@ -225,11 +225,11 @@ app.post("/api/payment/webhook", async (req, res) => {
         }
         // --- 🚀 KẾT THÚC KHU VỰC TÍCH HỢP ĐIỂM LOYALTY ---
 
-        // 2b. Nếu là đặt phòng: cập nhật booking thành CONFIRMED
-        await supabase
-          .from("bookings")
-          .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
-          .eq("id", bookingId);
+        // 2b. BỎ TÍNH NĂNG TỰ ĐỘNG CONFIRM (Giữ nguyên PENDING để Lễ tân xác nhận thủ công)
+        // await supabase
+        //   .from("bookings")
+        //   .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
+        //   .eq("id", bookingId);
 
         // Check if this is an experience booking and trigger confirmation email
         try {

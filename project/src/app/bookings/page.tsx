@@ -10,6 +10,10 @@ import { Route } from "@/routers/types";
 import { Eye, Calendar, User as UserIcon, Search, ArrowRight, RefreshCw, Filter, CreditCard, Users, Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Input from "@/shared/Input";
+import { Dialog, Transition } from "@headlessui/react";
+import ButtonPrimary from "@/shared/ButtonPrimary";
+import ButtonSecondary from "@/shared/ButtonSecondary";
+import { XCircle } from "lucide-react";
 
 export default function BookingsPage() {
   const { t } = useTranslation();
@@ -63,6 +67,16 @@ export default function BookingsPage() {
   // Filters
   const [statusTab, setStatusTab] = useState<string>("ALL");
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+
+  // Cancel Modal State
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<Booking | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  
+  // Confirm State
+  const [isConfirming, setIsConfirming] = useState<string | null>(null);
+
+  const [cancelReason, setCancelReason] = useState("");
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -143,6 +157,58 @@ export default function BookingsPage() {
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const isStaff = ["ADMIN", "RECEPTIONIST"].includes(user?.role || "");
+
+  const handleCancelBooking = async () => {
+    if (!bookingToCancel) return;
+    if (isStaff && !cancelReason.trim()) {
+      alert("Vui lòng nhập lý do hủy phòng.");
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const res = await fetch(`/api/bookings/${bookingToCancel.id}/cancel`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: cancelReason })
+      });
+      if (res.ok) {
+        setCancelModalOpen(false);
+        setBookingToCancel(null);
+        fetchBookings();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to cancel booking.");
+      }
+    } catch (err) {
+      console.error("Cancel error:", err);
+      alert("An error occurred while cancelling the booking.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleConfirmBooking = async (bookingId: string) => {
+    setIsConfirming(bookingId);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/confirm`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        fetchBookings();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to confirm booking.");
+      }
+    } catch (err) {
+      console.error("Confirm error:", err);
+      alert("An error occurred while confirming.");
+    } finally {
+      setIsConfirming(null);
     }
   };
 
@@ -300,7 +366,16 @@ export default function BookingsPage() {
                       {formatMoney(booking.total_amount)}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      {isStaff && (booking.status === "CONFIRMED" || booking.status === "PENDING") && (
+                      {isStaff && booking.status === "PENDING" && (
+                        <button
+                          onClick={() => handleConfirmBooking(booking.id)}
+                          disabled={isConfirming === booking.id}
+                          className="inline-flex items-center px-3 py-1.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50"
+                        >
+                          <span>{isConfirming === booking.id ? "Đang xác nhận..." : "Xác nhận phòng"}</span>
+                        </button>
+                      )}
+                      {isStaff && booking.status === "CONFIRMED" && (
                         <Link
                           href={`/checkin?bookingId=${booking.id}`}
                           className="inline-flex items-center px-3 py-1.5 rounded-xl bg-primary-6000 hover:bg-primary-700 text-white font-bold text-xs shadow-sm transition-all"
@@ -316,6 +391,17 @@ export default function BookingsPage() {
                           <span>Settle / Check-Out</span>
                         </Link>
                       )}
+                      {(booking.status === "PENDING" || (!isStaff && booking.status === "CONFIRMED")) && (
+                        <button
+                          onClick={() => {
+                            setBookingToCancel(booking);
+                            setCancelModalOpen(true);
+                          }}
+                          className="inline-flex items-center px-3 py-1.5 rounded-xl bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 font-semibold text-xs transition-all"
+                        >
+                          <XCircle className="w-3.5 h-3.5 mr-1" /> Hủy phòng
+                        </button>
+                      )}
                       <Link
                         href={`/bookings/${booking.id}` as Route}
                         className="inline-flex items-center px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold text-xs transition-all"
@@ -330,6 +416,7 @@ export default function BookingsPage() {
           </table>
         </div>
       </div>
+
 
       {/* Car Rentals Section */}
       <div className="space-y-6 pt-6">
@@ -441,6 +528,78 @@ export default function BookingsPage() {
         </div>
       </div>
       </div>
+
+      {/* CANCEL MODAL */}
+      <Transition appear show={cancelModalOpen} as={React.Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => !isCancelling && setCancelModalOpen(false)}>
+          <div className="min-h-screen px-4 text-center">
+            <Transition.Child
+              as={React.Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-40" />
+            </Transition.Child>
+
+            <span className="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+
+            <Transition.Child
+              as={React.Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-neutral-900 shadow-xl rounded-2xl">
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+                  Xác nhận hủy đặt phòng
+                </Dialog.Title>
+                <div className="mt-2 text-sm text-gray-500 dark:text-neutral-400">
+                  Bạn có chắc chắn muốn hủy đặt phòng{" "}
+                  <span className="font-bold text-gray-800 dark:text-gray-200">
+                    {bookingToCancel?.id.split("-")[0].toUpperCase()}
+                  </span>
+                  ?
+                  {isStaff ? (
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-xl font-medium text-left">
+                      Lưu ý: Tiền cọc sẽ được hoàn trả lại cho khách hàng.
+                      <textarea
+                        className="w-full mt-3 p-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-neutral-900 text-sm font-normal text-neutral-700 dark:text-neutral-300"
+                        placeholder="Nhập lý do hủy phòng..."
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl font-medium">
+                      Lưu ý: Hủy phòng sẽ làm bạn mất khoản tiền cọc là 10% tổng giá trị (
+                      <span className="font-bold">{formatMoney((bookingToCancel?.total_amount || 0) * 0.1)}</span>
+                      ). Hành động này không thể hoàn tác.
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <ButtonSecondary onClick={() => setCancelModalOpen(false)} disabled={isCancelling}>
+                    Không, giữ lại
+                  </ButtonSecondary>
+                  <ButtonPrimary onClick={handleCancelBooking} loading={isCancelling} className="bg-red-600 hover:bg-red-700">
+                    Đồng ý hủy
+                  </ButtonPrimary>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
+
     </DashboardLayout>
   );
 }

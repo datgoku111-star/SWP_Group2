@@ -7,7 +7,7 @@ import { Route } from "@/routers/types";
 import Image from "next/image";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import type { Service, Booking } from "@/types/hotel";
-import { ShoppingCart, Plus, Minus, X } from "lucide-react";
+import { ShoppingCart, Plus, Minus, X, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 
@@ -78,12 +78,12 @@ export default function ServicesPage() {
         let activeBookings = [];
         if (user?.role === "CUSTOMER") {
           activeBookings = data.filter(
-            (b: Booking) => b.user_id === user?.id && ["CONFIRMED", "CHECKED_IN"].includes(b.status)
+            (b: Booking) => b.user_id === user?.id && b.status === "CHECKED_IN"
           );
         } else {
-          // Admin, receptionists can select from all active or confirmed bookings
+          // Admin, receptionists can select from all checked-in bookings
           activeBookings = data.filter(
-            (b: Booking) => ["CONFIRMED", "CHECKED_IN"].includes(b.status)
+            (b: Booking) => b.status === "CHECKED_IN"
           );
         }
 
@@ -113,6 +113,14 @@ export default function ServicesPage() {
     });
   };
 
+  const clearItemFromCart = (serviceId: string) => {
+    setCart((prev) => {
+      const newCart = { ...prev };
+      delete newCart[serviceId];
+      return newCart;
+    });
+  };
+
   const cartItemsCount = Object.values(cart).reduce((a, b) => a + b, 0);
   const cartTotal = Object.entries(cart).reduce((total, [id, qty]) => {
     const service = services.find((s) => s.id === id);
@@ -128,6 +136,7 @@ export default function ServicesPage() {
     setError("");
     try {
       const cartEntries = Object.entries(cart);
+      if (cartEntries.length === 0) return;
       const items = cartEntries.map(([service_id, quantity]) => ({ service_id, quantity }));
       const selectedB = bookings.find((b) => b.id === selectedBookingId);
       const roomNum = selectedB?.room?.room_number || "P-VIP";
@@ -137,6 +146,7 @@ export default function ServicesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           booking_id: selectedBookingId,
+          total_amount: cartTotal,
           items,
           notes: `Khách đặt từ phòng ${roomNum}`,
         }),
@@ -149,10 +159,15 @@ export default function ServicesPage() {
 
       setCart({});
       setIsCartOpen(false);
-      setSuccess("✅ Đã gửi đơn đặt món thành công! Đơn hàng đã gửi tới Lễ Tân để duyệt & chuyển xuống Bếp.");
-      setTimeout(() => setSuccess(""), 6000);
+      
+      if (user?.role === "CUSTOMER") {
+        router.push("/dashboard/customer" as Route);
+      } else {
+        setSuccess("✅ Đã gửi đơn đặt món thành công! Đơn hàng đã gửi tới Lễ Tân để duyệt & chuyển xuống Bếp.");
+        setTimeout(() => setSuccess(""), 6000);
+      }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "An error occurred");
     } finally {
       setOrderLoading(false);
     }
@@ -200,7 +215,6 @@ export default function ServicesPage() {
   };
 
   if (isLoading) return <div className="container py-20">{t("loading")}</div>;
-
   const filteredServices =
     activeCategory === "ALL"
       ? services
@@ -365,12 +379,20 @@ export default function ServicesPage() {
                             x {qty}
                           </span>
                         </div>
-                        <span className="font-semibold">
-                          {new Intl.NumberFormat(
-                            i18n.language === "vn" ? "vi-VN" : "en-US",
-                            { style: "currency", currency: "VND" },
-                          ).format(service.price * qty)}
-                        </span>
+                        <div className="flex items-center space-x-4">
+                          <span className="font-semibold">
+                            {new Intl.NumberFormat(
+                              i18n.language === "vn" ? "vi-VN" : "en-US",
+                              { style: "currency", currency: "VND" },
+                            ).format(service.price * qty)}
+                          </span>
+                          <button
+                            onClick={() => clearItemFromCart(id)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

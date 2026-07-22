@@ -22,7 +22,7 @@ export default function CustomerDashboard() {
         setActiveBooking(active || null);
 
         if (active) {
-          fetch(`/api/orders?bookingId=${active.id}`)
+          fetch(`/api/orders?booking_id=${active.id}`)
             .then((r) => r.json())
             .then((ordersData) => {
               if (Array.isArray(ordersData)) setMyOrders(ordersData);
@@ -32,6 +32,29 @@ export default function CustomerDashboard() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+  };
+
+  const updateOrderDeliveryState = async (orderId: string, newState: string, targetStatus: string) => {
+    try {
+      const order = myOrders.find((o) => o.id === orderId);
+      let newNotes = order?.notes || "";
+      newNotes = newNotes
+        .replace(/\[DELIVERED_WAITING_CONFIRM\]/g, "")
+        .replace(/\[CUSTOMER_NOT_RECEIVED\]/g, "")
+        .replace(/\[REDO_REQUESTED_BY_RECEPTIONIST\]/g, "")
+        .replace(/\[CUSTOMER_CONFIRMED\]/g, "")
+        .trim();
+      newNotes = newNotes ? `${newNotes}\n${newState}` : newState;
+
+      await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: targetStatus, notes: newNotes }),
+      });
+      fetchBookingsAndOrders();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -80,9 +103,11 @@ export default function CustomerDashboard() {
               </div>
 
               <div className="flex gap-4">
-                <Link href={"/services" as Route} className="flex items-center px-6 py-3 bg-primary-6000 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors">
-                  <UtensilsCrossed className="w-5 h-5 mr-2" /> Order Service
-                </Link>
+                {activeBooking.status === "CHECKED_IN" && (
+                  <Link href={"/services" as Route} className="flex items-center px-6 py-3 bg-primary-6000 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors">
+                    <UtensilsCrossed className="w-5 h-5 mr-2" /> Order Service
+                  </Link>
+                )}
                 <Link href={`/bookings/${activeBooking.id}` as Route} className="flex items-center px-6 py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-xl font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
                   View Details & Invoice
                 </Link>
@@ -108,6 +133,10 @@ export default function CustomerDashboard() {
               <div className="space-y-4">
                 {myOrders.map((order) => {
                   const isForwarded = order.notes && order.notes.includes("[FORWARDED_TO_KITCHEN]");
+                  const isDelivered = order.notes && order.notes.includes("[DELIVERED_WAITING_CONFIRM]");
+                  const isNotReceived = order.notes && order.notes.includes("[CUSTOMER_NOT_RECEIVED]");
+                  const isRedoRequested = order.notes && order.notes.includes("[REDO_REQUESTED_BY_RECEPTIONIST]");
+                  const isConfirmed = order.notes && order.notes.includes("[CUSTOMER_CONFIRMED]");
                   const estMatch = order.notes ? order.notes.match(/\[EST_TIME:\s*([^\]]+)\]/) : null;
 
                   let stepIndex = 1;
@@ -121,15 +150,32 @@ export default function CustomerDashboard() {
                     badgeClass = "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 border-orange-300";
                     progressPercent = "66%";
                   } else if (order.status === "IN_PROGRESS") {
-                    stepIndex = 3;
-                    badgeText = estMatch
-                      ? `🔥 Đầu bếp đang chế biến — ⏱️ Dự kiến hoàn thành sau: ${estMatch[1]}`
-                      : "🔥 Đầu bếp đang chế biến món ăn / Đang mang lên phòng";
-                    badgeClass = "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-300 animate-pulse";
-                    progressPercent = "90%";
+                    if (isDelivered) {
+                      stepIndex = 4;
+                      badgeText = "🚪 Bếp đã giao đồ — Vui lòng xác nhận nhận món";
+                      badgeClass = "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 border-purple-300 animate-pulse";
+                      progressPercent = "95%";
+                    } else if (isNotReceived) {
+                      stepIndex = 4;
+                      badgeText = "❌ Bạn báo chưa nhận được đồ — Đang chờ Lễ Tân xử lý";
+                      badgeClass = "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-300";
+                      progressPercent = "95%";
+                    } else if (isRedoRequested) {
+                      stepIndex = 3;
+                      badgeText = "🔥 Lễ Tân đã yêu cầu Bếp giao lại / làm lại";
+                      badgeClass = "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300 border-orange-300 animate-pulse";
+                      progressPercent = "90%";
+                    } else {
+                      stepIndex = 3;
+                      badgeText = estMatch
+                        ? `🔥 Đầu bếp đang chế biến — ⏱️ Dự kiến hoàn thành sau: ${estMatch[1]}`
+                        : "🔥 Đầu bếp đang chế biến món ăn / Đang mang lên phòng";
+                      badgeClass = "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-300 animate-pulse";
+                      progressPercent = "90%";
+                    }
                   } else if (order.status === "COMPLETED") {
-                    stepIndex = 4;
-                    badgeText = "✅ Món ăn đã chế biến xong & Phục vụ hoàn tất!";
+                    stepIndex = 5;
+                    badgeText = "✅ Bạn đã xác nhận / Hoàn thành";
                     badgeClass = "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 border-emerald-300";
                     progressPercent = "100%";
                   }
@@ -151,15 +197,16 @@ export default function CustomerDashboard() {
                         <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2.5 overflow-hidden">
                           <div
                             className={`h-2.5 rounded-full transition-all duration-500 ${
-                              stepIndex === 4 ? "bg-emerald-500" : stepIndex === 3 ? "bg-orange-500 animate-pulse" : "bg-primary-6000"
+                              stepIndex >= 5 ? "bg-emerald-500" : stepIndex === 4 ? "bg-purple-500 animate-pulse" : stepIndex === 3 ? "bg-orange-500 animate-pulse" : "bg-primary-6000"
                             }`}
                             style={{ width: progressPercent }}
                           ></div>
                         </div>
-                        <div className="grid grid-cols-3 text-[11px] font-bold text-neutral-400">
-                          <span className={stepIndex >= 1 ? "text-primary-600 dark:text-primary-400" : ""}>1. Khách gửi Lễ Tân</span>
-                          <span className={`text-center ${stepIndex >= 2 ? "text-orange-600 dark:text-orange-400" : ""}`}>2. Lễ Tân duyệt & chuyển Bếp</span>
-                          <span className={`text-right ${stepIndex >= 3 ? "text-blue-600 dark:text-blue-400" : ""}`}>3. Bếp chế biến & Báo giờ</span>
+                        <div className="grid grid-cols-4 text-[10px] font-bold text-neutral-400">
+                          <span className={stepIndex >= 1 ? "text-primary-600 dark:text-primary-400" : ""}>1. Khách gửi</span>
+                          <span className={`text-center ${stepIndex >= 2 ? "text-orange-600 dark:text-orange-400" : ""}`}>2. Lễ Tân duyệt</span>
+                          <span className={`text-center ${stepIndex >= 3 ? "text-blue-600 dark:text-blue-400" : ""}`}>3. Bếp chế biến</span>
+                          <span className={`text-right ${stepIndex >= 5 ? "text-emerald-600 dark:text-emerald-400" : ""}`}>4. Khách nhận</span>
                         </div>
                       </div>
 
@@ -176,6 +223,23 @@ export default function CustomerDashboard() {
                           {order.total_amount?.toLocaleString("vi-VN")} đ
                         </div>
                       </div>
+
+                      {order.status === "IN_PROGRESS" && isDelivered && !isConfirmed && (
+                        <div className="mt-4 flex justify-end gap-3">
+                          <button
+                            onClick={() => updateOrderDeliveryState(order.id, "[CUSTOMER_NOT_RECEIVED]", "IN_PROGRESS")}
+                            className="px-6 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-red-700 transition-colors"
+                          >
+                            Chưa nhận được đồ
+                          </button>
+                          <button
+                            onClick={() => updateOrderDeliveryState(order.id, "[CUSTOMER_CONFIRMED]", "COMPLETED")}
+                            className="px-6 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-green-700 transition-colors flex items-center gap-2"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Đã nhận được đồ
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -100,13 +100,8 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       .channel(`payment-status-${paymentInfo.bookingId}`)
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: isService ? "service_orders" : "bookings",
-          filter: isService 
-            ? `booking_id=eq.${paymentInfo.bookingId}` 
-            : `id=eq.${paymentInfo.bookingId}`,
+          table: isService ? "service_orders" : "payments",
+          filter: `booking_id=eq.${paymentInfo.bookingId}`,
         },
         (payload) => {
           console.log("Real-time status update:", payload);
@@ -117,7 +112,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
               router.push(`/pay-done?bookingId=${paymentInfo.bookingId}&serviceOrderId=${sOrderId}&type=service&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
             }
           } else {
-            if (payload.new.status === "CONFIRMED") {
+            if (payload.new.status === "COMPLETED") {
               setShowPayOSModal(false);
               router.push(`/pay-done?bookingId=${paymentInfo.bookingId}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
             }
@@ -293,7 +288,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     checkInStr: string,
     checkOutStr: string,
     totalAmount: number,
+    depositAmount?: number
   ) => {
+    const amountToPay = depositAmount ?? totalAmount;
     try {
       let bookingId = paymentInfo?.bookingId || "";
       let serviceOrderId = "";
@@ -339,7 +336,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           serviceOrderId,
           type: typeParam || "room",
           roomName: titleParam,
-          totalPrice: totalAmount,
+          totalPrice: amountToPay,
         }),
       });
       const payOSData = await payOSRes.json();
@@ -386,8 +383,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       const nights = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
       const pricePerNight = Number(priceParam) || targetRoom.room_type?.base_price || 100;
       const totalAmount = pricePerNight * nights;
+      const depositAmount = totalAmount * 0.1;
       
-      await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount);
+      await handlePayOSPayment(targetRoom, checkInStr, checkOutStr, totalAmount, depositAmount);
       return;
     } catch (err: any) {
       console.error("Payment failed:", err);
@@ -412,6 +410,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     const priceVal = Number(priceParam) || 19;
     const subtotal = priceVal * nights;
     const total = subtotal;
+    const depositAmount = typeParam === "service" ? total : total * 0.1;
 
     return (
       <div className="w-full flex flex-col sm:rounded-2xl lg:border border-neutral-200 dark:border-neutral-700 space-y-6 sm:space-y-8 px-0 sm:p-6 xl:p-8">
@@ -472,6 +471,14 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                 : formatPrice(total, "USD")}
             </span>
           </div>
+          {typeParam !== "service" && (
+            <div className="flex justify-between font-bold text-primary-6000 mt-2">
+              <span>{t("checkoutDeposit") || "Thanh toán cọc (10%)"}</span>
+              <span>
+                {formatPrice(depositAmount, "USD")}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -720,8 +727,22 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                      </a>
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           setShowPayOSModal(false);
+                          
+                          // Mock Webhook for local testing to auto-confirm payment without admin
+                          try {
+                            await fetch("/api/mock-payos-webhook", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ 
+                                bookingId: paymentInfo.bookingId, 
+                                serviceOrderId: paymentInfo.serviceOrderId 
+                              })
+                            });
+                          } catch (e) {
+                            console.error("Mock webhook failed:", e);
+                          }
                           if (typeParam === "service") {
                             router.push(`/pay-done?bookingId=${paymentInfo.bookingId}&serviceOrderId=${paymentInfo.serviceOrderId}&type=service&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
                           } else {

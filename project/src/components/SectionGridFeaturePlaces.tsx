@@ -36,11 +36,20 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
   useEffect(() => {
     if (initialStays && initialStays.length > 0) {
       const mappedInitial = initialStays.map((item, index) => {
+        const titleLower = item.title.toLowerCase();
         let city = "Standard";
-        if (index === 1 || index === 7) city = "Deluxe";
-        else if (index === 2 || index === 6) city = "Suite";
-        else if (index === 3 || index === 5) city = "Family";
-        return { ...item, city };
+        if (titleLower.includes("family")) city = "Family";
+        else if (titleLower.includes("suite")) city = "Suite";
+        else if (titleLower.includes("deluxe")) city = "Deluxe";
+
+        return { 
+          ...item, 
+          city,
+          listingCategory: {
+            ...DEMO_STAY_CATEGORIES[0],
+            name: item.bedrooms === 1 ? "Phòng đơn" : "Phòng kép"
+          }
+        };
       });
       setStays(mappedInitial);
       return;
@@ -68,10 +77,11 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
 
         if (dbData && dbData.length > 0) {
           const mapped = dbData.map((h: any, index: number) => {
+            const titleLower = h.title.toLowerCase();
             let city = "Standard";
-            if (index === 1 || index === 7) city = "Deluxe";
-            else if (index === 2 || index === 6) city = "Suite";
-            else if (index === 3 || index === 5) city = "Family";
+            if (titleLower.includes("family")) city = "Family";
+            else if (titleLower.includes("suite")) city = "Suite";
+            else if (titleLower.includes("deluxe")) city = "Deluxe";
 
             const getRoomNumberByTitle = (title: string): string => {
               const t = title.toLowerCase();
@@ -120,7 +130,10 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
               isAds: index === 0 ? true : null,
               availableRooms: h.available_rooms,
               author: DEMO_AUTHORS[0],
-              listingCategory: DEMO_STAY_CATEGORIES[0],
+              listingCategory: {
+                ...DEMO_STAY_CATEGORIES[0],
+                name: h.beds === 1 ? "Phòng đơn" : "Phòng kép"
+              },
               map: { 
                 lat: 55.2094559 + (index * 0.01) - 0.03, 
                 lng: 61.5594641 + (index * 0.01) - 0.03 
@@ -134,23 +147,41 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
           setStays(mapped);
         } else {
           const mappedDemo = DEMO_STAY_LISTINGS.filter((_, i) => i < 8).map((item, index) => {
+            const titleLower = item.title.toLowerCase();
             let city = "Standard";
-            if (index === 1 || index === 7) city = "Deluxe";
-            else if (index === 2 || index === 6) city = "Suite";
-            else if (index === 3 || index === 5) city = "Family";
-            return { ...item, city };
+            if (titleLower.includes("family")) city = "Family";
+            else if (titleLower.includes("suite")) city = "Suite";
+            else if (titleLower.includes("deluxe")) city = "Deluxe";
+            
+            return { 
+              ...item, 
+              city,
+              listingCategory: {
+                ...DEMO_STAY_CATEGORIES[0],
+                name: item.bedrooms === 1 ? "Phòng đơn" : "Phòng kép"
+              }
+            };
           });
           setStays(mappedDemo);
         }
       } catch (err) {
         console.warn("Could not load dynamic rooms for homepage:", err);
         const mappedDemo = DEMO_STAY_LISTINGS.filter((_, i) => i < 8).map((item, index) => {
+          const titleLower = item.title.toLowerCase();
           let city = "Standard";
-        if (index === 1 || index === 7) city = "Deluxe";
-        else if (index === 2 || index === 6) city = "Suite";
-        else if (index === 3 || index === 5) city = "Family";
-        return { ...item, city };
-      });
+          if (titleLower.includes("family")) city = "Family";
+          else if (titleLower.includes("suite")) city = "Suite";
+          else if (titleLower.includes("deluxe")) city = "Deluxe";
+          
+          return { 
+            ...item, 
+            city,
+            listingCategory: {
+              ...DEMO_STAY_CATEGORIES[0],
+              name: item.bedrooms === 1 ? "Phòng đơn" : "Phòng kép"
+            }
+          };
+        });
       setStays(mappedDemo);
       }
     };

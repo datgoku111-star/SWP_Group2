@@ -102,8 +102,8 @@ export async function GET(
 
     const subtotal = roomCharges + totalServices + totalExperiences + totalCars + totalFineAmount;
     
-    // Configurable VAT, usually 10%
-    const vatRate = 0.1;
+    // Configurable VAT, usually 2%
+    const vatRate = 0.02;
     const vatAmount = subtotal * vatRate;
     const grandTotal = subtotal + vatAmount;
 

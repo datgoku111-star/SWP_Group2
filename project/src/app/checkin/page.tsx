@@ -231,6 +231,10 @@ function CheckInContent() {
       setError("Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!");
       return;
     }
+    if (guestForm.id_card_number.length < 12) {
+      setError("Số ID Card (CCCD/CMND) phải chứa tối thiểu 12 số!");
+      return;
+    }
     setActionLoading(true);
     setError("");
     setSuccess("");
@@ -305,6 +309,10 @@ function CheckInContent() {
     }
     if (!guestForm.full_name || !guestForm.id_card_number) {
       setError("Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!");
+      return;
+    }
+    if (guestForm.id_card_number.length < 12) {
+      setError("Số ID Card (CCCD/CMND) phải chứa tối thiểu 12 số!");
       return;
     }
 
@@ -743,15 +751,23 @@ function CheckInContent() {
                         <span className="text-neutral-400">Room Charges:</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.room_charges)}</span>
                       </div>
-                      {checkoutDetails.service_charges?.total_service > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-neutral-400">Deposit Paid:</span>
+                        <span className="font-bold text-green-400">-{formatMoney(checkoutDetails.deposit_paid)}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-neutral-400">Remaining Room:</span>
+                        <span className="font-bold">{formatMoney(checkoutDetails.remaining_room_charges)}</span>
+                      </div>
+                      {checkoutDetails.service_charges_detail?.total_service > 0 && (
                         <div className="flex justify-between">
                           <span className="text-amber-400 font-semibold">Food & Service Orders:</span>
-                          <span className="font-bold text-amber-300">{formatMoney(checkoutDetails.service_charges.total_service)}</span>
+                          <span className="font-bold text-amber-300">{formatMoney(checkoutDetails.service_charges_detail.total_service)}</span>
                         </div>
                       )}
-                      {checkoutDetails.service_charges?.orders?.length > 0 && (
+                      {checkoutDetails.service_charges_detail?.orders?.length > 0 && (
                         <div className="pl-3 space-y-1 text-xs border-l border-amber-500/30 my-1">
-                          {checkoutDetails.service_charges.orders.map((ord: any) => {
+                          {checkoutDetails.service_charges_detail.orders.map((ord: any) => {
                             let displayName = "Service Order";
                             try {
                               if (ord.notes && ord.notes.trim().startsWith("{")) {
@@ -800,7 +816,7 @@ function CheckInContent() {
                         <span className="font-bold">{formatMoney(checkoutDetails.subtotal)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">VAT (10%):</span>
+                        <span className="text-neutral-400">VAT (2%):</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.vat_amount)}</span>
                       </div>
                       <div className="flex justify-between pt-2 border-t border-neutral-700/60 text-base font-extrabold">
@@ -945,7 +961,10 @@ function CheckInContent() {
                       <span className="text-neutral-800 dark:text-neutral-200 text-xs font-bold uppercase tracking-wider">ID Card Number</span>
                       <Input
                         value={guestForm.id_card_number}
-                        onChange={(e) => setGuestForm({ ...guestForm, id_card_number: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, ""); // Remove all non-digits
+                          setGuestForm({ ...guestForm, id_card_number: val });
+                        }}
                         className="mt-1.5 h-11 font-mono"
                         placeholder="ID / Passport No."
                         required

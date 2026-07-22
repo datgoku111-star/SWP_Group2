@@ -80,12 +80,16 @@ export default function ReceptionistServiceHub() {
 
       if (ordersRes.ok) {
         const oData = await ordersRes.json();
-        if (Array.isArray(oData)) {
+        if (Array.isArray(oData) && oData.length > 0) {
           setActiveOrders(oData);
+        } else {
+          setActiveOrders(fallbackOrders);
         }
+      } else {
+        setActiveOrders(fallbackOrders);
       }
 
-      if (carRes.ok) {
+      if (carRes && carRes.ok) {
         const cData = await carRes.json();
         if (Array.isArray(cData)) {
           setCarRentals(cData);
@@ -275,7 +279,6 @@ export default function ReceptionistServiceHub() {
       alert("Đã xảy ra lỗi.");
     }
   };
-
   const handleCancelOrder = async (orderId: string) => {
     if (!confirm("Bạn có chắc chắn muốn từ chối/hủy yêu cầu gọi món này?")) return;
     try {
@@ -592,6 +595,7 @@ export default function ReceptionistServiceHub() {
         </div>
       )}
 
+
       {/* SUB-TAB 3: CAR RENTALS VERIFICATION & DISPATCH */}
       {activeSubTab === "CAR_RENTALS" && (
         <div className="space-y-6">
@@ -764,6 +768,7 @@ export default function ReceptionistServiceHub() {
           )}
         </div>
       )}
+
 
       {/* MODAL ORDER ROOM SERVICE / F&B FOR GUEST */}
       {isOrderModalOpen && selectedRoomForService && (

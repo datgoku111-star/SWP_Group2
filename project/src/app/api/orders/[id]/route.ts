@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user || !["ADMIN", "KITCHEN", "RECEPTIONIST"].includes(user.role)) {
+    if (!user || !["ADMIN", "KITCHEN", "RECEPTIONIST", "CUSTOMER"].includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

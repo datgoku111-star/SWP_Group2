@@ -107,7 +107,18 @@ export async function GET(
       return NextResponse.json({ error: "Không tìm thấy đơn đặt phòng" }, { status: 404 });
     }
 
-    // 2. Tự động kiểm tra các khoản phạt chưa thanh toán (chargeable và chưa RESOLVED/CLOSED/CANCELLED) của booking này
+    // 2. Lấy số tiền cọc đã thanh toán (Deposit)
+    const { data: payments } = await supabaseServer
+      .from("payments")
+      .select("amount")
+      .eq("booking_id", bookingId)
+      .eq("status", "COMPLETED");
+
+    const depositPaid = payments
+      ? payments.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+      : 0;
+
+    // 3. Tự động kiểm tra các khoản phạt chưa thanh toán (chargeable và chưa RESOLVED/CLOSED/CANCELLED) của booking này
     const { data: incidents } = await supabaseServer
       .from("room_incidents")
       .select("*")
@@ -119,7 +130,7 @@ export async function GET(
       ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
       : 0;
 
-    // 3. Tự động cộng tất cả đơn gọi món / dịch vụ phòng (service_orders) chưa bị hủy của booking này
+    // 4. Tự động cộng tất cả đơn gọi món / dịch vụ phòng (service_orders) chưa bị hủy của booking này
     let serviceOrders: any[] = [];
     try {
       const { data: sOrders } = await supabaseServer
@@ -149,29 +160,34 @@ export async function GET(
       return sum + amount;
     }, 0);
 
-    // 4. Cộng dồn trực tiếp vào InvoiceData cuối cùng (Tiền phòng + Tiền phạt + Tiền dịch vụ đồ ăn)
+    // 5. Cộng dồn vào InvoiceData cuối cùng
     const roomCharges = Number(booking.total_amount);
-    const subtotal = roomCharges + totalFineAmount + totalServiceAmount;
-    const vatRate = 0.1; // 10% VAT
+    const remainingRoomCharges = Math.max(0, roomCharges - depositPaid);
+    
+    const subtotal = remainingRoomCharges + totalServiceAmount + totalFineAmount; 
+    const vatRate = 0.02; // 2% VAT
     const vatAmount = subtotal * vatRate;
     const grandTotal = subtotal + vatAmount;
 
     return NextResponse.json({
       booking,
       room_charges: roomCharges,
-      service_charges: {
+      deposit_paid: depositPaid,
+      remaining_room_charges: remainingRoomCharges,
+      service_charges: totalServiceAmount,
+      service_charges_detail: {
         orders: serviceOrders,
         total_service: totalServiceAmount,
       },
       incident_charges: {
         incidents: incidents || [],
-        total_fine: totalFineAmount,
+        total_fine: totalFineAmount
       },
       subtotal,
       vat_rate: vatRate,
       vat_amount: vatAmount,
       grand_total: grandTotal,
-      balance_due: grandTotal,
+      balance_due: grandTotal
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
