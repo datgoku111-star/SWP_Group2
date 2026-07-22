@@ -44,7 +44,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const categoryParam = searchParams.get("category") || "Hotel room";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "2";
-  const isExperience = categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience") || categoryParam.toLowerCase().includes("climbing") || categoryParam.toLowerCase().includes("hiking");
+  const isExperience = typeParam === "experience" || categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience") || categoryParam.toLowerCase().includes("climbing") || categoryParam.toLowerCase().includes("hiking");
   const isRoomBooking = 
     typeParam !== "service" &&
     typeParam !== "experience" &&
