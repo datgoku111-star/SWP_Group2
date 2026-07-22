@@ -161,13 +161,26 @@ export async function GET(
     }, 0);
 
     // 5. Cộng dồn vào InvoiceData cuối cùng
-    const roomCharges = Number(booking.total_amount);
-    const remainingRoomCharges = Math.max(0, roomCharges - depositPaid);
+    const calculateNights = (start: string, end: string) => {
+      const diff = Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 1;
+    };
+
+    const nights = calculateNights(booking.check_in_date, booking.check_out_date);
+    const basePrice = Number(booking.room?.room_type?.base_price || 0);
+    const roomCharges = nights * basePrice;
     
-    const subtotal = remainingRoomCharges + totalServiceAmount + totalFineAmount; 
-    const vatRate = 0.02; // 2% VAT
+    // Tổng số bill trước cọc
+    const subtotal = roomCharges + totalServiceAmount + totalFineAmount; 
+    
+    // 2% VAT của tổng số bill
+    const vatRate = 0.02;
     const vatAmount = subtotal * vatRate;
-    const grandTotal = subtotal + vatAmount;
+    
+    // Khách trả = Tổng bill + VAT - Tiền cọc
+    const grandTotal = subtotal + vatAmount - depositPaid;
+    const remainingRoomCharges = Math.max(0, roomCharges - depositPaid);
+
 
     return NextResponse.json({
       booking,

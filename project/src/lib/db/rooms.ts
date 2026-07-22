@@ -22,11 +22,11 @@ export async function getAvailableRooms(
     }
   }
 
-  // 2. Base Query: Only AVAILABLE rooms, optionally filtered by room class (roomTypeId)
+  // 2. Base Query: Only rooms not in maintenance, optionally filtered by room class (roomTypeId)
   let query = supabaseServer
     .from("rooms")
     .select("*, room_type:room_types(*)")
-    .eq("status", "AVAILABLE");
+    .neq("status", "MAINTENANCE");
 
   if (roomTypeId) {
     query = query.eq("room_type_id", roomTypeId);

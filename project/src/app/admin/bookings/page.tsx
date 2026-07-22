@@ -296,10 +296,10 @@ export default function AdminBookingsPage() {
                         {b.status !== "CANCELLED" && b.status !== "CHECKED_OUT" && (
                             <button
                               onClick={() => {
-                                const reason = prompt("Vui lòng nhập lý do hủy phòng (tiền cọc sẽ được hoàn trả lại cho khách hàng):");
+                                const reason = prompt("Please enter the cancellation reason (deposit will be refunded to the customer):");
                                 if (reason !== null) {
                                   if (!reason.trim()) {
-                                    alert("Lý do hủy phòng không được để trống!");
+                                    alert("Cancellation reason cannot be empty!");
                                   } else {
                                     updateBookingStatus(b.id, "CANCELLED", reason);
                                   }
@@ -307,7 +307,7 @@ export default function AdminBookingsPage() {
                               }}
                               className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 font-bold px-2.5 py-1.5 rounded-xl text-xs transition-all"
                             >
-                              Hủy
+                              Cancel
                             </button>
                         )}
                       </td>

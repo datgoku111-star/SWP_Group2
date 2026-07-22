@@ -24,6 +24,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   const [isCancelling, setIsCancelling] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [isRequestingCheckout, setIsRequestingCheckout] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -126,6 +127,27 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
     }
   };
 
+  const handleRequestCheckout = async () => {
+    setIsRequestingCheckout(true);
+    try {
+      const res = await fetch(`/api/bookings/${params.id}/request-checkout`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        setSuccess("Đã gửi yêu cầu trả phòng (checkout) đến Lễ tân.");
+        fetchInvoice(); // Refresh data
+      } else {
+        const err = await res.json();
+        setError(err.error || "Failed to request checkout.");
+      }
+    } catch (err: any) {
+      console.error("Request checkout error:", err);
+      setError("An error occurred while requesting checkout.");
+    } finally {
+      setIsRequestingCheckout(false);
+    }
+  };
+
   if (isLoading || loading) return <div className="container py-20">Loading...</div>;
   if (!invoice) return <div className="container py-20">Invoice not found or error occurred.</div>;
 
@@ -134,6 +156,8 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   const canCheckout = isStaff && b.status === "CHECKED_IN";
   const canConfirm = isStaff && b.status === "PENDING";
   const canCancel = (b.status === "PENDING" || (!isStaff && b.status === "CONFIRMED"));
+  
+  const canRequestCheckout = !isStaff && b.status === "CHECKED_IN" && (!b.checkout_step || b.checkout_step === "NONE");
   
   const formatMoney = (amount: number) => 
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -163,6 +187,15 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 <XCircle className="w-5 h-5 mr-2" /> Hủy phòng
               </button>
             )}
+            {canRequestCheckout && (
+              <button 
+                onClick={handleRequestCheckout}
+                disabled={isRequestingCheckout}
+                className="flex items-center text-white font-medium bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isRequestingCheckout ? "Đang gửi..." : "Yêu cầu Trả phòng (Checkout)"}
+              </button>
+            )}
             <button className="flex items-center text-primary-6000 hover:text-primary-700 font-medium bg-primary-50 px-4 py-2 rounded-lg" onClick={() => window.print()}>
               <Printer className="w-5 h-5 mr-2" /> Print Invoice
             </button>
@@ -171,6 +204,33 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
         {error && <div className="p-4 bg-red-100 text-red-800 rounded-xl">{error}</div>}
         {success && <div className="p-4 bg-green-100 text-green-800 rounded-xl">{success}</div>}
+
+        {!isStaff && b.checkout_step && b.checkout_step !== "NONE" && (
+          <div className="p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl">
+            <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-2">Trạng thái Yêu cầu Trả phòng:</h3>
+            <div className="flex items-center gap-3 mb-2">
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                b.checkout_step === "REQUESTED" ? "bg-amber-200 text-amber-900" :
+                b.checkout_step === "INSPECTING" ? "bg-blue-200 text-blue-900" :
+                "bg-green-200 text-green-900"
+              }`}>
+                {b.checkout_step === "REQUESTED" ? "Đang chờ Lễ tân" :
+                 b.checkout_step === "INSPECTING" ? "Đang kiểm tra phòng" :
+                 "Đã kiểm tra xong"}
+              </span>
+            </div>
+            {b.checkout_message && (
+              <p className="text-sm text-amber-900 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 p-3 rounded-lg mt-3">
+                <span className="font-bold">Lễ tân:</span> {b.checkout_message}
+              </p>
+            )}
+            {b.checkout_step === "INSPECTED" && (
+              <p className="text-sm font-medium mt-3 text-green-700 dark:text-green-400">
+                Phòng đã được kiểm tra xong. Vui lòng xuống quầy Lễ tân để hoàn tất thanh toán.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Invoice Paper */}
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-3xl shadow-lg p-8 sm:p-12 print:shadow-none print:border-none print:p-0">

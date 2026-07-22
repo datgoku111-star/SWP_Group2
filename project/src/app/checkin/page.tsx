@@ -71,7 +71,10 @@ function CheckInContent() {
   });
 
   // Check-Out Payment State
-  const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH" | "BANK_TRANSFER">("CARD");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "BANK_TRANSFER">("CASH");
+  const [showQR, setShowQR] = useState(false);
+  const [payosQRUrl, setPayosQRUrl] = useState<string | null>(null);
+  const [payosOrderCode, setPayosOrderCode] = useState<number | null>(null);
   const [transactionRef, setTransactionRef] = useState("");
   const [customAmount, setCustomAmount] = useState<number | null>(null);
   const [checkoutDetails, setCheckoutDetails] = useState<any | null>(null);
@@ -221,8 +224,19 @@ function CheckInContent() {
     return diff > 0 ? diff : 1;
   };
 
-  const formatMoney = (val: number) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val || 0);
+  const getAmountToSettle = () => {
+    if (customAmount !== null) return customAmount;
+    let baseAmount = checkoutDetails?.grand_total || booking?.total_amount || 0;
+    const numericVal = typeof baseAmount === 'number' ? baseAmount : parseFloat(baseAmount as any) || 0;
+    const vndVal = numericVal < 1000 ? numericVal * 25000 : numericVal;
+    return Math.round(vndVal);
+  };
+
+  const formatMoney = (val: number) => {
+    const numericVal = typeof val === 'number' ? val : parseFloat(val as any) || 0;
+    const vndVal = numericVal < 1000 ? numericVal * 25000 : numericVal;
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Math.round(vndVal));
+  };
 
   // Action 1: Confirm Check-In
   const confirmCheckIn = async () => {
@@ -267,18 +281,60 @@ function CheckInContent() {
   };
 
   // Action 2: Confirm Check-Out & Settle Bill
+  const handleCheckoutClick = async () => {
+    if (paymentMethod === "BANK_TRANSFER" && !showQR) {
+      setActionLoading(true);
+      setError("");
+      try {
+        const amountToPay = customAmount !== null ? customAmount : getAmountToSettle();
+        const payOSRes = await fetch("http://localhost:5000/api/payment/create-embedded-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookingId: booking?.id || "",
+            type: "checkout",
+            roomName: `Checkout Room ${booking?.room?.room_number}`,
+            totalPrice: amountToPay,
+          }),
+        });
+        const payOSData = await payOSRes.json();
+        if (!payOSRes.ok) throw new Error(payOSData.error || "Lỗi tạo mã PayOS");
+        
+        setPayosQRUrl(payOSData.qrCode);
+        setPayosOrderCode(payOSData.orderCode);
+        setShowQR(true);
+      } catch (err: any) {
+        setError(err.message || "Không thể tạo mã VietQR từ PayOS");
+      } finally {
+        setActionLoading(false);
+      }
+      return;
+    }
+    confirmCheckOut();
+  };
+
   const confirmCheckOut = async () => {
     if (!booking) return;
     setActionLoading(true);
     setError("");
     setSuccess("");
     try {
+      if (paymentMethod === "BANK_TRANSFER") {
+        if (!payosOrderCode) throw new Error("Vui lòng tạo mã QR trước khi thanh toán.");
+        const checkRes = await fetch(`/api/payment/check/${payosOrderCode}`);
+        const checkData = await checkRes.json();
+        if (!checkRes.ok) throw new Error(checkData.error || "Lỗi kiểm tra trạng thái thanh toán.");
+        if (checkData.status !== "PAID") {
+          throw new Error("Khách hàng chưa thanh toán thành công qua mã QR. Vui lòng kiểm tra lại!");
+        }
+      }
+
       const res = await fetch(`/api/checkin/${booking.id}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          payment_method: paymentMethod,
-          amount: customAmount || booking.total_amount || 0,
+          payment_method: paymentMethod === "BANK_TRANSFER" ? "TRANSFER" : paymentMethod,
+          amount: customAmount !== null ? customAmount : getAmountToSettle(),
           transaction_ref: transactionRef || "TXN-COUNTER-" + Date.now(),
         }),
       });
@@ -751,15 +807,7 @@ function CheckInContent() {
                         <span className="text-neutral-400">Room Charges:</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.room_charges)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-400">Deposit Paid:</span>
-                        <span className="font-bold text-green-400">-{formatMoney(checkoutDetails.deposit_paid)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold">
-                        <span className="text-neutral-400">Remaining Room:</span>
-                        <span className="font-bold">{formatMoney(checkoutDetails.remaining_room_charges)}</span>
-                      </div>
-                      {checkoutDetails.service_charges_detail?.total_service > 0 && (
+                      {checkoutDetails.service_charges > 0 && (
                         <div className="flex justify-between">
                           <span className="text-amber-400 font-semibold">Food & Service Orders:</span>
                           <span className="font-bold text-amber-300">{formatMoney(checkoutDetails.service_charges_detail.total_service)}</span>
@@ -768,6 +816,7 @@ function CheckInContent() {
                       {checkoutDetails.service_charges_detail?.orders?.length > 0 && (
                         <div className="pl-3 space-y-1 text-xs border-l border-amber-500/30 my-1">
                           {checkoutDetails.service_charges_detail.orders.map((ord: any) => {
+                            let itemPrice = Number(ord.total_amount || 0);
                             let displayName = "Service Order";
                             try {
                               if (ord.notes && ord.notes.trim().startsWith("{")) {
@@ -776,6 +825,7 @@ function CheckInContent() {
                                   const pick = notesObj.pickup_date ? notesObj.pickup_date.split("T")[0] : "";
                                   const drop = notesObj.dropoff_date ? notesObj.dropoff_date.split("T")[0] : "";
                                   displayName = `Thuê xe ${notesObj.car_type} (${pick} ➔ ${drop})`;
+                                  itemPrice = itemPrice * 26320;
                                 } else {
                                   displayName = notesObj.notes || "Service Order";
                                 }
@@ -788,18 +838,20 @@ function CheckInContent() {
                             return (
                               <div key={ord.id} className="flex justify-between text-neutral-400">
                                 <span>• {displayName}:</span>
-                                <span>{formatMoney(ord.total_amount * 26320)}</span>
+                                <span>{formatMoney(itemPrice)}</span>
                               </div>
                             );
                           })}
                         </div>
                       )}
+                      
                       {checkoutDetails.incident_charges?.total_fine > 0 && (
                         <div className="flex justify-between">
                           <span className="text-red-400 font-semibold">Incident Fines:</span>
                           <span className="font-bold text-red-300">{formatMoney(checkoutDetails.incident_charges.total_fine)}</span>
                         </div>
                       )}
+                      
                       {/* List incidents if any */}
                       {checkoutDetails.incident_charges?.incidents?.length > 0 && (
                         <div className="pl-3 space-y-1 text-xs border-l border-red-500/30 my-1">
@@ -811,16 +863,29 @@ function CheckInContent() {
                           ))}
                         </div>
                       )}
+                      
                       <div className="flex justify-between pt-2 border-t border-neutral-700/40">
-                        <span className="text-neutral-400">Subtotal:</span>
+                        <span className="text-neutral-400">Subtotal (All Charges):</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.subtotal)}</span>
                       </div>
+                      
                       <div className="flex justify-between">
                         <span className="text-neutral-400">VAT (2%):</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.vat_amount)}</span>
                       </div>
+                      
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-neutral-400">Total Invoice:</span>
+                        <span className="font-bold">{formatMoney(checkoutDetails.subtotal + checkoutDetails.vat_amount)}</span>
+                      </div>
+
+                      <div className="flex justify-between pt-2 border-t border-neutral-700/40">
+                        <span className="text-neutral-400">Deposit Paid:</span>
+                        <span className="font-bold text-green-400">-{formatMoney(checkoutDetails.deposit_paid)}</span>
+                      </div>
+                      
                       <div className="flex justify-between pt-2 border-t border-neutral-700/60 text-base font-extrabold">
-                        <span className="text-primary-300">Grand Total (Settle):</span>
+                        <span className="text-primary-300">Amount Due (Settle):</span>
                         <span className="text-white">{formatMoney(checkoutDetails.grand_total)}</span>
                       </div>
                     </>
@@ -886,32 +951,46 @@ function CheckInContent() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Payment Method</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {(["CARD", "CASH", "BANK_TRANSFER"] as const).map((method) => (
+                    <div className="grid grid-cols-2 gap-3">
+                      {(["CASH", "BANK_TRANSFER"] as const).map((method) => (
                         <button
                           key={method}
                           type="button"
-                          onClick={() => setPaymentMethod(method)}
+                          onClick={() => {
+                            setPaymentMethod(method);
+                            setShowQR(false);
+                          }}
                           className={`py-3 px-3 rounded-2xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
                             paymentMethod === method
                               ? "border-amber-600 bg-amber-50/60 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 ring-2 ring-amber-500/20"
                               : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                           }`}
                         >
-                          <span>{method === "CARD" ? "💳 POS / Card" : method === "CASH" ? "💵 Cash" : "🏦 Bank Transfer"}</span>
+                          <span>{method === "CASH" ? "💵 Cash" : "🏦 Bank Transfer"}</span>
                         </button>
                       ))}
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Amount to Settle (VND)</label>
-                    <Input
-                      type="number"
-                      value={customAmount || booking?.total_amount || 0}
-                      onChange={(e) => setCustomAmount(Number(e.target.value))}
-                      className="h-11 font-bold text-base"
-                    />
+                    {paymentMethod === "BANK_TRANSFER" && booking && showQR && (
+                      <div className="mt-5 p-5 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 flex flex-col items-center">
+                        <span className="text-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                          Quét mã VietQR (PayOS) để thanh toán
+                        </span>
+                        <div className="p-3 bg-white rounded-xl shadow-sm border border-neutral-200 relative overflow-hidden group">
+                          <img
+                            src={payosQRUrl && payosQRUrl.startsWith("http") ? payosQRUrl : `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(payosQRUrl || "")}`}
+                            alt="VietQR Code"
+                            className="w-48 h-48 object-contain"
+                          />
+                          {/* Scanning Animation line */}
+                          <div className="absolute left-0 right-0 h-0.5 bg-primary-500 opacity-60 animate-bounce top-0 group-hover:block"></div>
+                        </div>
+                        <p className="text-xs text-neutral-500 mt-4 text-center px-4 leading-relaxed">
+                          Mã QR VietQR đã được tạo tự động bởi PayOS. Vui lòng nhắc khách hàng giữ nguyên nội dung chuyển khoản để hệ thống xác nhận thanh toán.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -928,11 +1007,13 @@ function CheckInContent() {
                 <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
                   <ButtonPrimary
                     className="w-full h-12 text-base font-bold bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-600/25"
-                    onClick={confirmCheckOut}
+                    onClick={handleCheckoutClick}
                     loading={actionLoading}
                     disabled={actionLoading || !booking}
                   >
-                    Confirm Check-Out & Settle Bill
+                    {paymentMethod === "BANK_TRANSFER" && !showQR 
+                      ? "Tạo mã QR Thanh Toán" 
+                      : "Xác nhận & Hoàn tất Check-Out"}
                   </ButtonPrimary>
                 </div>
               </div>

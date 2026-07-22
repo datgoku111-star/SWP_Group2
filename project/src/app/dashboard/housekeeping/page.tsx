@@ -22,7 +22,8 @@ export interface RoomTurnover {
 export default function HousekeepingDashboardHub() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW">("DIRTY_FLOW");
+  const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW" | "CHECKOUT_FLOW">("DIRTY_FLOW");
+  const [checkoutRequests, setCheckoutRequests] = useState<any[]>([]);
   const [rooms, setRooms] = useState<RoomTurnover[]>([]);
   const [loading, setLoading] = useState(true);
   const [laundryOrders, setLaundryOrders] = useState<any[]>([]);
@@ -40,6 +41,13 @@ export default function HousekeepingDashboardHub() {
     setLoading(true);
     try {
       const res = await fetch("/api/rooms?all=true");
+      const coRes = await fetch("/api/housekeeping/checkout-requests");
+      
+      if (coRes.ok) {
+        const coData = await coRes.json();
+        setCheckoutRequests(coData);
+      }
+
       if (!res.ok) throw new Error("Không thể tải trạng thái buồng phòng");
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -147,6 +155,43 @@ export default function HousekeepingDashboardHub() {
   const inUseRooms = rooms.filter((r) => r.status === "IN_USE");
   const availableRooms = rooms.filter((r) => r.status === "AVAILABLE");
 
+  const handleCompleteInspection = async (bookingId: string, roomId: string, hasDamage: boolean) => {
+    let damageDescription = "";
+    let estimatedCharge = 0;
+
+    if (hasDamage) {
+      damageDescription = prompt("Nhập mô tả đồ đạc bị hỏng (VD: Vỡ bình hoa, rách rèm...):") || "";
+      if (!damageDescription.trim()) {
+        alert("Bạn phải nhập mô tả đồ đạc hỏng.");
+        return;
+      }
+      const chargeStr = prompt("Nhập số tiền ước tính đền bù (VND):", "0");
+      estimatedCharge = parseInt(chargeStr || "0", 10);
+      if (isNaN(estimatedCharge) || estimatedCharge < 0) {
+        alert("Số tiền không hợp lệ.");
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch("/api/housekeeping/checkout-requests/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, roomId, hasDamage, damageDescription, estimatedCharge }),
+      });
+      if (res.ok) {
+        alert("Đã hoàn tất kiểm tra phòng.");
+        fetchRooms();
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error completing inspection");
+    }
+  };
+
   return (
     <div className="p-6 md:p-8 space-y-8 bg-neutral-50 dark:bg-neutral-900 min-h-screen rounded-2xl">
       {/* Top Header Banner */}
@@ -177,7 +222,25 @@ export default function HousekeepingDashboardHub() {
       </div>
 
       {/* KPI Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+        <div
+          onClick={() => setActiveWorkflow("CHECKOUT_FLOW")}
+          className={`p-6 rounded-3xl border transition-all cursor-pointer ${
+            activeWorkflow === "CHECKOUT_FLOW"
+              ? "bg-purple-600 text-white shadow-xl shadow-purple-600/30 scale-[1.02]"
+              : "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/40 hover:bg-purple-100/60"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <p className={`text-sm font-bold ${activeWorkflow === "CHECKOUT_FLOW" ? "text-white" : "text-purple-800 dark:text-purple-300"}`}>
+              🟣 Kiểm Tra (CHECKOUT)
+            </p>
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{checkoutRequests.length}</h3>
+          <p className={`text-xs mt-1 ${activeWorkflow === "CHECKOUT_FLOW" ? "text-purple-100" : "text-neutral-500"}`}>Khách yêu cầu trả phòng</p>
+        </div>
+
         <div
           onClick={() => setActiveWorkflow("DIRTY_FLOW")}
           className={`p-6 rounded-3xl border transition-all cursor-pointer ${
@@ -313,6 +376,63 @@ export default function HousekeepingDashboardHub() {
           Luồng 5: Dịch Vụ Giặt Là (Laundry Orders) ({laundryOrders.filter(o => ["assigned", "washing", "ready_to_receive", "delivering"].includes(o.status_text)).length})
         </button>
       </div>
+
+      {/* WORKFLOW 5: CHECKOUT INSPECTION FLOW */}
+      {activeWorkflow === "CHECKOUT_FLOW" && (
+        <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
+          <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              🟣 LUỒNG KIỂM TRA TRẢ PHÒNG (Checkout Inspection)
+            </h2>
+            <p className="text-xs text-neutral-500 mt-1">
+              Khách hàng gửi yêu cầu trả phòng. Lễ tân đã điều động bạn lên kiểm tra xem có hư hỏng hay mất mát đồ đạc gì không trước khi khách thanh toán.
+            </p>
+          </div>
+
+          {checkoutRequests.length === 0 ? (
+            <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
+              Không có yêu cầu kiểm tra phòng nào hiện tại.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {checkoutRequests.map((req) => (
+                <div key={req.id} className="bg-purple-50/60 dark:bg-purple-950/20 border-2 border-purple-300 dark:border-purple-800/60 p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="bg-purple-600 text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow">
+                        Phòng {req.room?.room_number}
+                      </span>
+                      <h4 className="text-lg font-bold text-neutral-900 dark:text-white mt-2">
+                        {req.user?.full_name || req.guest?.full_name}
+                      </h4>
+                    </div>
+                    <span className="text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-200 dark:bg-purple-900/60 px-3 py-1 rounded-full uppercase">
+                      Chờ Kiểm Tra
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      onClick={() => handleCompleteInspection(req.id, req.room_id, false)}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Phòng Bình Thường
+                    </button>
+                    <button
+                      onClick={() => handleCompleteInspection(req.id, req.room_id, true)}
+                      className="bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-800 dark:text-red-300 font-semibold py-3 px-4 rounded-2xl transition-all text-sm flex items-center gap-1.5"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Báo Hỏng / Mất Đồ
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* WORKFLOW 1: DIRTY TURNOVER FLOW */}
       {activeWorkflow === "DIRTY_FLOW" && (

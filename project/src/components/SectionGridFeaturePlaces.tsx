@@ -64,17 +64,6 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
 
         if (error) throw error;
 
-        // Fetch live rooms to get status
-        let liveRooms: any[] = [];
-        try {
-          const roomsRes = await fetch("/api/rooms?all=true");
-          if (roomsRes.ok) {
-            liveRooms = await roomsRes.json();
-          }
-        } catch (e) {
-          console.error("Failed to fetch live rooms for homepage:", e);
-        }
-
         if (dbData && dbData.length > 0) {
           const mapped = dbData.map((h: any, index: number) => {
             const titleLower = h.title.toLowerCase();
@@ -82,24 +71,6 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
             if (titleLower.includes("family")) city = "Family";
             else if (titleLower.includes("suite")) city = "Suite";
             else if (titleLower.includes("deluxe")) city = "Deluxe";
-
-            const getRoomNumberByTitle = (title: string): string => {
-              const t = title.toLowerCase();
-              if (t.includes("cedars")) return "101";
-              if (t.includes("ship & castle") || t.includes("ship and castle")) return "102";
-              if (t.includes("bell")) return "103";
-              if (t.includes("windmill")) return "201";
-              if (t.includes("holiday inn")) return "202";
-              if (t.includes("half moon")) return "203";
-              if (t.includes("white horse")) return "301";
-              if (t.includes("unicorn")) return "302";
-              return "101";
-            };
-
-            const roomNumber = getRoomNumberByTitle(h.title);
-            const liveRoom = (liveRooms || []).find((r: any) => r.room_number === roomNumber);
-            const liveStatus = liveRoom ? liveRoom.status : "AVAILABLE";
-            const liveRoomId = liveRoom ? liveRoom.id : h.id;
 
             return {
               id: h.id,
@@ -137,11 +108,7 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
               map: { 
                 lat: 55.2094559 + (index * 0.01) - 0.03, 
                 lng: 61.5594641 + (index * 0.01) - 0.03 
-              },
-              // Inject custom fields
-              room_number: roomNumber,
-              room_status: liveStatus,
-              room_id: liveRoomId
+              }
             };
           });
           setStays(mapped);

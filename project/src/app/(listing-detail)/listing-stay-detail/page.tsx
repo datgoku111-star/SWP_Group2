@@ -538,9 +538,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     return (
       <div className="listingSection__wrap !space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold">Lịch hoạt động & Trạng thái phòng trống</h2>
+          <h2 className="text-2xl font-semibold">Availability & Schedule</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            Xem chi tiết danh sách phòng và các khoảng thời gian đã được đặt để dễ dàng lên kế hoạch
+            View the detailed list of rooms and upcoming booked periods to easily plan your stay
           </span>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
@@ -549,10 +549,10 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800 text-left text-sm text-neutral-500 dark:text-neutral-400">
             <thead className="bg-neutral-50 dark:bg-neutral-800/80 text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
               <tr>
-                <th scope="col" className="px-6 py-3.5">Mã phòng / Tầng</th>
-                <th scope="col" className="px-6 py-3.5">Loại phòng</th>
-                <th scope="col" className="px-6 py-3.5">Hôm nay</th>
-                <th scope="col" className="px-6 py-3.5">Lịch đã đặt sắp tới</th>
+                <th scope="col" className="px-6 py-4">ROOM / FLOOR</th>
+                <th scope="col" className="px-6 py-4">ROOM TYPE</th>
+                <th scope="col" className="px-6 py-4">TODAY</th>
+                <th scope="col" className="px-6 py-4">UPCOMING BOOKINGS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 bg-white dark:bg-neutral-900/40">
@@ -568,7 +568,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                   return (
                     <tr key={room.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/20 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
-                        Phòng {room.room_number} <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-1 font-normal">(Tầng {room.floor})</span>
+                        <span className="font-bold text-neutral-900 dark:text-white">Room {room.room_number}</span> <span className="text-xs text-neutral-400">(Floor {room.floor})</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
@@ -577,11 +577,19 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {(() => {
-                          if (room.status === 'CLEANING' || room.status === 'DIRTY') {
+                          if (room.status === 'CLEANING') {
                             return (
                               <span className="inline-flex items-center text-xs font-semibold text-purple-600 dark:text-purple-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400 mr-1.5 animate-pulse"></span>
-                                Đang dọn dẹp
+                                CLEANING
+                              </span>
+                            );
+                          }
+                          if (room.status === 'DIRTY') {
+                            return (
+                              <span className="inline-flex items-center text-xs font-semibold text-red-600 dark:text-red-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400 mr-1.5 animate-pulse"></span>
+                                DIRTY
                               </span>
                             );
                           }
@@ -589,22 +597,22 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                             return (
                               <span className="inline-flex items-center text-xs font-semibold text-amber-600 dark:text-amber-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 mr-1.5"></span>
-                                Bảo trì
+                                MAINTENANCE
                               </span>
                             );
                           }
                           if (isOccupiedToday) {
                             return (
-                              <span className="inline-flex items-center text-xs font-semibold text-red-600 dark:text-red-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400 mr-1.5 animate-pulse"></span>
-                                Đang bận
+                              <span className="inline-flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 mr-1.5 animate-pulse"></span>
+                                IN_USE
                               </span>
                             );
                           }
                           return (
                             <span className="inline-flex items-center text-xs font-semibold text-green-600 dark:text-green-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 mr-1.5"></span>
-                              Trống
+                              AVAILABLE
                             </span>
                           );
                         })()}
@@ -632,7 +640,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                             })
                           ) : (
                             <span className="text-xs text-neutral-400 dark:text-neutral-500 italic">
-                              ✓ Trống lịch (Không có booking sắp tới)
+                              ✓ Available (No upcoming bookings)
                             </span>
                           )}
                         </div>
@@ -643,7 +651,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               ) : (
                 <tr>
                   <td colSpan={4} className="px-6 py-10 text-center text-sm text-neutral-400 dark:text-neutral-500">
-                    Đang tải lịch hoạt động phòng...
+                    Loading room schedule...
                   </td>
                 </tr>
               )}
@@ -979,23 +987,23 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
           {checkingAvailability ? (
             <div className="flex items-center justify-center space-x-2 py-1 text-neutral-500">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-6000 border-t-transparent"></div>
-              <span>Đang kiểm tra phòng trống...</span>
+              <span>Checking availability...</span>
             </div>
           ) : (() => {
             const maxAvailable = hotelRoomData ? Math.min(hotelRoomData.available_rooms, availableRooms.length) : availableRooms.length;
             return (
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-green-600 font-semibold">
-                  <span>✓ Còn phòng trống</span>
+                  <span>✓ Available</span>
                   <span className="bg-green-50 dark:bg-green-900/20 text-xs px-2.5 py-1 rounded-lg">
-                    {maxAvailable} phòng sẵn sàng
+                    {maxAvailable} rooms ready
                   </span>
                 </div>
 
                 {allRoomsOfCategory.length > 0 && (
                   <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2 mt-2">
                     <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
-                      Vui lòng chọn phòng:
+                      Please select a room:
                     </span>
                     <div className="max-h-72 overflow-y-auto overscroll-contain space-y-2 pr-2">
                       {allRoomsOfCategory.map((room) => {
@@ -1020,20 +1028,20 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                               />
                               <div className="text-sm">
                                 <div className="font-semibold text-neutral-800 dark:text-neutral-200">
-                                  Phòng {room.room_number} (Tầng {room.floor})
+                                  Room {room.room_number} (Floor {room.floor})
                                   {isUnavailableForDates && (
                                     <span className="ml-2 text-[10px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                                      Kín lịch
+                                      Fully booked
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                                  {room.notes === 'SINGLE' ? 'Phòng đơn' : 'Phòng đôi'} - Trạng thái: {
-                                    room.status === 'AVAILABLE' ? 'Trống (Sẵn sàng)' :
-                                    room.status === 'IN_USE' ? 'Đang sử dụng' :
-                                    room.status === 'DIRTY' ? 'Chưa dọn' :
-                                    room.status === 'CLEANING' ? 'Đang dọn' :
-                                    room.status === 'MAINTENANCE' ? 'Bảo trì' : room.status
+                                  {room.notes === 'SINGLE' ? 'Single' : 'Double'} - Status: {
+                                    room.status === 'AVAILABLE' ? 'AVAILABLE' :
+                                    room.status === 'IN_USE' ? 'IN_USE' :
+                                    room.status === 'DIRTY' ? 'DIRTY' :
+                                    room.status === 'CLEANING' ? 'CLEANING' :
+                                    room.status === 'MAINTENANCE' ? 'MAINTENANCE' : room.status
                                   }
                                 </div>
                               </div>
@@ -1058,7 +1066,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                 disabled 
                 className="w-full py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 rounded-3xl font-semibold cursor-not-allowed text-center text-sm"
               >
-                Vui lòng chọn ngày nhận/trả phòng
+                Please select check-in/check-out dates
               </button>
             );
           }
@@ -1070,7 +1078,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                 disabled 
                 className="w-full py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 rounded-3xl font-semibold cursor-not-allowed text-center text-sm"
               >
-                Vui lòng chọn 1 phòng
+                Please select a room
               </button>
             );
           }
@@ -1084,7 +1092,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                 disabled 
                 className="w-full py-3 bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-3xl font-semibold cursor-not-allowed text-center text-sm"
               >
-                Phòng đã kín lịch trong thời gian chọn
+                Room is fully booked for the selected dates
               </button>
             );
           }
@@ -1172,7 +1180,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
 
         {/* SIDEBAR */}
         <div className="hidden lg:block flex-grow mt-14 lg:mt-0">
-          <div className="sticky top-28">{renderSidebar()}</div>
+          <div className="sticky top-28 pb-10">{renderSidebar()}</div>
         </div>
       </main>
     </div>
