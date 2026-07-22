@@ -50,6 +50,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const [selectedBookingId, setSelectedBookingId] = useState<string>("");
   const [gplxFile, setGplxFile] = useState<any>(null);
   const [gplxFileName, setGplxFileName] = useState<string>("");
+  const [gplxBase64, setGplxBase64] = useState<string>("");
   const [gplxCccd, setGplxCccd] = useState<string>("");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [blockedDates, setBlockedDates] = useState<{ start: Date; end: Date }[]>([]);
@@ -134,7 +135,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           pickup_date: startDate.toISOString(),
           dropoff_date: endDate.toISOString(),
           total_price: priceParam * daysCount + 15,
-          gplx_image: gplxFileName || "gplx_manual_upload.png",
+          gplx_image: gplxBase64 || gplxFileName || "gplx_manual_upload.png",
           gplx_cccd: gplxCccd,
         }),
       });
@@ -629,8 +630,15 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
               accept="image/*"
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
-                  setGplxFile(e.target.files[0]);
-                  setGplxFileName(e.target.files[0].name);
+                  const file = e.target.files[0];
+                  setGplxFile(file);
+                  setGplxFileName(file.name);
+                  
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setGplxBase64(reader.result as string);
+                  };
+                  reader.readAsDataURL(file);
                 }
               }}
               className="hidden"

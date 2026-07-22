@@ -692,10 +692,27 @@ export default function ReceptionistServiceHub() {
                           </div>
                         </div>
 
-                        <div className="text-xs text-neutral-500 flex items-center gap-1.5 pt-1">
-                          <span>📂 File ảnh GPLX thủ công:</span>
-                          <span className="text-primary-600 underline font-bold select-all cursor-pointer">{rental.gplx_image || "gplx_manual_upload.png"}</span>
-                        </div>
+                        {rental.gplx_image && (rental.gplx_image.startsWith("data:image/") || rental.gplx_image.startsWith("http")) ? (
+                          <div className="mt-2 space-y-1">
+                            <span className="text-xs text-neutral-400 font-medium">📂 Ảnh chụp GPLX:</span>
+                            <div className="relative max-w-[240px] rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800 shadow-md group cursor-pointer hover:shadow-lg transition-all">
+                              <img 
+                                src={rental.gplx_image} 
+                                alt="GPLX" 
+                                className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300"
+                                onClick={() => {
+                                  const win = window.open();
+                                  win?.document.write(`<img src="${rental.gplx_image}" style="max-width:100%; max-height:100%; display:block; margin:auto;" />`);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-neutral-500 flex items-center gap-1.5 pt-1">
+                            <span>📂 File ảnh GPLX thủ công:</span>
+                            <span className="text-primary-600 underline font-bold select-all cursor-pointer">{rental.gplx_image || "gplx_manual_upload.png"}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="text-right flex flex-col justify-between items-end gap-2">

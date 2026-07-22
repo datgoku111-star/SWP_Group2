@@ -19,6 +19,17 @@ export async function GET(request: Request) {
         : ["PENDING", "IN_PROGRESS", "COMPLETED"];
       let orders = await getPendingOrders(statuses);
 
+      // Filter out car rental service orders from regular service orders queue
+      orders = orders.filter((order: any) => {
+        try {
+          if (!order.notes) return true;
+          const notesObj = JSON.parse(order.notes);
+          return notesObj.is_car_rental !== true;
+        } catch (e) {
+          return true;
+        }
+      });
+
       // Food/Beverage Segmentation for Chef / Kitchen role or explicit query parameter
       const categoryParam = searchParams.get("category");
       if (categoryParam || user.role === "KITCHEN") {
