@@ -32,8 +32,9 @@ export default function ReceptionistServiceHub() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"ROOMS" | "ORDERS">("ROOMS");
+  const [activeSubTab, setActiveSubTab] = useState<"ROOMS" | "ORDERS" | "EXPERIENCES">("ROOMS");
   const [filterFloor, setFilterFloor] = useState<number | "ALL">("ALL");
 
   // Modal State for Ordering Room Service / F&B
@@ -46,10 +47,11 @@ export default function ReceptionistServiceHub() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [roomsRes, servicesRes, ordersRes] = await Promise.all([
+      const [roomsRes, servicesRes, ordersRes, bookingsRes] = await Promise.all([
         fetch("/api/rooms?all=true"),
         fetch("/api/services?all=true"),
         fetch("/api/orders?status=PENDING,IN_PROGRESS,COMPLETED"),
+        fetch("/api/bookings"),
       ]);
 
       if (roomsRes.ok) {
@@ -83,6 +85,13 @@ export default function ReceptionistServiceHub() {
         }
       } else {
         setActiveOrders(fallbackOrders);
+      }
+
+      if (bookingsRes.ok) {
+        const bData = await bookingsRes.json();
+        if (Array.isArray(bData)) {
+          setBookings(bData);
+        }
       }
     } catch (err) {
       console.error("ReceptionistServiceHub fetch error:", err);
@@ -307,6 +316,17 @@ export default function ReceptionistServiceHub() {
           >
             <Clock className="w-4 h-4" />
             Đơn Dịch Vụ Đang Xử Lý ({activeOrders.length})
+          </button>
+          <button
+            onClick={() => setActiveSubTab("EXPERIENCES")}
+            className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeSubTab === "EXPERIENCES"
+                ? "bg-white text-primary-700 shadow-lg scale-105"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            Giám Sát Trải Nghiệm
           </button>
           <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title="Làm mới">
             <RefreshCw className="w-5 h-5" />
@@ -552,6 +572,150 @@ export default function ReceptionistServiceHub() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* SUB-TAB 3: EXPERIENCES DASHBOARD */}
+      {activeSubTab === "EXPERIENCES" && (
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 shadow-sm space-y-6">
+          <div className="border-b border-neutral-100 dark:border-neutral-800 pb-4">
+            <h3 className="text-xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-600 animate-pulse" />
+              <span>Giám Sát & Điều Hành Trải Nghiệm Khách Sạn</span>
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1">
+              Bảng theo dõi trạng thái đặt tour trải nghiệm (climbing, rowing, swimming, skiing) của tất cả các phòng lưu trú.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-neutral-600 dark:text-neutral-300">
+              <thead className="bg-neutral-50 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-200 border-b border-neutral-200 dark:border-neutral-800">
+                <tr>
+                  <th className="px-6 py-4 font-extrabold">Số Phòng</th>
+                  <th className="px-6 py-4 font-extrabold">Trạng Thái Phòng</th>
+                  <th className="px-6 py-4 font-extrabold">Khách Đang Ở</th>
+                  <th className="px-6 py-4 font-extrabold">Tour Trải Nghiệm Đã Đặt</th>
+                  <th className="px-6 py-4 font-extrabold">Kênh Đặt</th>
+                  <th className="px-6 py-4 font-extrabold">Thanh Toán</th>
+                  <th className="px-6 py-4 font-extrabold text-right">Tổng Chi Phí</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                {rooms.map((room) => {
+                  const currentBooking = bookings.find(b => b.room_id === room.id && b.status === "CHECKED_IN");
+                  
+                  // Gather online experience bookings
+                  const onlineExps = bookings.filter(b => 
+                    b.room_id === room.id && 
+                    b.status !== "CANCELLED" && 
+                    b.special_requests && 
+                    (() => {
+                      try {
+                        const parsed = JSON.parse(b.special_requests);
+                        return parsed && parsed.isExperience === true;
+                      } catch (e) { return false; }
+                    })()
+                  );
+
+                  // Gather counter experience orders
+                  const counterExps: any[] = [];
+                  if (currentBooking) {
+                    const roomOrders = activeOrders.filter(o => o.booking_id === currentBooking.id);
+                    roomOrders.forEach(o => {
+                      o.items?.forEach((item: any) => {
+                        const nameLower = (item.service_name || "").toLowerCase();
+                        if (nameLower.includes("experience") || nameLower.includes("tour") || nameLower.includes("leo núi") || nameLower.includes("chèo thuyền") || nameLower.includes("tắm biển") || nameLower.includes("trượt tuyết")) {
+                          counterExps.push({
+                            id: o.id,
+                            name: item.service_name,
+                            qty: item.quantity,
+                            status: o.status,
+                            price: item.subtotal || (item.unit_price * item.quantity)
+                          });
+                        }
+                      });
+                    });
+                  }
+
+                  const hasExp = onlineExps.length > 0 || counterExps.length > 0;
+                  const guestName = currentBooking?.user?.full_name || currentBooking?.guest?.full_name || "-";
+
+                  return (
+                    <tr key={room.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors">
+                      <td className="px-6 py-4 font-bold text-neutral-900 dark:text-white">
+                        Phòng {room.room_number}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          room.status === "AVAILABLE" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" :
+                          room.status === "IN_USE" ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" :
+                          room.status === "DIRTY" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" :
+                          "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                        }`}>
+                          {room.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                        {guestName}
+                      </td>
+                      <td className="px-6 py-4 space-y-1">
+                        {!hasExp && <span className="text-neutral-400 text-xs">Chưa đặt trải nghiệm</span>}
+                        {onlineExps.map((b: any) => {
+                          let title = "Tour Trải nghiệm";
+                          try {
+                            const parsed = JSON.parse(b.special_requests);
+                            title = parsed.title || title;
+                          } catch (e) {}
+                          return (
+                            <div key={b.id} className="font-bold text-emerald-600 dark:text-emerald-400 capitalize">
+                              🧗 {title}
+                            </div>
+                          );
+                        })}
+                        {counterExps.map((item: any, idx: number) => (
+                          <div key={idx} className="font-bold text-indigo-600 dark:text-indigo-400">
+                            🛎️ {item.name} <span className="text-xs text-neutral-400 font-normal">x{item.qty}</span>
+                          </div>
+                        ))}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-neutral-500">
+                        {onlineExps.map((b: any) => <div key={b.id}>Đặt trực tuyến</div>)}
+                        {counterExps.map((item: any, idx: number) => <div key={idx}>Tại quầy lễ tân</div>)}
+                      </td>
+                      <td className="px-6 py-4 space-y-1">
+                        {onlineExps.map((b: any) => (
+                          <div key={b.id}>
+                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300">
+                              Đã thanh toán (Online)
+                            </span>
+                          </div>
+                        ))}
+                        {counterExps.map((item: any, idx: number) => {
+                          const isPaid = item.status === "COMPLETED";
+                          return (
+                            <div key={idx}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                isPaid 
+                                  ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300"
+                                  : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                              }`}>
+                                {isPaid ? "Đã thanh toán" : "Ghi nợ phòng (Chờ thanh toán)"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </td>
+                      <td className="px-6 py-4 text-right font-black text-neutral-900 dark:text-white">
+                        {onlineExps.map((b: any) => <div key={b.id}>{(b.total_amount || 0).toLocaleString("vi-VN")} đ</div>)}
+                        {counterExps.map((item: any, idx: number) => <div key={idx}>{(item.price || 0).toLocaleString("vi-VN")} đ</div>)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
