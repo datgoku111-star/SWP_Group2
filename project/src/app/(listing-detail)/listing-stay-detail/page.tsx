@@ -577,11 +577,19 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {(() => {
-                          if (room.status === 'CLEANING' || room.status === 'DIRTY') {
+                          if (room.status === 'CLEANING') {
                             return (
                               <span className="inline-flex items-center text-xs font-semibold text-purple-600 dark:text-purple-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400 mr-1.5 animate-pulse"></span>
-                                Cleaning
+                                CLEANING
+                              </span>
+                            );
+                          }
+                          if (room.status === 'DIRTY') {
+                            return (
+                              <span className="inline-flex items-center text-xs font-semibold text-red-600 dark:text-red-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400 mr-1.5 animate-pulse"></span>
+                                DIRTY
                               </span>
                             );
                           }
@@ -589,22 +597,22 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                             return (
                               <span className="inline-flex items-center text-xs font-semibold text-amber-600 dark:text-amber-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 mr-1.5"></span>
-                                Maintenance
+                                MAINTENANCE
                               </span>
                             );
                           }
                           if (isOccupiedToday) {
                             return (
-                              <span className="inline-flex items-center text-xs font-semibold text-red-600 dark:text-red-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400 mr-1.5 animate-pulse"></span>
-                                Occupied
+                              <span className="inline-flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 mr-1.5 animate-pulse"></span>
+                                IN_USE
                               </span>
                             );
                           }
                           return (
                             <span className="inline-flex items-center text-xs font-semibold text-green-600 dark:text-green-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400 mr-1.5"></span>
-                              Available
+                              AVAILABLE
                             </span>
                           );
                         })()}
@@ -1029,11 +1037,11 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                                 </div>
                                 <div className="text-xs text-neutral-500 dark:text-neutral-400">
                                   {room.notes === 'SINGLE' ? 'Single' : 'Double'} - Status: {
-                                    room.status === 'AVAILABLE' ? 'Available (Ready)' :
-                                    room.status === 'IN_USE' ? 'In Use' :
-                                    room.status === 'DIRTY' ? 'Dirty' :
-                                    room.status === 'CLEANING' ? 'Cleaning' :
-                                    room.status === 'MAINTENANCE' ? 'Maintenance' : room.status
+                                    room.status === 'AVAILABLE' ? 'AVAILABLE' :
+                                    room.status === 'IN_USE' ? 'IN_USE' :
+                                    room.status === 'DIRTY' ? 'DIRTY' :
+                                    room.status === 'CLEANING' ? 'CLEANING' :
+                                    room.status === 'MAINTENANCE' ? 'MAINTENANCE' : room.status
                                   }
                                 </div>
                               </div>
