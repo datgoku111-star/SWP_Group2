@@ -96,7 +96,7 @@ export default function BookingsPage() {
         if (user?.role === "CUSTOMER") {
           setBookings(data.filter((b: Booking) => b.user_id === user.id));
         } else {
-          setBookings(data.filter((b: any) => b.room_id !== "99999999-9999-9999-9999-999999999999" && b.room_id !== "88888888-8888-8888-8888-888888888888"));
+          setBookings(data.filter((b: any) => b.room_id === "99999999-9999-9999-9999-999999999999"));
         }
       }
     } catch (err) {
@@ -231,7 +231,7 @@ export default function BookingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-700 pb-6">
         <div>
           <h1 className="text-3xl font-extrabold sm:text-4xl text-neutral-900 dark:text-white">
-            {user?.role === "CUSTOMER" ? "My Bookings" : "Reservations & Billing Management"}
+            {"Booked Experiences"}
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
             {isStaff

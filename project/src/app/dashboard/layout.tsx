@@ -47,7 +47,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     // Customer
     { name: "My Bookings", href: "/bookings", icon: CalendarCheck, roles: ["CUSTOMER"] },
-    { name: "Order Service", href: "/services", icon: UtensilsCrossed, roles: ["CUSTOMER"] },
+    { name: "Booked Experiences", href: "/booked-experiences", icon: Map, roles: ["CUSTOMER"] },
+    { name: "Order Foods", href: "/services", icon: UtensilsCrossed, roles: ["CUSTOMER"] },
     { name: "Car Bookings", href: "/car-bookings", icon: Car, roles: ["CUSTOMER"] },
     { name: "Laundry Services", href: "/laundry-bookings", icon: Shirt, roles: ["CUSTOMER"] },
   ];
