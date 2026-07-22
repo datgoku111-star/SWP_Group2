@@ -221,8 +221,19 @@ function CheckInContent() {
     return diff > 0 ? diff : 1;
   };
 
-  const formatMoney = (val: number) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val || 0);
+  const getAmountToSettle = () => {
+    if (customAmount !== null) return customAmount;
+    let baseAmount = checkoutDetails?.grand_total || booking?.total_amount || 0;
+    const numericVal = typeof baseAmount === 'number' ? baseAmount : parseFloat(baseAmount as any) || 0;
+    const vndVal = numericVal < 1000 ? numericVal * 25000 : numericVal;
+    return Math.round(vndVal);
+  };
+
+  const formatMoney = (val: number) => {
+    const numericVal = typeof val === 'number' ? val : parseFloat(val as any) || 0;
+    const vndVal = numericVal < 1000 ? numericVal * 25000 : numericVal;
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Math.round(vndVal));
+  };
 
   // Action 1: Confirm Check-In
   const confirmCheckIn = async () => {
@@ -873,13 +884,27 @@ function CheckInContent() {
                         </button>
                       ))}
                     </div>
+
+                    {paymentMethod === "BANK_TRANSFER" && booking && (
+                      <div className="mt-5 p-5 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 flex flex-col items-center">
+                        <span className="text-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-200">Quét mã VietQR (Thanh toán)</span>
+                        <div className="p-3 bg-white rounded-xl shadow-sm border border-neutral-200">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`VIETQR-DEMO-${booking.id}-${getAmountToSettle()}`)}`}
+                            alt="VietQR Code"
+                            className="w-40 h-40 object-contain"
+                          />
+                        </div>
+                        <p className="text-xs text-neutral-500 mt-3 text-center px-4">Khách hàng có thể quét mã này bằng ứng dụng ngân hàng để thanh toán nhanh.</p>
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Amount to Settle (VND)</label>
                     <Input
                       type="number"
-                      value={customAmount || booking?.total_amount || 0}
+                      value={customAmount !== null ? customAmount : getAmountToSettle()}
                       onChange={(e) => setCustomAmount(Number(e.target.value))}
                       className="h-11 font-bold text-base"
                     />
