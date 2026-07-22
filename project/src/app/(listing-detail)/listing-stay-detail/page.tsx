@@ -1171,9 +1171,9 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         </div>
 
         {/* SIDEBAR */}
-        <div className="hidden lg:block flex-grow mt-14 lg:mt-0">
-          <div className="sticky top-28">{renderSidebar()}</div>
-        </div>
+          <div className="hidden lg:block flex-grow mt-14 lg:mt-0">
+            <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto" style={{ scrollbarWidth: "none" }}>{renderSidebar()}</div>
+          </div>
       </main>
     </div>
   );
