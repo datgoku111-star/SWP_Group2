@@ -10,28 +10,42 @@ export async function createBooking(booking: {
   total_amount: number;
   special_requests?: string;
 }) {
-  // Call the Stored Procedure (RPC) on Supabase for a safe transactional booking
-  const { data, error } = await supabaseServer.rpc("book_room_secure", {
-    p_room_id: booking.room_id,
-    p_user_id: booking.user_id,
-    p_check_in: booking.check_in_date,
-    p_check_out: booking.check_out_date,
-    p_num_guests: booking.num_guests,
-    p_total_amount: booking.total_amount,
-    p_special_requests: booking.special_requests || null,
-  });
+  // 1. Dynamic Check for overlapping bookings
+  const { data: overlaps, error: overlapError } = await supabaseServer
+    .from("bookings")
+    .select("id")
+    .eq("room_id", booking.room_id)
+    .not("status", "in", '("CANCELLED","CHECKED_OUT")')
+    .lt("check_in_date", booking.check_out_date)
+    .gt("check_out_date", booking.check_in_date);
 
-  if (error) throw error;
+  if (overlapError) throw overlapError;
 
-  // Since RPC returns a TABLE, data will be an array
-  const result = data && data[0];
-
-  if (!result || result.status === "FAILED") {
-    throw new Error(result?.message || "Room is no longer available for the selected dates");
+  if (overlaps && overlaps.length > 0) {
+    throw new Error("Phòng không còn trống trong khoảng thời gian đã chọn.");
   }
 
+  // 2. Insert the booking
+  const { data, error } = await supabaseServer
+    .from("bookings")
+    .insert({
+      user_id: booking.user_id,
+      room_id: booking.room_id,
+      check_in_date: booking.check_in_date,
+      check_out_date: booking.check_out_date,
+      num_guests: booking.num_guests,
+      total_amount: booking.total_amount,
+      special_requests: booking.special_requests || null,
+      status: "PENDING",
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  if (!data) throw new Error("Failed to create booking record.");
+
   // Fetch and return the full booking details
-  return await getBookingById(result.booking_id);
+  return await getBookingById(data.id);
 }
 
 export async function getBookingById(id: string) {
