@@ -91,7 +91,7 @@ export default function CustomerCarBookingsPage() {
         );
       case "waiting to return the vehicle":
         return (
-          <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200">
+          <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200">
             🚗 Đang sử dụng xe
           </span>
         );

@@ -627,7 +627,7 @@ export default function ReceptionistServiceHub() {
                   statusColor = "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300";
                   statusText = "lobby Chờ bàn giao xe ở sảnh";
                 } else if (rental.status_text === "waiting to return the vehicle") {
-                  statusColor = "bg-purple-100 text-purple-800 border border-purple-300 dark:bg-purple-900/40 dark:text-purple-300";
+                  statusColor = "bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300";
                   statusText = "🚗 Đang thuê (Chờ trả xe)";
                 } else if (rental.status_text === "return requested") {
                   statusColor = "bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300";
