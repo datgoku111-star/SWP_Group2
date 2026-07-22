@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import DashboardLayout from "../dashboard/layout";
 import { Route } from "@/routers/types";
 import Image from "next/image";
 import ButtonPrimary from "@/shared/ButtonPrimary";
@@ -58,9 +59,10 @@ export default function ServicesPage() {
     try {
       const res = await fetch("/api/services");
       if (res.ok) {
-        const data = await res.json();
-        setServices(data);
-        const cats = Array.from(new Set(data.map((s: Service) => s.category)));
+                const data = await res.json();
+        const foodData = data.filter((s: any) => s.category.toUpperCase() === "FOOD" || s.category.toUpperCase() === "BEVERAGE");
+        setServices(foodData);
+        const cats = Array.from(new Set(foodData.map((s: any) => s.category)));
         setCategories(cats as string[]);
       }
     } catch (err) {
@@ -221,13 +223,14 @@ export default function ServicesPage() {
       : services.filter((s) => s.category === activeCategory);
 
   return (
+    <DashboardLayout>
     <div className="container py-16 mb-24 lg:mb-32 relative">
       <div className="flex justify-between items-center mb-10">
         <div>
           <h2 className="text-3xl font-semibold sm:text-4xl">
-            {t("servicesTitle")}
+            "Order Foods"
           </h2>
-          <p className="text-neutral-500 mt-2">{t("servicesDesc")}</p>
+          <p className="text-neutral-500 mt-2">"Order delicious food and drinks directly to your room."</p>
         </div>
 
         <button
@@ -460,6 +463,7 @@ export default function ServicesPage() {
           </div>
         </div>
       )}
-    </div>
+        </div>
+    </DashboardLayout>
   );
 }
