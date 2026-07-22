@@ -226,7 +226,7 @@ export default function CarOrdersPage() {
               return (
                 <div 
                   key={rental.id} 
-                  className="bg-white dark:bg-neutral-850 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 flex flex-col justify-between gap-6 shadow-sm hover:shadow-md transition-all"
+                  className="bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 flex flex-col justify-between gap-6 shadow-sm hover:shadow-md transition-all"
                 >
                   <div className="space-y-4">
                     {/* Top Info line */}
@@ -235,7 +235,7 @@ export default function CarOrdersPage() {
                         <span className="bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-300 font-black px-3.5 py-1.5 rounded-2xl text-xs">
                           🚪 Phòng {rental.booking?.room?.room_number || "P101"}
                         </span>
-                        <span className="text-xs font-mono font-bold text-neutral-400">
+                        <span className="text-xs font-mono font-bold text-neutral-600 dark:text-neutral-400">
                           #{rental.id.split("-")[0].toUpperCase()}
                         </span>
                       </div>
@@ -245,33 +245,33 @@ export default function CarOrdersPage() {
                     {/* Customer & Car Info */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-55 dark:bg-neutral-900/40 p-4 rounded-2xl border border-neutral-100 dark:border-neutral-800 text-sm">
                       <div className="space-y-1">
-                        <span className="text-neutral-400 font-medium text-xs uppercase block">Khách hàng:</span>
+                        <span className="text-neutral-600 dark:text-neutral-400 font-medium text-xs uppercase block">Khách hàng:</span>
                         <span className="font-extrabold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                          <User className="w-4 h-4 text-neutral-400" />
+                          <User className="w-4 h-4 text-neutral-500" />
                           {rental.booking?.user?.full_name || rental.booking?.guest?.full_name || "Vô danh"}
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <span className="text-neutral-400 font-medium text-xs uppercase block">Dòng xe đặt:</span>
+                        <span className="text-neutral-600 dark:text-neutral-400 font-medium text-xs uppercase block">Dòng xe đặt:</span>
                         <span className="font-extrabold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                          <Car className="w-4 h-4 text-neutral-400" />
+                          <Car className="w-4 h-4 text-neutral-500" />
                           {rental.car_type}
                         </span>
                       </div>
                       <div className="space-y-1 col-span-1 sm:col-span-2 border-t border-neutral-100 dark:border-neutral-800 pt-2 flex items-center justify-between">
                         <div>
-                          <span className="text-neutral-400 font-medium text-xs uppercase block">Thời gian thuê:</span>
+                          <span className="text-neutral-600 dark:text-neutral-400 font-medium text-xs uppercase block">Thời gian thuê:</span>
                           <span className="font-extrabold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 mt-0.5">
-                            <Calendar className="w-4 h-4 text-neutral-400" />
+                            <Calendar className="w-4 h-4 text-neutral-500" />
                             {new Date(rental.pickup_date).toLocaleDateString("vi-VN")} ➔ {new Date(rental.dropoff_date).toLocaleDateString("vi-VN")}
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="text-neutral-400 font-medium text-xs uppercase block">Tổng phí dịch vụ:</span>
+                          <span className="text-neutral-600 dark:text-neutral-400 font-medium text-xs uppercase block">Tổng phí dịch vụ:</span>
                           <span className="font-black text-primary-600 dark:text-primary-400 text-base">
                             {(rental.total_amount * 26320).toLocaleString("vi-VN")} đ
                           </span>
-                          <span className="text-[10px] text-neutral-400 block font-mono">({(rental.total_amount).toLocaleString("en-US")} USD)</span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block font-mono">({(rental.total_amount).toLocaleString("en-US")} USD)</span>
                         </div>
                       </div>
                     </div>
@@ -279,13 +279,13 @@ export default function CarOrdersPage() {
                     {/* Verify Section */}
                     <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1 border-b sm:border-b-0 sm:border-r border-neutral-200 dark:border-neutral-800 pb-3 sm:pb-0 sm:pr-4">
-                        <span className="text-[10px] text-neutral-400 uppercase font-black tracking-wider">💳 CCCD Lúc Check-in phòng:</span>
+                        <span className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase font-black tracking-wider">💳 CCCD Lúc Check-in phòng:</span>
                         <div className="text-sm font-black font-mono text-neutral-800 dark:text-neutral-200">
                           {checkInCccd}
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <span className="text-[10px] text-neutral-400 uppercase font-black tracking-wider">🪪 Số CCCD trên GPLX khai báo:</span>
+                        <span className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase font-black tracking-wider">🪪 Số CCCD trên GPLX khai báo:</span>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm font-black font-mono text-neutral-800 dark:text-neutral-200">
                             {gplxCccd || "Chưa nhập"}
@@ -304,8 +304,8 @@ export default function CarOrdersPage() {
                     {/* Driving License Image Render */}
                     {rental.gplx_image && (rental.gplx_image.startsWith("data:image/") || rental.gplx_image.startsWith("http")) ? (
                       <div className="space-y-1.5">
-                        <span className="text-xs text-neutral-400 font-bold flex items-center gap-1">
-                          <FileText className="w-4 h-4 text-neutral-400" />
+                        <span className="text-xs text-neutral-600 dark:text-neutral-400 font-bold flex items-center gap-1">
+                          <FileText className="w-4 h-4 text-neutral-500" />
                           Ảnh Giấy Phép Lái Xe:
                         </span>
                         <div className="relative max-w-[320px] rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm group cursor-pointer hover:shadow-md transition-all">

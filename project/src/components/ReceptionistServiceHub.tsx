@@ -638,14 +638,14 @@ export default function ReceptionistServiceHub() {
                 }
 
                 return (
-                  <div key={rental.id} className="p-6 rounded-3xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex flex-col gap-4">
+                  <div key={rental.id} className="p-6 rounded-3xl bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-800 flex flex-col gap-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-2 flex-grow">
                         <div className="flex flex-wrap items-center gap-3">
                           <span className="bg-primary-600 text-white font-black px-3 py-1 rounded-xl text-sm">
                             Phòng {rental.booking?.room?.room_number || "P101"}
                           </span>
-                          <span className="text-xs font-bold text-neutral-500">Mã: #{rental.id.split("-")[0].toUpperCase()}</span>
+                          <span className="text-xs font-bold text-neutral-600 dark:text-neutral-400">Mã: #{rental.id.split("-")[0].toUpperCase()}</span>
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
                             {statusText}
                           </span>
@@ -653,15 +653,15 @@ export default function ReceptionistServiceHub() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 pt-2 text-sm">
                           <div>
-                            <span className="text-neutral-400 font-medium">Khách hàng:</span>
+                            <span className="text-neutral-600 dark:text-neutral-400 font-medium">Khách hàng:</span>
                             <span className="text-neutral-850 dark:text-neutral-200 font-bold ml-1.5">{rental.booking?.user?.full_name || rental.booking?.guest?.full_name || "Guest"}</span>
                           </div>
                           <div>
-                            <span className="text-neutral-400 font-medium">Xe đăng ký:</span>
+                            <span className="text-neutral-600 dark:text-neutral-400 font-medium">Xe đăng ký:</span>
                             <span className="text-neutral-855 dark:text-neutral-200 font-bold ml-1.5">{rental.car_type}</span>
                           </div>
                           <div>
-                            <span className="text-neutral-400 font-medium">Thời gian thuê:</span>
+                            <span className="text-neutral-600 dark:text-neutral-400 font-medium">Thời gian thuê:</span>
                             <span className="text-neutral-860 dark:text-neutral-200 font-bold ml-1.5">
                               {new Date(rental.pickup_date).toLocaleDateString("vi-VN")} ➔ {new Date(rental.dropoff_date).toLocaleDateString("vi-VN")}
                             </span>
@@ -670,13 +670,13 @@ export default function ReceptionistServiceHub() {
 
                         <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                           <div className="space-y-1">
-                            <div className="text-xs text-neutral-400 uppercase font-bold">Số CCCD Check-in phòng:</div>
+                            <div className="text-xs text-neutral-600 dark:text-neutral-400 uppercase font-bold">Số CCCD Check-in phòng:</div>
                             <div className="text-sm font-black font-mono text-neutral-800 dark:text-neutral-200">
                               💳 {checkInCccd}
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <div className="text-xs text-neutral-400 uppercase font-bold">Số CCCD trên GPLX tự khai:</div>
+                            <div className="text-xs text-neutral-600 dark:text-neutral-400 uppercase font-bold">Số CCCD trên GPLX tự khai:</div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-black font-mono text-neutral-800 dark:text-neutral-200">
                                 🪪 {gplxCccd || "Chưa nhập"}
@@ -694,7 +694,7 @@ export default function ReceptionistServiceHub() {
 
                         {rental.gplx_image && (rental.gplx_image.startsWith("data:image/") || rental.gplx_image.startsWith("http")) ? (
                           <div className="mt-2 space-y-1">
-                            <span className="text-xs text-neutral-400 font-medium">📂 Ảnh chụp GPLX:</span>
+                            <span className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">📂 Ảnh chụp GPLX:</span>
                             <div className="relative max-w-[240px] rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800 shadow-md group cursor-pointer hover:shadow-lg transition-all">
                               <img 
                                 src={rental.gplx_image} 

@@ -169,7 +169,7 @@ export default function CustomerCarBookingsPage() {
             <AlertCircle className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
             <p className="text-neutral-500 dark:text-neutral-450 font-medium text-lg">Bạn chưa đăng ký sử dụng dịch vụ thuê xe nào.</p>
             <button 
-              onClick={() => router.push("/listing-car")}
+              onClick={() => router.push("/services")}
               className="mt-4 px-5 py-2.5 bg-primary-6000 text-white rounded-xl text-xs font-bold shadow-md hover:bg-primary-700 transition-all flex items-center gap-1.5 mx-auto"
             >
               Đặt dịch vụ ngay <ArrowRight className="w-4 h-4" />
@@ -182,7 +182,7 @@ export default function CustomerCarBookingsPage() {
               return (
                 <div 
                   key={cb.id} 
-                  className="bg-white dark:bg-neutral-850 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 flex flex-col justify-between gap-6 shadow-sm hover:shadow-md transition-all"
+                  className="bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-6 flex flex-col justify-between gap-6 shadow-sm hover:shadow-md transition-all"
                 >
                   <div className="space-y-4">
                     {/* Top line info */}
@@ -199,19 +199,19 @@ export default function CustomerCarBookingsPage() {
                         <Car className="w-5 h-5 text-neutral-500" />
                         {cb.car_type}
                       </h3>
-                      <p className="text-xs text-neutral-400">Mã đơn đặt xe: #{cb.id.split("-")[0].toUpperCase()}</p>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400">Mã đơn đặt xe: #{cb.id.split("-")[0].toUpperCase()}</p>
                     </div>
 
                     {/* Meta info */}
                     <div className="space-y-2 text-sm pt-2 border-t border-neutral-100 dark:border-neutral-800">
                       <div className="flex justify-between items-center">
-                        <span className="text-neutral-400">Thời gian thuê:</span>
+                        <span className="text-neutral-600 dark:text-neutral-400">Thời gian thuê:</span>
                         <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                           {new Date(cb.pickup_date).toLocaleDateString("vi-VN")} ➔ {new Date(cb.dropoff_date).toLocaleDateString("vi-VN")}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-neutral-400">CCCD Đăng ký:</span>
+                        <span className="text-neutral-600 dark:text-neutral-400">CCCD Đăng ký:</span>
                         <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
                           {cb.gplx_cccd}
                         </span>
@@ -219,20 +219,20 @@ export default function CustomerCarBookingsPage() {
                       
                       {/* Price Section */}
                       <div className="flex justify-between items-center border-t border-dashed border-neutral-200 dark:border-neutral-700 pt-2 mt-2">
-                        <span className="text-neutral-450 font-bold">Tổng chi phí thuê:</span>
+                        <span className="text-neutral-700 dark:text-neutral-300 font-bold">Tổng chi phí thuê:</span>
                         <div className="text-right">
                           <span className="text-lg font-black text-primary-600 dark:text-primary-400 block">
                             {formattedPrice}
                           </span>
-                          <span className="text-[10px] text-neutral-400 font-mono block">({cb.total_amount} USD)</span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono block">({cb.total_amount} USD)</span>
                         </div>
                       </div>
                     </div>
 
                     {/* GPLX Image Render */}
                     {cb.gplx_image && (cb.gplx_image.startsWith("data:image/") || cb.gplx_image.startsWith("http")) && (
-                      <div className="space-y-1 pt-2">
-                        <span className="text-[10px] text-neutral-400 uppercase font-black tracking-wider block">📂 Ảnh GPLX đã gửi đối chiếu:</span>
+                      <div className="space-y-1.5 pt-2">
+                        <span className="text-[10px] text-neutral-600 dark:text-neutral-400 uppercase font-black tracking-wider block">📂 Ảnh GPLX đã gửi đối chiếu:</span>
                         <div className="relative max-w-[200px] rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm">
                           <img 
                             src={cb.gplx_image} 
