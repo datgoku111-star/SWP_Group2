@@ -126,6 +126,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  if (pathname.startsWith("/car-bookings") && !["ADMIN", "CUSTOMER"].includes(payload.role)) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   // 5. Pass user info via headers for API routes
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-user-id", payload.sub);

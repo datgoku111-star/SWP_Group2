@@ -46,6 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // Customer
     { name: "My Bookings", href: "/bookings", icon: CalendarCheck, roles: ["CUSTOMER"] },
     { name: "Order Service", href: "/services", icon: UtensilsCrossed, roles: ["CUSTOMER"] },
+    { name: "Car Bookings", href: "/car-bookings", icon: Car, roles: ["CUSTOMER"] },
   ];
 
   const allowedNav = navItems.filter(item => item.roles.includes(user.role));
