@@ -37,6 +37,11 @@ export async function GET(request: Request) {
     const user = await getCurrentUser();
     const currentUserId = user?.sub || undefined;
 
+    try {
+      const fs = require("fs");
+      fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] GET /api/rooms checkIn=${checkIn}, checkOut=${checkOut}, user=${currentUserId}\n`);
+    } catch (e) {}
+
     let rooms;
     if (all) {
       rooms = await getAllRooms();
@@ -45,8 +50,12 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(rooms);
-  } catch (error) {
+  } catch (error: any) {
     console.error("GET rooms error:", error);
+    try {
+      const fs = require("fs");
+      fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] GET /api/rooms error: ${error.message || error}\n`);
+    } catch (e) {}
     if (error instanceof Error && (error.message.includes("Validation error") || error.message.includes("Invalid booking date range"))) {
       return NextResponse.json(
         { error: error.message, rooms: [] },
