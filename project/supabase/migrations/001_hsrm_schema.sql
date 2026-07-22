@@ -64,6 +64,7 @@ CREATE TABLE rooms (
   room_number VARCHAR(10) UNIQUE NOT NULL,
   floor INT NOT NULL DEFAULT 1,
   room_type_id UUID NOT NULL REFERENCES room_types(id) ON DELETE RESTRICT,
+  bed_type VARCHAR(20) DEFAULT 'SINGLE',
   status room_status DEFAULT 'AVAILABLE' NOT NULL,
   status_updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   notes TEXT,
@@ -211,17 +212,42 @@ INSERT INTO room_types (name, description, base_price, max_occupancy, amenities,
   ('Suite', 'Luxury suite with living area', 1500000, 4, ARRAY['Wi-Fi', 'AC', 'TV', 'Mini-bar', 'Bathtub', 'City View', 'Living Room', 'Kitchen'], ARRAY['https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800']),
   ('Family', 'Perfect for families with extra beds', 1200000, 6, ARRAY['Wi-Fi', 'AC', 'TV', 'Mini-bar', 'Extra Beds', 'Kids Corner'], ARRAY['https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800']);
 
-INSERT INTO rooms (room_number, floor, room_type_id, status) VALUES
-  ('101', 1, (SELECT id FROM room_types WHERE name = 'Standard'), 'AVAILABLE'),
-  ('102', 1, (SELECT id FROM room_types WHERE name = 'Standard'), 'AVAILABLE'),
-  ('103', 1, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'AVAILABLE'),
-  ('201', 2, (SELECT id FROM room_types WHERE name = 'Standard'), 'AVAILABLE'),
-  ('202', 2, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'AVAILABLE'),
-  ('203', 2, (SELECT id FROM room_types WHERE name = 'Suite'), 'AVAILABLE'),
-  ('301', 3, (SELECT id FROM room_types WHERE name = 'Family'), 'AVAILABLE'),
-  ('302', 3, (SELECT id FROM room_types WHERE name = 'Suite'), 'AVAILABLE'),
-  ('303', 3, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'AVAILABLE'),
-  ('401', 4, (SELECT id FROM room_types WHERE name = 'Suite'), 'AVAILABLE');
+INSERT INTO rooms (room_number, floor, room_type_id, bed_type, status) VALUES
+  -- Standard (7 rooms)
+  ('101', 1, (SELECT id FROM room_types WHERE name = 'Standard'), 'SINGLE', 'AVAILABLE'),
+  ('102', 1, (SELECT id FROM room_types WHERE name = 'Standard'), 'SINGLE', 'AVAILABLE'),
+  ('103', 1, (SELECT id FROM room_types WHERE name = 'Standard'), 'DOUBLE', 'AVAILABLE'),
+  ('201', 2, (SELECT id FROM room_types WHERE name = 'Standard'), 'SINGLE', 'AVAILABLE'),
+  ('202', 2, (SELECT id FROM room_types WHERE name = 'Standard'), 'DOUBLE', 'AVAILABLE'),
+  ('301', 3, (SELECT id FROM room_types WHERE name = 'Standard'), 'SINGLE', 'AVAILABLE'),
+  ('401', 4, (SELECT id FROM room_types WHERE name = 'Standard'), 'DOUBLE', 'AVAILABLE'),
+
+  -- Deluxe (7 rooms)
+  ('104', 1, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'SINGLE', 'AVAILABLE'),
+  ('105', 1, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'DOUBLE', 'AVAILABLE'),
+  ('203', 2, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'SINGLE', 'AVAILABLE'),
+  ('204', 2, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'DOUBLE', 'AVAILABLE'),
+  ('302', 3, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'SINGLE', 'AVAILABLE'),
+  ('303', 3, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'DOUBLE', 'AVAILABLE'),
+  ('402', 4, (SELECT id FROM room_types WHERE name = 'Deluxe'), 'DOUBLE', 'AVAILABLE'),
+
+  -- Suite (7 rooms)
+  ('106', 1, (SELECT id FROM room_types WHERE name = 'Suite'), 'DOUBLE', 'AVAILABLE'),
+  ('205', 2, (SELECT id FROM room_types WHERE name = 'Suite'), 'SINGLE', 'AVAILABLE'),
+  ('206', 2, (SELECT id FROM room_types WHERE name = 'Suite'), 'DOUBLE', 'AVAILABLE'),
+  ('304', 3, (SELECT id FROM room_types WHERE name = 'Suite'), 'SINGLE', 'AVAILABLE'),
+  ('305', 3, (SELECT id FROM room_types WHERE name = 'Suite'), 'DOUBLE', 'AVAILABLE'),
+  ('403', 4, (SELECT id FROM room_types WHERE name = 'Suite'), 'DOUBLE', 'AVAILABLE'),
+  ('404', 4, (SELECT id FROM room_types WHERE name = 'Suite'), 'SINGLE', 'AVAILABLE'),
+
+  -- Family (7 rooms)
+  ('107', 1, (SELECT id FROM room_types WHERE name = 'Family'), 'DOUBLE', 'AVAILABLE'),
+  ('207', 2, (SELECT id FROM room_types WHERE name = 'Family'), 'DOUBLE', 'AVAILABLE'),
+  ('208', 2, (SELECT id FROM room_types WHERE name = 'Family'), 'DOUBLE', 'AVAILABLE'),
+  ('306', 3, (SELECT id FROM room_types WHERE name = 'Family'), 'DOUBLE', 'AVAILABLE'),
+  ('307', 3, (SELECT id FROM room_types WHERE name = 'Family'), 'DOUBLE', 'AVAILABLE'),
+  ('405', 4, (SELECT id FROM room_types WHERE name = 'Family'), 'DOUBLE', 'AVAILABLE'),
+  ('406', 4, (SELECT id FROM room_types WHERE name = 'Family'), 'DOUBLE', 'AVAILABLE');
 
 INSERT INTO services (name, description, category, price, is_available) VALUES
   ('Pho Bo', 'Traditional Vietnamese beef noodle soup', 'FOOD', 75000, true),

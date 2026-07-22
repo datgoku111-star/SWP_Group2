@@ -24,8 +24,8 @@ export async function POST(
       .single();
 
     if (!bError && booking) {
-      if (user.role === "CUSTOMER" && booking.user_id !== user.sub) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (user.role !== "ADMIN" && user.role !== "RECEPTIONIST") {
+        return NextResponse.json({ error: "Forbidden. Only staff can confirm bookings." }, { status: 403 });
       }
 
       // Update booking status to CONFIRMED

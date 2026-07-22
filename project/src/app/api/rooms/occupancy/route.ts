@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     // 1. Fetch all physical rooms
@@ -30,6 +32,8 @@ export async function GET() {
         room_number: r.room_number,
         floor: r.floor,
         room_type: r.room_type?.name,
+        notes: r.notes,
+        status: r.status,
         bookedRanges: roomBookings,
       };
     });

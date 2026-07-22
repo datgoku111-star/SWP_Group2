@@ -3,7 +3,11 @@ import DatePicker from "react-datepicker";
 import DatePickerCustomHeaderTwoMonth from "@/components/DatePickerCustomHeaderTwoMonth";
 import DatePickerCustomDay from "@/components/DatePickerCustomDay";
 
-const SectionDateRange = () => {
+interface SectionDateRangeProps {
+  excludeDateIntervals?: { start: Date; end: Date }[];
+}
+
+const SectionDateRange: FC<SectionDateRangeProps> = ({ excludeDateIntervals }) => {
   const [startDate, setStartDate] = useState<Date | null>(
     new Date()
   );
@@ -37,6 +41,8 @@ const SectionDateRange = () => {
             monthsShown={2}
             showPopperArrow={false}
             inline
+            minDate={new Date()}
+            excludeDateIntervals={excludeDateIntervals}
             renderCustomHeader={(p) => (
               <DatePickerCustomHeaderTwoMonth {...p} />
             )}

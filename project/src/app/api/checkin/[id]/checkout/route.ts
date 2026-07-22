@@ -107,7 +107,29 @@ export async function GET(
       return NextResponse.json({ error: "Không tìm thấy đơn đặt phòng" }, { status: 404 });
     }
 
-    // 2. Tự động kiểm tra các khoản phạt chưa thanh toán (chargeable và chưa RESOLVED/CLOSED/CANCELLED) của booking này
+    // 2. Lấy số tiền cọc đã thanh toán (Deposit)
+    const { data: payments } = await supabaseServer
+      .from("payments")
+      .select("amount")
+      .eq("booking_id", bookingId)
+      .eq("status", "COMPLETED");
+
+    const depositPaid = payments
+      ? payments.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+      : 0;
+
+    // 3. Lấy tổng tiền dịch vụ (Service Orders) chưa thanh toán
+    const { data: serviceOrders } = await supabaseServer
+      .from("service_orders")
+      .select("total_amount")
+      .eq("booking_id", bookingId)
+      .not("status", "in", '("CANCELLED")');
+
+    const totalServiceCharges = serviceOrders
+      ? serviceOrders.reduce((sum, item) => sum + Number(item.total_amount || 0), 0)
+      : 0;
+
+    // 4. Tự động kiểm tra các khoản phạt chưa thanh toán (chargeable và chưa RESOLVED/CLOSED/CANCELLED) của booking này
     const { data: incidents } = await supabaseServer
       .from("room_incidents")
       .select("*")
@@ -119,16 +141,21 @@ export async function GET(
       ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
       : 0;
 
-    // 3. Cộng dồn trực tiếp vào InvoiceData cuối cùng
+    // 5. Cộng dồn vào InvoiceData cuối cùng
     const roomCharges = Number(booking.total_amount);
-    const subtotal = roomCharges + totalFineAmount; // Cộng dồn tiền phạt trực tiếp
-    const vatRate = 0.1; // 10% VAT
+    const remainingRoomCharges = Math.max(0, roomCharges - depositPaid);
+    
+    const subtotal = remainingRoomCharges + totalServiceCharges + totalFineAmount; // Cộng dồn tiền phạt trực tiếp
+    const vatRate = 0.02; // 2% VAT
     const vatAmount = subtotal * vatRate;
     const grandTotal = subtotal + vatAmount;
 
     return NextResponse.json({
       booking,
       room_charges: roomCharges,
+      deposit_paid: depositPaid,
+      remaining_room_charges: remainingRoomCharges,
+      service_charges: totalServiceCharges,
       incident_charges: {
         incidents: incidents || [],
         total_fine: totalFineAmount

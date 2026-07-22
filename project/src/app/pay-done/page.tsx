@@ -99,11 +99,6 @@ const PayPageContent: FC = () => {
         const bData = await bookingRes.json();
         setBookingData(bData);
 
-        // Trigger automated fallback confirmation of payment and booking status update
-        await fetch(`/api/bookings/${bookingId}/confirm?serviceOrderId=${serviceOrderId || ""}`, {
-          method: "POST",
-        }).catch(err => console.error("Auto confirmation fallback error:", err));
-
         // 2. Fetch service order if type is service
         if (type === "service" && serviceOrderId) {
           const ordersRes = await fetch(`/api/orders?booking_id=${bookingId}`);

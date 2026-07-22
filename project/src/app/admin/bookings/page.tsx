@@ -107,18 +107,26 @@ export default function AdminBookingsPage() {
     fetchBookings();
   }, []);
 
-  const updateBookingStatus = async (id: string, newStatus: BookingRecord["status"]) => {
+  const updateBookingStatus = async (id: string, newStatus: BookingRecord["status"], reason?: string) => {
     setBookings((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
     );
 
     if (!id.startsWith("BK-")) {
       try {
-        await fetch(`/api/bookings/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: newStatus }),
-        });
+        if (newStatus === "CANCELLED") {
+          await fetch(`/api/bookings/${id}/cancel`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason }),
+          });
+        } else {
+          await fetch(`/api/bookings/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus }),
+          });
+        }
       } catch (err) {
         console.error("Failed to sync status:", err);
       }
@@ -286,14 +294,21 @@ export default function AdminBookingsPage() {
                           </button>
                         )}
                         {b.status !== "CANCELLED" && b.status !== "CHECKED_OUT" && (
-                          <button
-                            onClick={() => {
-                              if (confirm("Hủy đơn đặt phòng này?")) updateBookingStatus(b.id, "CANCELLED");
-                            }}
-                            className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 font-bold px-2.5 py-1.5 rounded-xl text-xs transition-all"
-                          >
-                            Hủy
-                          </button>
+                            <button
+                              onClick={() => {
+                                const reason = prompt("Vui lòng nhập lý do hủy phòng (tiền cọc sẽ được hoàn trả lại cho khách hàng):");
+                                if (reason !== null) {
+                                  if (!reason.trim()) {
+                                    alert("Lý do hủy phòng không được để trống!");
+                                  } else {
+                                    updateBookingStatus(b.id, "CANCELLED", reason);
+                                  }
+                                }
+                              }}
+                              className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 font-bold px-2.5 py-1.5 rounded-xl text-xs transition-all"
+                            >
+                              Hủy
+                            </button>
                         )}
                       </td>
                     </tr>

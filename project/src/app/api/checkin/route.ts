@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     // 1. Verify booking exists and validation check
     const { data: booking, error: bError } = await supabaseServer
       .from("bookings")
-      .select("id, status, room_id")
+      .select("id, status, room_id, check_in_date")
       .eq("id", booking_id)
       .single();
 
@@ -33,6 +33,19 @@ export async function POST(request: Request) {
 
     if (booking.status !== "CONFIRMED" && booking.status !== "PENDING") {
       return NextResponse.json({ error: `Cannot check in booking with status ${booking.status}` }, { status: 400 });
+    }
+
+    // Check if current date is before check_in_date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkInDate = new Date(booking.check_in_date);
+    checkInDate.setHours(0, 0, 0, 0);
+
+    if (today < checkInDate) {
+      return NextResponse.json(
+        { error: `Không thể Check-in sớm. Đơn đặt phòng này bắt đầu từ ngày ${booking.check_in_date}.` },
+        { status: 400 }
+      );
     }
 
     // Find if guest with this id_card_number already exists (safe dynamic check-in lookup)

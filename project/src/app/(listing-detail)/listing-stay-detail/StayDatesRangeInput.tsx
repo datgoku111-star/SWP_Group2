@@ -13,6 +13,8 @@ export interface StayDatesRangeInputProps {
   startDate: Date | null;
   endDate: Date | null;
   onChangeDate: (dates: [Date | null, Date | null]) => void;
+  minDate?: Date;
+  excludeDateIntervals?: { start: Date; end: Date }[];
 }
 
 const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
@@ -20,6 +22,8 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
   startDate,
   endDate,
   onChangeDate,
+  minDate,
+  excludeDateIntervals,
 }) => {
 
   const renderInput = () => {
@@ -85,6 +89,8 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
                   monthsShown={2}
                   showPopperArrow={false}
                   inline
+                  minDate={minDate}
+                  excludeDateIntervals={excludeDateIntervals}
                   renderCustomHeader={(p) => (
                     <DatePickerCustomHeaderTwoMonth {...p} />
                   )}
