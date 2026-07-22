@@ -28,8 +28,11 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 import Input from "@/shared/Input";
 import type { Room, Service, ServiceOrder } from "@/types/hotel";
+import { useTranslation } from "react-i18next";
 
 export default function ReceptionistServiceHub() {
+  const { t, i18n } = useTranslation();
+  const isVN = i18n.language === "vn";
   const [rooms, setRooms] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
@@ -198,7 +201,7 @@ export default function ReceptionistServiceHub() {
   const handleSubmitOrder = async (e?: any) => {
     if (e && e.preventDefault) e.preventDefault();
     if (orderItems.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 món ăn hoặc dịch vụ!");
+      alert(isVN ? "Vui lòng chọn ít nhất 1 món ăn hoặc dịch vụ!" : "Please select at least 1 food or service!");
       return;
     }
 
@@ -237,10 +240,10 @@ export default function ReceptionistServiceHub() {
       };
 
       setActiveOrders((prev) => [newOrderUI, ...prev]);
-      alert(`✅ Đã tạo đơn dịch vụ & chuyển ngay xuống Nhà bếp cho Phòng ${selectedRoomForService?.room_number}! Tổng cộng: $${totalOrderAmount.toFixed(2)}.`);
+      alert(isVN ? `✅ Đã tạo đơn dịch vụ & chuyển ngay xuống Nhà bếp cho Phòng ${selectedRoomForService?.room_number}! Tổng cộng: $${totalOrderAmount.toFixed(2)}.` : `✅ Created service order & forwarded to Kitchen for Room ${selectedRoomForService?.room_number}! Total: $${totalOrderAmount.toFixed(2)}.`);
       setIsOrderModalOpen(false);
     } catch (err: any) {
-      alert("Lỗi tạo đơn dịch vụ: " + err.message);
+      alert((isVN ? "Lỗi tạo đơn dịch vụ: " : "Error creating service order: ") + err.message);
     }
   };
 
@@ -255,9 +258,9 @@ export default function ReceptionistServiceHub() {
       setActiveOrders((prev) =>
         prev.map((o) => (o.id === order.id ? { ...o, notes: updatedNotes } : o))
       );
-      alert("✅ Đã duyệt đơn & chuyển xuống Nhà bếp thành công! Bếp đã nhận được thông báo reo chuông.");
+      alert(isVN ? "✅ Đã duyệt đơn & chuyển xuống Nhà bếp thành công! Bếp đã nhận được thông báo reo chuông." : "✅ Approved and forwarded to Kitchen successfully!");
     } catch (err: any) {
-      alert("Lỗi duyệt đơn: " + err.message);
+      alert((isVN ? "Lỗi duyệt đơn: " : "Error approving order: ") + err.message);
     }
   };
 
@@ -269,18 +272,18 @@ export default function ReceptionistServiceHub() {
         body: JSON.stringify({ status, status_text: statusText }),
       });
       if (res.ok) {
-        alert("✅ Đã cập nhật trạng thái thuê xe thành công!");
+        alert(isVN ? "✅ Đã cập nhật trạng thái thuê xe thành công!" : "✅ Car rental status updated successfully!");
         fetchAllData();
       } else {
-        alert("Cập nhật trạng thái thất bại.");
+        alert(isVN ? "Cập nhật trạng thái thất bại." : "Status update failed.");
       }
     } catch (err) {
       console.error(err);
-      alert("Đã xảy ra lỗi.");
+      alert(isVN ? "Đã xảy ra lỗi." : "An error occurred.");
     }
   };
   const handleCancelOrder = async (orderId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn từ chối/hủy yêu cầu gọi món này?")) return;
+    if (!confirm(isVN ? "Bạn có chắc chắn muốn từ chối/hủy yêu cầu gọi món này?" : "Are you sure you want to reject/cancel this food order?")) return;
     try {
       await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
@@ -289,7 +292,7 @@ export default function ReceptionistServiceHub() {
       });
       setActiveOrders((prev) => prev.filter((o) => o.id !== orderId));
     } catch (err: any) {
-      alert("Lỗi hủy đơn: " + err.message);
+      alert((isVN ? "Lỗi hủy đơn: " : "Error canceling order: ") + err.message);
     }
   };
 
@@ -304,13 +307,13 @@ export default function ReceptionistServiceHub() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
             <Utensils className="w-3.5 h-3.5" />
-            Cổng Phục Vụ Khách Hàng & Dịch Vụ Lễ Tân (Receptionist Service Hub)
+            {isVN ? "Cổng Phục Vụ Khách Hàng & Dịch Vụ Lễ Tân (Receptionist Service Hub)" : "Guest Service & Receptionist Hub"}
           </div>
           <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
-            Điều Hành Buồng Phòng & Gọi Món Trực Tiếp
+            {isVN ? "Điều Hành Buồng Phòng & Gọi Món Trực Tiếp" : "Room Management & Direct Ordering"}
           </h2>
           <p className="text-primary-100 text-sm max-w-2xl">
-            Lễ tân dễ dàng theo dõi tình trạng buồng phòng thực tế, bấm hối dọn gấp khi khách đến sớm hoặc gọi đồ ăn/thức uống/tiện ích lên phòng ghi nợ trực tiếp vào Booking.
+            {isVN ? "Lễ tân dễ dàng theo dõi tình trạng buồng phòng thực tế, bấm hối dọn gấp khi khách đến sớm hoặc gọi đồ ăn/thức uống/tiện ích lên phòng ghi nợ trực tiếp vào Booking." : "Receptionists can easily track real-time room status, expedite cleaning when guests arrive early, or order food/drinks/amenities to the room, charging directly to the Booking."}
           </p>
         </div>
 
@@ -324,7 +327,7 @@ export default function ReceptionistServiceHub() {
             }`}
           >
             <Home className="w-4 h-4" />
-            Sơ Đồ Phòng & Phục Vụ ({rooms.length})
+            {isVN ? "Sơ Đồ Phòng & Phục Vụ" : "Room Map & Service"} ({rooms.length})
           </button>
           <button
             onClick={() => setActiveSubTab("ORDERS")}
@@ -335,7 +338,7 @@ export default function ReceptionistServiceHub() {
             }`}
           >
             <Clock className="w-4 h-4" />
-            Đơn Dịch Vụ Đang Xử Lý ({activeOrders.length})
+            {isVN ? "Đơn Dịch Vụ Đang Xử Lý" : "Active Service Orders"} ({activeOrders.length})
           </button>
           <button
             onClick={() => setActiveSubTab("CAR_RENTALS")}
@@ -346,9 +349,9 @@ export default function ReceptionistServiceHub() {
             }`}
           >
             <Car className="w-4 h-4" />
-            Dịch Vụ Thuê Xe ({carRentals.length})
+            {isVN ? "Dịch Vụ Thuê Xe" : "Car Rental Services"} ({carRentals.length})
           </button>
-          <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title="Làm mới">
+          <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title={isVN ? "Làm mới" : "Refresh"}>
             <RefreshCw className="w-5 h-5" />
           </button>
         </div>

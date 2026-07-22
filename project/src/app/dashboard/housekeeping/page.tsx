@@ -6,6 +6,7 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 export interface RoomTurnover {
   id: string;
@@ -20,6 +21,8 @@ export interface RoomTurnover {
 }
 
 export default function HousekeepingDashboardHub() {
+  const { t, i18n } = useTranslation();
+  const isVN = i18n.language === "vn";
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW" | "CHECKOUT_FLOW">("DIRTY_FLOW");
@@ -373,7 +376,7 @@ export default function HousekeepingDashboardHub() {
           }`}
         >
           <Shirt className="w-4 h-4" />
-          Luồng 5: Dịch Vụ Giặt Là (Laundry Orders) ({laundryOrders.filter(o => ["assigned", "washing", "ready_to_receive", "delivering"].includes(o.status_text)).length})
+          {isVN ? "Luồng 5: Dịch Vụ Giặt Là" : "Flow 5: Laundry Services"} (Laundry Orders) ({laundryOrders.filter(o => ["assigned", "washing", "ready_to_receive", "delivering"].includes(o.status_text)).length})
         </button>
       </div>
 
@@ -712,21 +715,21 @@ export default function HousekeepingDashboardHub() {
           <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
               <Shirt className="w-5 h-5 text-indigo-500" />
-              👕 LUỒNG 5: QUY TRÌNH XỬ LÝ YÊU CẦU GIẶT LÀ (laundry Operations)
+              {isVN ? "LUỒNG 5: QUY TRÌNH XỬ LÝ YÊU CẦU GIẶT LÀ" : "FLOW 5: LAUNDRY REQUESTS PROCESSING"} (Laundry Operations)
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
-              Nhận đồ từ phòng khách, giặt hấp sấy ủi và bàn giao trả quần áo sạch cho khách. Mọi hoạt động được đồng bộ trực tiếp tới Lễ Tân và Khách Hàng.
+              {isVN ? "Nhận đồ từ phòng khách, giặt hấp sấy ủi và bàn giao trả quần áo sạch cho khách. Mọi hoạt động được đồng bộ trực tiếp tới Lễ Tân và Khách Hàng." : "Receive items from guest rooms, wash/dry clean/press, and deliver clean clothes back to guests. All actions synced in real-time with Receptionist and Customer."}
             </p>
           </div>
 
           {laundryLoading ? (
             <div className="text-center py-10">
               <div className="w-6 h-6 border-2 border-primary-6000 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-              <p className="text-xs text-neutral-450">Đang tải danh sách đơn giặt là...</p>
+              <p className="text-xs text-neutral-450">{isVN ? "Đang tải danh sách đơn giặt là..." : "Loading laundry orders..."}</p>
             </div>
           ) : laundryOrders.length === 0 ? (
             <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
-              Chưa có đơn yêu cầu giặt là nào trong hệ thống.
+              {isVN ? "Chưa có đơn yêu cầu giặt là nào trong hệ thống." : "No laundry requests in the system."}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -743,25 +746,25 @@ export default function HousekeepingDashboardHub() {
                 let cardBorder = "";
 
                 if (isAssigned) {
-                  statusBadge = "⏳ Chờ Buồng phòng thu gom đồ";
+                  statusBadge = isVN ? "⏳ Chờ Buồng phòng thu gom đồ" : "⏳ Housekeeping collecting clothes";
                   cardBorder = "border-purple-300 dark:border-purple-800/50 bg-purple-50/20 dark:bg-purple-950/10";
                 } else if (isWashing) {
-                  statusBadge = "🌀 Đang giặt đồ (Washing)";
+                  statusBadge = isVN ? "🌀 Đang giặt đồ (Washing)" : "🌀 Washing in progress";
                   cardBorder = "border-amber-300 dark:border-amber-800/50 bg-amber-50/20 dark:bg-amber-950/10";
                 } else if (isWashed) {
-                  statusBadge = "👕 Đã giặt xong — Chờ khách ở phòng báo";
+                  statusBadge = isVN ? "👕 Đã giặt xong — Chờ khách ở phòng báo" : "👕 Washed — Waiting for guest in room";
                   cardBorder = "border-indigo-300 dark:border-indigo-800/50 bg-indigo-50/20 dark:bg-indigo-950/10";
                 } else if (isReadyToReceive) {
-                  statusBadge = "⏳ Chờ Lễ tân duyệt trả đồ";
+                  statusBadge = isVN ? "⏳ Chờ Lễ tân duyệt trả đồ" : "⏳ Waiting for receptionist delivery approval";
                   cardBorder = "border-orange-300 dark:border-orange-800/50 bg-orange-50/20 dark:bg-orange-950/10 animate-pulse";
                 } else if (isDelivering) {
-                  statusBadge = "🚚 Đang trả đồ (Delivering)";
+                  statusBadge = isVN ? "🚚 Đang trả đồ (Delivering)" : "🚚 Delivering";
                   cardBorder = "border-blue-300 dark:border-blue-800/50 bg-blue-50/20 dark:bg-blue-950/10 animate-bounce";
                 } else if (isDelivered) {
-                  statusBadge = "✅ Đã giao đồ thành công";
+                  statusBadge = isVN ? "✅ Đã giao đồ thành công" : "✅ Delivered successfully";
                   cardBorder = "border-emerald-300 dark:border-emerald-800/50 bg-emerald-50/20 dark:bg-emerald-950/10";
                 } else {
-                  statusBadge = "❌ Bị từ chối";
+                  statusBadge = isVN ? "❌ Bị từ chối" : "❌ Rejected";
                   cardBorder = "border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/20";
                 }
 
@@ -816,7 +819,7 @@ export default function HousekeepingDashboardHub() {
                           onClick={() => handleUpdateLaundryStatus(order.id, "PENDING", "washing")}
                           className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900/50 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
                         >
-                          🌀 NHẬN ĐỒ VÀ ĐANG GIẶT
+                          🌀 {isVN ? "NHẬN ĐỒ VÀ ĐANG GIẶT" : "RECEIVE AND START WASHING"}
                         </button>
                       )}
 
@@ -825,13 +828,13 @@ export default function HousekeepingDashboardHub() {
                           onClick={() => handleUpdateLaundryStatus(order.id, "PENDING", "washed")}
                           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-2 text-xs"
                         >
-                          👕 ĐÃ GIẶT XONG & SẴN SÀNG GIAO
+                          👕 {isVN ? "ĐÃ GIẶT XONG & SẴN SÀNG GIAO" : "WASHED & READY FOR DELIVERY"}
                         </button>
                       )}
 
                       {isReadyToReceive && (
                         <div className="text-[10px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-                          ⏳ Chờ Lễ tân duyệt giao đồ...
+                          ⏳ {isVN ? "Chờ Lễ tân duyệt giao đồ..." : "Waiting for receptionist delivery approval..."}
                         </div>
                       )}
 
@@ -840,25 +843,25 @@ export default function HousekeepingDashboardHub() {
                           onClick={() => handleUpdateLaundryStatus(order.id, "COMPLETED", "delivered")}
                           className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-2 text-xs animate-bounce"
                         >
-                          <Truck className="w-4 h-4" /> BÀN GIAO ĐỒ XONG (Trả Đồ)
+                          <Truck className="w-4 h-4" /> {isVN ? "BÀN GIAO ĐỒ XONG (Trả Đồ)" : "DELIVERED SUCCESSFULLY"}
                         </button>
                       )}
 
                       {isWashed && (
                         <div className="text-[10px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-                          ⏳ Đã giặt sạch. Đang đợi Khách hàng báo sẵn sàng ở phòng để mang lên trả...
+                          ⏳ {isVN ? "Đã giặt sạch. Đang đợi Khách hàng báo sẵn sàng ở phòng để mang lên trả..." : "Washed. Waiting for guest confirmation to deliver..."}
                         </div>
                       )}
 
                       {isDelivered && (
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center w-full py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                          ✓ Đã trả xong đồ & cộng nợ phòng thành công
+                          ✓ {isVN ? "Đã trả xong đồ & cộng nợ phòng thành công" : "Delivered & debt charged successfully"}
                         </div>
                       )}
 
                       {isRejected && (
                         <div className="text-xs text-red-600 dark:text-red-400 font-bold text-center w-full py-2 bg-red-500/10 rounded-xl border border-red-500/20">
-                          Đơn hàng bị từ chối
+                          {isVN ? "Đơn hàng bị từ chối" : "Order rejected"}
                         </div>
                       )}
                     </div>
