@@ -268,7 +268,7 @@ export default function CarOrdersPage() {
                         </div>
                         <div className="text-right">
                           <span className="text-neutral-600 dark:text-neutral-400 font-medium text-xs uppercase block">Tổng phí dịch vụ:</span>
-                          <span className="font-black text-primary-600 dark:text-primary-400 text-base">
+                          <span className="font-black text-red-600 dark:text-red-400 text-base">
                             {(rental.total_amount * 26320).toLocaleString("vi-VN")} đ
                           </span>
                           <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block font-mono">({(rental.total_amount).toLocaleString("en-US")} USD)</span>

@@ -221,7 +221,7 @@ export default function CustomerCarBookingsPage() {
                       <div className="flex justify-between items-center border-t border-dashed border-neutral-200 dark:border-neutral-700 pt-2 mt-2">
                         <span className="text-neutral-700 dark:text-neutral-300 font-bold">Tổng chi phí thuê:</span>
                         <div className="text-right">
-                          <span className="text-lg font-black text-primary-600 dark:text-primary-400 block">
+                          <span className="text-lg font-black text-red-600 dark:text-red-400 block">
                             {formattedPrice}
                           </span>
                           <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono block">({cb.total_amount} USD)</span>

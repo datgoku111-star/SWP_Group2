@@ -718,7 +718,7 @@ export default function ReceptionistServiceHub() {
                       <div className="text-right flex flex-col justify-between items-end gap-2">
                         <div className="space-y-0.5">
                           <div className="text-xs text-neutral-400">Giá trị thuê xe</div>
-                          <div className="text-xl font-black text-primary-600 dark:text-primary-400">
+                          <div className="text-xl font-black text-red-600 dark:text-red-400">
                             {(rental.total_amount * 26320).toLocaleString("vi-VN")} đ
                           </div>
                           <span className="text-xs text-neutral-400 font-mono">({(rental.total_amount).toLocaleString("en-US")} USD)</span>
