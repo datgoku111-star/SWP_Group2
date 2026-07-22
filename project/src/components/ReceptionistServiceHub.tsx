@@ -103,8 +103,6 @@ export default function ReceptionistServiceHub() {
           setBookings(bData);
         }
       }
-        }
-      }
     } catch (err) {
       console.error("ReceptionistServiceHub fetch error:", err);
       setRooms(fallbackRooms);

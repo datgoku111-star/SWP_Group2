@@ -1,0 +1,2 @@
+[2026-07-22T16:50:18.557Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T16:50:31.114Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6

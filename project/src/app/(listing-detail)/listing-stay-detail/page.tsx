@@ -53,6 +53,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const [selectedRoomId, setSelectedRoomId] = useState<string>("");
   const [hotelRoomData, setHotelRoomData] = useState<any>(null);
   const [occupancyData, setOccupancyData] = useState<any[]>([]);
+  const [liveRoom, setLiveRoom] = useState<any>(null);
 
   const targetCategory = useMemo(() => {
     const t = titleParam.toLowerCase();
