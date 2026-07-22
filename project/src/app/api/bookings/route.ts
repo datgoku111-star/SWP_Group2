@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createBooking, getAllBookings, getBookingsByUser } from "@/lib/db/bookings";
 import { getCurrentUser } from "@/lib/auth-server";
+import { supabaseServer } from "@/lib/supabase";
 
 
 export async function GET() {
@@ -47,6 +48,31 @@ export async function POST(request: Request) {
     // Basic validation
     if (!data.room_id || !data.check_in_date || !data.check_out_date) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Ensure user exists in public.users to prevent foreign key violations (e.g. after database reseeding)
+    const { data: dbUser, error: dbUserErr } = await supabaseServer
+      .from("users")
+      .select("id")
+      .eq("id", user.sub)
+      .maybeSingle();
+
+    if (!dbUser) {
+      console.log(`User ${user.sub} not found in public.users, dynamically inserting...`);
+      const { error: insertErr } = await supabaseServer
+        .from("users")
+        .insert({
+          id: user.sub,
+          email: user.email.toLowerCase(),
+          full_name: user.name || user.email.split("@")[0],
+          phone: "",
+          role: user.role || "CUSTOMER",
+          is_active: true,
+          password_hash: "SUPABASE_AUTH",
+        });
+      if (insertErr) {
+        console.error("Failed to dynamically insert user on booking:", insertErr);
+      }
     }
 
     const booking = await createBooking({
