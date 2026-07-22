@@ -132,6 +132,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
 
   // Lock room on checkout mount
   useEffect(() => {
+    setPaymentInfo(null);
     if (typeParam === "service" || !user) return;
 
     let activeRoomId: string | null = null;
@@ -337,6 +338,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       setError(t("checkoutLoginRequiredError"));
       return;
     }
+
+    if (paymentInfo) {
+      setShowPayOSModal(true);
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
