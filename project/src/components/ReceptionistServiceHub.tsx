@@ -29,6 +29,7 @@ import ButtonThird from "@/shared/ButtonThird";
 import Input from "@/shared/Input";
 import type { Room, Service, ServiceOrder } from "@/types/hotel";
 import { useTranslation } from "react-i18next";
+import { translateService } from "@/utils/laundry";
 
 export default function ReceptionistServiceHub() {
   const { t, i18n } = useTranslation();
@@ -553,7 +554,7 @@ export default function ReceptionistServiceHub() {
                         <div className="flex flex-wrap gap-2 pt-1">
                           {order.items?.map((it: any, i: number) => (
                             <span key={i} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1.5 rounded-xl font-bold text-sm text-neutral-800 dark:text-neutral-200">
-                              {it.service_name} <strong className="text-primary-600">x{it.quantity}</strong>
+                              {translateService(it.service_name, undefined, isVN).name} <strong className="text-primary-600">x{it.quantity}</strong>
                             </span>
                           ))}
                         </div>

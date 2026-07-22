@@ -8,6 +8,7 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import { ShoppingCart, Plus, Minus, Trash2, X, Shirt, Info, FileText } from "lucide-react";
 import type { Service, Booking } from "@/types/hotel";
 import { useTranslation } from "react-i18next";
+import { translateService } from "@/utils/laundry";
 
 export default function LaundryServicesPage() {
   const { t, i18n } = useTranslation();
@@ -245,14 +246,14 @@ export default function LaundryServicesPage() {
               <div>
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="font-bold text-lg text-neutral-800 dark:text-neutral-200 group-hover:text-primary-6000 transition-colors">
-                    {service.name.replace("Laundry - ", "")}
+                    {translateService(service.name, service.description, isVN).name}
                   </h3>
                   <span className="px-2.5 py-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-[10px] uppercase font-black tracking-wider text-neutral-500">
                     {service.category}
                   </span>
                 </div>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5 leading-relaxed">
-                  {service.description || (isVN ? "Dịch vụ giặt ủi và sấy khô chất lượng cao đảm bảo vệ sinh." : "High quality laundry and drying services to ensure hygiene.")}
+                  {translateService(service.name, service.description, isVN).desc || (isVN ? "Dịch vụ giặt ủi và sấy khô chất lượng cao đảm bảo vệ sinh." : "High quality laundry and drying services to ensure hygiene.")}
                 </p>
               </div>
 
@@ -338,7 +339,7 @@ export default function LaundryServicesPage() {
                         <div key={id} className="flex justify-between items-center pt-3 first:pt-0">
                           <div>
                             <h4 className="font-bold text-sm text-neutral-800 dark:text-neutral-200">
-                              {service.name.replace("Laundry - ", "")}
+                              {translateService(service.name, service.description, isVN).name}
                             </h4>
                             <span className="text-xs text-neutral-500 dark:text-neutral-450 font-medium">
                               {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(adjustedPrice)} x {qty}

@@ -821,19 +821,37 @@ function CheckInContent() {
                           {checkoutDetails.service_charges_detail.orders.map((ord: any) => {
                             let itemPrice = Number(ord.total_amount || 0);
                             let displayName = "Service Order";
-                            try {
+                             try {
                               if (ord.notes && ord.notes.trim().startsWith("{")) {
                                 const notesObj = JSON.parse(ord.notes);
                                 if (notesObj.is_car_rental) {
                                   const pick = notesObj.pickup_date ? notesObj.pickup_date.split("T")[0] : "";
                                   const drop = notesObj.dropoff_date ? notesObj.dropoff_date.split("T")[0] : "";
-                                  displayName = `Thuê xe ${notesObj.car_type} (${pick} ➔ ${drop})`;
+                                  displayName = isVN 
+                                    ? `Thuê xe ${notesObj.car_type} (${pick} ➔ ${drop})`
+                                    : `Car rental ${notesObj.car_type} (${pick} ➔ ${drop})`;
                                   itemPrice = itemPrice * 26320;
                                 } else {
                                   displayName = notesObj.notes || "Service Order";
                                 }
                               } else {
                                 displayName = ord.notes?.replace(/\[[^\]]+\]/g, "").trim() || "Service Order";
+                              }
+                              
+                              if (!isVN) {
+                                if (displayName.includes("Giặt và ủi áo sơ mi")) {
+                                  displayName = "Laundry - Shirt (Wash & Iron)";
+                                } else if (displayName.includes("Giặt ủi áo thun")) {
+                                  displayName = "Laundry - T-shirt (Wash & Fold)";
+                                } else if (displayName.includes("Giặt hấp/giặt khô áo vest")) {
+                                  displayName = "Laundry - Suit Jacket (Dry Clean)";
+                                } else if (displayName.includes("Giặt và là nếp quần âu")) {
+                                  displayName = "Laundry - Pants (Wash & Press)";
+                                } else if (displayName.includes("Giặt và ủi quần kaki")) {
+                                  displayName = "Laundry - Kaki Pants (Wash & Iron)";
+                                } else if (displayName === "Service Order") {
+                                  displayName = "Service Order";
+                                }
                               }
                             } catch (e) {
                               displayName = ord.notes?.replace(/\[[^\]]+\]/g, "").trim() || "Service Order";

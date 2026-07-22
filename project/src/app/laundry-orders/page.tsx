@@ -18,6 +18,7 @@ import {
   Truck
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { translateService } from "@/utils/laundry";
 
 export default function LaundryOrdersHubPage() {
   const { t, i18n } = useTranslation();
@@ -302,7 +303,7 @@ export default function LaundryOrdersHubPage() {
                       <div className="space-y-1.5">
                         {order.items?.map((item: any, idx: number) => (
                           <div key={idx} className="flex justify-between items-center text-xs text-neutral-700 dark:text-neutral-300">
-                            <span className="font-semibold">{item.quantity}x {item.service?.name.replace("Laundry - ", "")}</span>
+                            <span className="font-semibold">{item.quantity}x {translateService(item.service?.name || "Service", item.service?.description, isVN).name}</span>
                             <span className="font-mono text-neutral-500">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.unit_price)}/{isVN ? "món" : "item"})</span>
                           </div>
                         ))}

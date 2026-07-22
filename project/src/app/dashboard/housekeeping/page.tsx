@@ -7,6 +7,7 @@ import ButtonThird from "@/shared/ButtonThird";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { translateService } from "@/utils/laundry";
 
 export interface RoomTurnover {
   id: string;
@@ -786,29 +787,29 @@ export default function HousekeepingDashboardHub() {
 
                     <div className="text-xs space-y-2">
                       <div className="font-semibold text-neutral-700 dark:text-neutral-300">
-                        Loại dịch vụ: <span className="text-indigo-600 dark:text-indigo-400 font-black">{order.service_type}</span>
+                        {isVN ? "Loại dịch vụ:" : "Service Type:"} <span className="text-indigo-600 dark:text-indigo-400 font-black">{order.service_type === "Wash & Fold" ? (isVN ? "Giặt thường (Wash & Fold)" : "Wash & Fold") : order.service_type === "Dry Cleaning" ? (isVN ? "Giặt khô / Giặt hấp" : "Dry Cleaning") : (isVN ? "Chỉ ủi / là (Pressing Only)" : "Pressing Only")}</span>
                       </div>
                       
                       {/* Items */}
                       <div className="bg-white/80 dark:bg-neutral-900/60 p-3 rounded-2xl border border-neutral-100 dark:border-neutral-850 space-y-1">
-                        <span className="text-[9px] text-neutral-400 font-bold uppercase block tracking-wider mb-1">Đồ cần giặt:</span>
+                        <span className="text-[9px] text-neutral-400 font-bold uppercase block tracking-wider mb-1">{isVN ? "Đồ cần giặt:" : "Items to wash:"}</span>
                         {order.items?.map((it: any, i: number) => (
                           <div key={i} className="flex justify-between items-center text-xs">
-                            <span className="font-semibold">{it.quantity}x {it.service?.name.replace("Laundry - ", "")}</span>
-                             <span className="text-neutral-500 font-mono text-[10px]">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(it.unit_price)}/cái)</span>
+                            <span className="font-semibold">{it.quantity}x {translateService(it.service?.name || "Service", it.service?.description, isVN).name}</span>
+                            <span className="text-neutral-500 font-mono text-[10px]">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(it.unit_price)}/{isVN ? "cái" : "item"})</span>
                           </div>
                         ))}
                       </div>
 
                       {order.customer_notes && (
                         <div className="p-3 bg-amber-500/10 rounded-2xl text-[11px] italic text-neutral-750 dark:text-neutral-300 border border-amber-500/20">
-                          <strong>Ghi chú của khách:</strong> {order.customer_notes}
+                          <strong>{isVN ? "Ghi chú của khách:" : "Guest notes:"}</strong> {order.customer_notes}
                         </div>
                       )}
                       
                       <div className="flex justify-between text-[11px] text-neutral-400 pt-2 border-t border-neutral-100 dark:border-neutral-850">
-                        <span>Đặt lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN")} - {new Date(order.created_at).toLocaleDateString("vi-VN")}</span>
-                         <span className="font-bold text-red-600 dark:text-red-400">Tổng cộng: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.total_amount || 0)}</span>
+                        <span>{isVN ? "Đặt lúc:" : "Ordered at:"} {new Date(order.created_at).toLocaleTimeString(isVN ? "vi-VN" : "en-US")} - {new Date(order.created_at).toLocaleDateString(isVN ? "vi-VN" : "en-US")}</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">{isVN ? "Tổng cộng:" : "Total:"} {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.total_amount || 0)}</span>
                       </div>
                     </div>
 

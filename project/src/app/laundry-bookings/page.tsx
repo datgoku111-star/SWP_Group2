@@ -16,6 +16,7 @@ import {
   Truck
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { translateService } from "@/utils/laundry";
 
 export default function CustomerLaundryBookingsPage() {
   const { t, i18n } = useTranslation();
@@ -215,9 +216,9 @@ export default function CustomerLaundryBookingsPage() {
                       <span className="text-[10px] text-neutral-400 font-bold uppercase block tracking-wider">{isVN ? "Đồ gửi giặt:" : "Laundry items:"}</span>
                       <div className="space-y-1.5">
                         {booking.items?.map((item: any, idx: number) => (
-                          <div key={idx} className="flex justify-between items-center text-neutral-700 dark:text-neutral-300">
-                            <span className="font-semibold">{item.quantity}x {item.service?.name.replace("Laundry - ", "")}</span>
-                             <span className="font-mono text-neutral-500">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.unit_price)}/{isVN ? "cái" : "item"})</span>
+                          <div key={idx} className="flex justify-between items-center text-xs text-neutral-700 dark:text-neutral-300">
+                            <span className="font-semibold">{item.quantity}x {translateService(item.service?.name || "Service", item.service?.description, isVN).name}</span>
+                            <span className="font-mono text-neutral-500">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.unit_price)}/{isVN ? "cái" : "item"})</span>
                           </div>
                         ))}
                       </div>
