@@ -102,19 +102,22 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       .on(
         "postgres_changes",
         {
+          event: "*",
+          schema: "public",
           table: isService ? "service_orders" : "payments",
           filter: `booking_id=eq.${paymentInfo.bookingId}`,
         },
         (payload) => {
           console.log("Real-time status update:", payload);
+          const newRecord = payload.new as any;
           if (isService) {
-            if (payload.new.status === "IN_PROGRESS" || payload.new.status === "COMPLETED") {
+            if (newRecord.status === "IN_PROGRESS" || newRecord.status === "COMPLETED") {
               setShowPayOSModal(false);
-              const sOrderId = payload.new.id;
+              const sOrderId = newRecord.id;
               router.push(`/pay-done?bookingId=${paymentInfo.bookingId}&serviceOrderId=${sOrderId}&type=service&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
             }
           } else {
-            if (payload.new.status === "COMPLETED") {
+            if (newRecord.status === "COMPLETED") {
               setShowPayOSModal(false);
               router.push(`/pay-done?bookingId=${paymentInfo.bookingId}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
             }
