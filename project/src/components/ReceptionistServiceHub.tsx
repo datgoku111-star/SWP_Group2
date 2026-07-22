@@ -33,8 +33,9 @@ export default function ReceptionistServiceHub() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"ROOMS" | "ORDERS" | "CAR_RENTALS">("ROOMS");
+  const [activeSubTab, setActiveSubTab] = useState<"ROOMS" | "ORDERS" | "CAR_RENTALS" | "EXPERIENCES">("ROOMS");
   const [filterFloor, setFilterFloor] = useState<number | "ALL">("ALL");
 
   // Modal State for Ordering Room Service / F&B
@@ -49,11 +50,12 @@ export default function ReceptionistServiceHub() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [roomsRes, servicesRes, ordersRes, carRes] = await Promise.all([
+      const [roomsRes, servicesRes, ordersRes, carRes, bookingsRes] = await Promise.all([
         fetch("/api/rooms?all=true"),
         fetch("/api/services?all=true"),
         fetch("/api/orders?status=PENDING,IN_PROGRESS,COMPLETED"),
         fetch("/api/car-bookings"),
+        fetch("/api/bookings"),
       ]);
 
       if (roomsRes.ok) {
@@ -93,6 +95,14 @@ export default function ReceptionistServiceHub() {
         const cData = await carRes.json();
         if (Array.isArray(cData)) {
           setCarRentals(cData);
+        }
+      }
+      if (bookingsRes && bookingsRes.ok) {
+        const bData = await bookingsRes.json();
+        if (Array.isArray(bData)) {
+          setBookings(bData);
+        }
+      }
         }
       }
     } catch (err) {
@@ -300,7 +310,7 @@ export default function ReceptionistServiceHub() {
   return (
     <div className="space-y-6">
       {/* Top Bar Banner for Receptionist Services */}
-      <div className="bg-gradient-to-r from-primary-600 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-primary-6000 to-indigo-700 rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
             <Utensils className="w-3.5 h-3.5" />
@@ -348,6 +358,17 @@ export default function ReceptionistServiceHub() {
             <Car className="w-4 h-4" />
             Dịch Vụ Thuê Xe ({carRentals.length})
           </button>
+          <button
+            onClick={() => setActiveSubTab("EXPERIENCES")}
+            className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeSubTab === "EXPERIENCES"
+                ? "bg-white text-primary-700 shadow-lg scale-105"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            Giám Sát Trải Nghiệm
+          </button>
           <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title="Làm mới">
             <RefreshCw className="w-5 h-5" />
           </button>
@@ -365,7 +386,7 @@ export default function ReceptionistServiceHub() {
                 onClick={() => setFilterFloor("ALL")}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   filterFloor === "ALL"
-                    ? "bg-primary-600 text-white shadow"
+                    ? "bg-primary-6000 text-white shadow"
                     : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
                 }`}
               >
@@ -377,7 +398,7 @@ export default function ReceptionistServiceHub() {
                   onClick={() => setFilterFloor(fl)}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     filterFloor === fl
-                      ? "bg-primary-600 text-white shadow"
+                      ? "bg-primary-6000 text-white shadow"
                       : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300"
                   }`}
                 >
@@ -429,7 +450,7 @@ export default function ReceptionistServiceHub() {
 
                   {room.notes && (
                     <div className="bg-white/80 dark:bg-neutral-900/80 p-3 rounded-2xl text-xs font-medium text-neutral-700 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700 flex items-start gap-2">
-                      <User className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
+                      <User className="w-4 h-4 text-primary-6000 shrink-0 mt-0.5" />
                       <div>{room.notes}</div>
                     </div>
                   )}
@@ -439,7 +460,7 @@ export default function ReceptionistServiceHub() {
                     {room.status === "IN_USE" && (
                       <button
                         onClick={() => openServiceOrderingModal(room)}
-                        className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-extrabold py-3 px-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm"
+                        className="flex-1 bg-primary-6000 hover:bg-primary-700 text-white font-extrabold py-3 px-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm"
                       >
                         <Utensils className="w-4 h-4" />
                         ➕ Gọi Món / Dịch Vụ
@@ -502,7 +523,7 @@ export default function ReceptionistServiceHub() {
         <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
           <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h3 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Clock className="w-6 h-6 text-primary-600" />
+              <Clock className="w-6 h-6 text-primary-6000" />
               Danh Sách Yêu Cầu Dịch Vụ & Gọi Món Đang Phục Vụ ({activeOrders.length})
             </h3>
           </div>
@@ -538,7 +559,7 @@ export default function ReceptionistServiceHub() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-3">
-                          <span className="bg-primary-600 text-white font-black px-3 py-1 rounded-xl text-sm">
+                          <span className="bg-primary-6000 text-white font-black px-3 py-1 rounded-xl text-sm">
                             Phòng {order.room_number || "P201"}
                           </span>
                           <span className="text-xs font-bold text-neutral-500">Mã đơn: #{order.id}</span>
@@ -550,7 +571,7 @@ export default function ReceptionistServiceHub() {
                         <div className="flex flex-wrap gap-2 pt-1">
                           {order.items?.map((it: any, i: number) => (
                             <span key={i} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1.5 rounded-xl font-bold text-sm text-neutral-800 dark:text-neutral-200">
-                              {it.service_name} <strong className="text-primary-600">x{it.quantity}</strong>
+                              {it.service_name} <strong className="text-primary-6000">x{it.quantity}</strong>
                             </span>
                           ))}
                         </div>
@@ -564,7 +585,7 @@ export default function ReceptionistServiceHub() {
 
                       <div className="text-right">
                         <div className="text-xs text-neutral-400">Tổng tiền ghi nợ phòng</div>
-                        <div className="text-xl font-black text-primary-600 dark:text-primary-400">
+                        <div className="text-xl font-black text-primary-6000 dark:text-primary-400">
                           {order.total_amount.toLocaleString("vi-VN")} đ
                         </div>
                         <div className="text-xs text-neutral-400 mt-1">Ghi lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</div>
@@ -787,6 +808,151 @@ export default function ReceptionistServiceHub() {
       )}
 
 
+
+      {/* SUB-TAB 3: EXPERIENCES DASHBOARD */}
+      {activeSubTab === "EXPERIENCES" && (
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 shadow-sm space-y-6">
+          <div className="border-b border-neutral-100 dark:border-neutral-800 pb-4">
+            <h3 className="text-xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-600 animate-pulse" />
+              <span>Giám Sát & Điều Hành Trải Nghiệm Khách Sạn</span>
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1">
+              Bảng theo dõi trạng thái đặt tour trải nghiệm (climbing, rowing, swimming, skiing) của tất cả các phòng lưu trú.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-neutral-600 dark:text-neutral-300">
+              <thead className="bg-neutral-50 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-200 border-b border-neutral-200 dark:border-neutral-800">
+                <tr>
+                  <th className="px-6 py-4 font-extrabold">Số Phòng</th>
+                  <th className="px-6 py-4 font-extrabold">Trạng Thái Phòng</th>
+                  <th className="px-6 py-4 font-extrabold">Khách Đang Ở</th>
+                  <th className="px-6 py-4 font-extrabold">Tour Trải Nghiệm Đã Đặt</th>
+                  <th className="px-6 py-4 font-extrabold">Kênh Đặt</th>
+                  <th className="px-6 py-4 font-extrabold">Thanh Toán</th>
+                  <th className="px-6 py-4 font-extrabold text-right">Tổng Chi Phí</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                {rooms.map((room) => {
+                  const currentBooking = bookings.find(b => b.room_id === room.id && b.status === "CHECKED_IN");
+                  
+                  // Gather online experience bookings
+                  const onlineExps = bookings.filter(b => 
+                    b.room_id === room.id && 
+                    b.status !== "CANCELLED" && 
+                    b.special_requests && 
+                    (() => {
+                      try {
+                        const parsed = JSON.parse(b.special_requests);
+                        return parsed && parsed.isExperience === true;
+                      } catch (e) { return false; }
+                    })()
+                  );
+
+                  // Gather counter experience orders
+                  const counterExps: any[] = [];
+                  if (currentBooking) {
+                    const roomOrders = activeOrders.filter(o => o.booking_id === currentBooking.id);
+                    roomOrders.forEach(o => {
+                      o.items?.forEach((item: any) => {
+                        const nameLower = (item.service_name || "").toLowerCase();
+                        if (nameLower.includes("experience") || nameLower.includes("tour") || nameLower.includes("leo núi") || nameLower.includes("chèo thuyền") || nameLower.includes("tắm biển") || nameLower.includes("trượt tuyết")) {
+                          counterExps.push({
+                            id: o.id,
+                            name: item.service_name,
+                            qty: item.quantity,
+                            status: o.status,
+                            price: item.subtotal || (item.unit_price * item.quantity)
+                          });
+                        }
+                      });
+                    });
+                  }
+
+                  const hasExp = onlineExps.length > 0 || counterExps.length > 0;
+                  const guestName = currentBooking?.user?.full_name || currentBooking?.guest?.full_name || "-";
+
+                  return (
+                    <tr key={room.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors">
+                      <td className="px-6 py-4 font-bold text-neutral-900 dark:text-white">
+                        Phòng {room.room_number}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          room.status === "AVAILABLE" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" :
+                          room.status === "IN_USE" ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" :
+                          room.status === "DIRTY" ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" :
+                          "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                        }`}>
+                          {room.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                        {guestName}
+                      </td>
+                      <td className="px-6 py-4 space-y-1">
+                        {!hasExp && <span className="text-neutral-400 text-xs">Chưa đặt trải nghiệm</span>}
+                        {onlineExps.map((b: any) => {
+                          let title = "Tour Trải nghiệm";
+                          try {
+                            const parsed = JSON.parse(b.special_requests);
+                            title = parsed.title || title;
+                          } catch (e) {}
+                          return (
+                            <div key={b.id} className="font-bold text-emerald-600 dark:text-emerald-400 capitalize">
+                              🧗 {title}
+                            </div>
+                          );
+                        })}
+                        {counterExps.map((item: any, idx: number) => (
+                          <div key={idx} className="font-bold text-indigo-600 dark:text-indigo-400">
+                            🛎️ {item.name} <span className="text-xs text-neutral-400 font-normal">x{item.qty}</span>
+                          </div>
+                        ))}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-neutral-500">
+                        {onlineExps.map((b: any) => <div key={b.id}>Đặt trực tuyến</div>)}
+                        {counterExps.map((item: any, idx: number) => <div key={idx}>Tại quầy lễ tân</div>)}
+                      </td>
+                      <td className="px-6 py-4 space-y-1">
+                        {onlineExps.map((b: any) => (
+                          <div key={b.id}>
+                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300">
+                              Đã thanh toán (Online)
+                            </span>
+                          </div>
+                        ))}
+                        {counterExps.map((item: any, idx: number) => {
+                          const isPaid = item.status === "COMPLETED";
+                          return (
+                            <div key={idx}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                isPaid 
+                                  ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300"
+                                  : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                              }`}>
+                                {isPaid ? "Đã thanh toán" : "Ghi nợ phòng (Chờ thanh toán)"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </td>
+                      <td className="px-6 py-4 text-right font-black text-neutral-900 dark:text-white">
+                        {onlineExps.map((b: any) => <div key={b.id}>{(b.total_amount || 0).toLocaleString("vi-VN")} đ</div>)}
+                        {counterExps.map((item: any, idx: number) => <div key={idx}>{(item.price || 0).toLocaleString("vi-VN")} đ</div>)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* MODAL ORDER ROOM SERVICE / F&B FOR GUEST */}
       {isOrderModalOpen && selectedRoomForService && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -814,23 +980,24 @@ export default function ReceptionistServiceHub() {
                 <button
                   onClick={() => setServiceCategory("ALL")}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    serviceCategory === "ALL" ? "bg-primary-600 text-white" : "bg-neutral-100 dark:bg-neutral-700"
+                    serviceCategory === "ALL" ? "bg-primary-6000 text-white" : "bg-neutral-100 dark:bg-neutral-700"
                   }`}
                 >
                   Tất cả
                 </button>
-                {["FOOD", "BEVERAGE", "LAUNDRY", "AMENITY"].map((cat) => (
+                {["FOOD", "BEVERAGE", "LAUNDRY", "AMENITY", "OTHER"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setServiceCategory(cat)}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      serviceCategory === cat ? "bg-primary-600 text-white" : "bg-neutral-100 dark:bg-neutral-700"
+                      serviceCategory === cat ? "bg-primary-6000 text-white" : "bg-neutral-100 dark:bg-neutral-700"
                     }`}
                   >
                     {cat === "FOOD" && "🍲 Đồ ăn"}
                     {cat === "BEVERAGE" && "🍹 Thức uống"}
                     {cat === "LAUNDRY" && "👔 Giặt ủi"}
                     {cat === "AMENITY" && "🧼 Tiện ích"}
+                    {cat === "OTHER" && "🧗 Trải nghiệm & Khác"}
                   </button>
                 ))}
               </div>
@@ -841,12 +1008,12 @@ export default function ReceptionistServiceHub() {
                   <div key={srv.id} className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between">
                     <div>
                       <div className="font-extrabold text-sm text-neutral-900 dark:text-white">{srv.name}</div>
-                      <div className="text-xs font-bold text-primary-600 mt-0.5">{srv.price.toLocaleString("vi-VN")} đ</div>
+                      <div className="text-xs font-bold text-primary-6000 mt-0.5">{srv.price.toLocaleString("vi-VN")} đ</div>
                     </div>
                     <button
                       type="button"
                       onClick={() => addItemToOrder(srv)}
-                      className="p-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white transition-all shadow"
+                      className="p-2 rounded-xl bg-primary-6000 hover:bg-primary-700 text-white transition-all shadow"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -858,7 +1025,7 @@ export default function ReceptionistServiceHub() {
               <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
                 <h4 className="font-bold text-sm text-neutral-900 dark:text-white flex items-center justify-between">
                   <span>🛒 Các Món / Dịch Vụ Đã Chọn ({orderItems.length})</span>
-                  <span className="text-primary-600 font-extrabold">{totalOrderAmount.toLocaleString("vi-VN")} đ</span>
+                  <span className="text-primary-6000 font-extrabold">{totalOrderAmount.toLocaleString("vi-VN")} đ</span>
                 </h4>
 
                 {orderItems.length === 0 ? (
@@ -885,7 +1052,7 @@ export default function ReceptionistServiceHub() {
                           <button
                             type="button"
                             onClick={() => addItemToOrder(item.service)}
-                            className="w-7 h-7 rounded-lg bg-primary-600 text-white flex items-center justify-center font-bold"
+                            className="w-7 h-7 rounded-lg bg-primary-6000 text-white flex items-center justify-center font-bold"
                           >
                             +
                           </button>
@@ -913,7 +1080,7 @@ export default function ReceptionistServiceHub() {
             <div className="p-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
               <div>
                 <span className="text-xs text-neutral-400">Tổng cộng thanh toán</span>
-                <div className="text-2xl font-black text-primary-600 dark:text-primary-400">
+                <div className="text-2xl font-black text-primary-6000 dark:text-primary-400">
                   {totalOrderAmount.toLocaleString("vi-VN")} đ
                 </div>
               </div>

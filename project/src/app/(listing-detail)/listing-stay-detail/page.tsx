@@ -106,6 +106,53 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
     fetchOccupancyData();
   }, []);
 
+  // 2.5 Fetch specific live room info matching the title
+  useEffect(() => {
+    const fetchLiveRoom = async () => {
+      try {
+        const res = await fetch("/api/rooms?all=true");
+        if (res.ok) {
+          const rooms = await res.json();
+          const getRoomNumberByTitle = (title: string): string => {
+            const t = title.toLowerCase();
+            if (t.includes("cedars")) return "101";
+            if (t.includes("ship & castle") || t.includes("ship and castle")) return "102";
+            if (t.includes("bell")) return "103";
+            if (t.includes("windmill")) return "201";
+            if (t.includes("holiday inn")) return "202";
+            if (t.includes("half moon")) return "203";
+            if (t.includes("white horse")) return "301";
+            if (t.includes("unicorn")) return "302";
+            return "101";
+          };
+          const num = getRoomNumberByTitle(titleParam);
+          const found = (rooms || []).find((r: any) => r.room_number === num);
+          if (found) {
+            setLiveRoom(found);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load live room info for detail page:", err);
+      }
+    };
+    fetchLiveRoom();
+
+    const channel = supabaseBrowser
+      .channel("live_rooms_detail")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rooms" },
+        (payload) => {
+          console.log("Realtime room change on detail page:", payload);
+          fetchLiveRoom();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseBrowser.removeChannel(channel);
+    };
+  }, [titleParam]);
   // 3. Check live rooms available for selected dates
   useEffect(() => {
     if (!startDate || !endDate) return;

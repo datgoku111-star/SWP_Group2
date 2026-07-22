@@ -319,7 +319,7 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
       {
         id: ncNanoId(),
         href: "/listing-experiences-map",
-        name: "Experiences (map)",
+        name: "Lịch trình trải nghiệm",
       },
       {
         id: ncNanoId(),

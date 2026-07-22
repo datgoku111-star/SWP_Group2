@@ -596,7 +596,7 @@ const ListingExperiencesDetailPage: FC<
         </div>
 
         {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}&adults=${guests.guestAdults}&children=${guests.guestChildren}&infants=${guests.guestInfants}` as any}>Reserve</ButtonPrimary>
+        <ButtonPrimary href={`/checkout?type=experience&title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}&adults=${guests.guestAdults}&children=${guests.guestChildren}&infants=${guests.guestInfants}` as any}>Reserve</ButtonPrimary>
       </div>
     );
   };
