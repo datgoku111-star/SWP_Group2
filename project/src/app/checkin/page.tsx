@@ -72,6 +72,7 @@ function CheckInContent() {
 
   // Check-Out Payment State
   const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH" | "BANK_TRANSFER">("CARD");
+  const [showQR, setShowQR] = useState(false);
   const [transactionRef, setTransactionRef] = useState("");
   const [customAmount, setCustomAmount] = useState<number | null>(null);
   const [checkoutDetails, setCheckoutDetails] = useState<any | null>(null);
@@ -278,6 +279,14 @@ function CheckInContent() {
   };
 
   // Action 2: Confirm Check-Out & Settle Bill
+  const handleCheckoutClick = () => {
+    if (paymentMethod === "BANK_TRANSFER" && !showQR) {
+      setShowQR(true);
+      return;
+    }
+    confirmCheckOut();
+  };
+
   const confirmCheckOut = async () => {
     if (!booking) return;
     setActionLoading(true);
@@ -873,7 +882,10 @@ function CheckInContent() {
                         <button
                           key={method}
                           type="button"
-                          onClick={() => setPaymentMethod(method)}
+                          onClick={() => {
+                            setPaymentMethod(method);
+                            setShowQR(false);
+                          }}
                           className={`py-3 px-3 rounded-2xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
                             paymentMethod === method
                               ? "border-amber-600 bg-amber-50/60 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 ring-2 ring-amber-500/20"
@@ -885,7 +897,7 @@ function CheckInContent() {
                       ))}
                     </div>
 
-                    {paymentMethod === "BANK_TRANSFER" && booking && (
+                    {paymentMethod === "BANK_TRANSFER" && booking && showQR && (
                       <div className="mt-5 p-5 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 flex flex-col items-center">
                         <span className="text-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-200">Quét mã VietQR (Thanh toán)</span>
                         <div className="p-3 bg-white rounded-xl shadow-sm border border-neutral-200">
@@ -924,11 +936,13 @@ function CheckInContent() {
                 <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
                   <ButtonPrimary
                     className="w-full h-12 text-base font-bold bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-600/25"
-                    onClick={confirmCheckOut}
+                    onClick={handleCheckoutClick}
                     loading={actionLoading}
                     disabled={actionLoading || !booking}
                   >
-                    Confirm Check-Out & Settle Bill
+                    {paymentMethod === "BANK_TRANSFER" && !showQR 
+                      ? "Tạo mã QR Thanh Toán" 
+                      : "Xác nhận & Hoàn tất Check-Out"}
                   </ButtonPrimary>
                 </div>
               </div>
