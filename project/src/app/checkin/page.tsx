@@ -944,16 +944,6 @@ function CheckInContent() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Amount to Settle (VND)</label>
-                    <Input
-                      type="number"
-                      value={customAmount !== null ? customAmount : getAmountToSettle()}
-                      onChange={(e) => setCustomAmount(Number(e.target.value))}
-                      className="h-11 font-bold text-base"
-                    />
-                  </div>
-
-                  <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Transaction / Receipt Ref</label>
                     <Input
                       value={transactionRef}
