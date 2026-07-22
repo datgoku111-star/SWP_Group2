@@ -3,7 +3,7 @@ import { getDashboardStats } from "@/lib/db/reports";
 import { getTodaysArrivals, getTodaysDepartures } from "@/lib/db/bookings";
 import { getAllRooms } from "@/lib/db/rooms";
 import { getCurrentUser } from "@/lib/auth-server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabase";
 
 export async function GET() {
   try {

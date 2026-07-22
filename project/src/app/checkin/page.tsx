@@ -807,26 +807,21 @@ function CheckInContent() {
                         <span className="text-neutral-400">Room Charges:</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.room_charges)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-400">Deposit Paid:</span>
-                        <span className="font-bold text-green-400">-{formatMoney(checkoutDetails.deposit_paid)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold">
-                        <span className="text-neutral-400">Remaining Room:</span>
-                        <span className="font-bold">{formatMoney(checkoutDetails.remaining_room_charges)}</span>
-                      </div>
+                      
                       {checkoutDetails.service_charges > 0 && (
                         <div className="flex justify-between">
                           <span className="text-neutral-400 font-semibold">Service Charges:</span>
                           <span className="font-bold">{formatMoney(checkoutDetails.service_charges)}</span>
                         </div>
                       )}
+                      
                       {checkoutDetails.incident_charges?.total_fine > 0 && (
                         <div className="flex justify-between">
                           <span className="text-red-400 font-semibold">Incident Fines:</span>
                           <span className="font-bold text-red-300">{formatMoney(checkoutDetails.incident_charges.total_fine)}</span>
                         </div>
                       )}
+                      
                       {/* List incidents if any */}
                       {checkoutDetails.incident_charges?.incidents?.length > 0 && (
                         <div className="pl-3 space-y-1 text-xs border-l border-red-500/30 my-1">
@@ -838,16 +833,29 @@ function CheckInContent() {
                           ))}
                         </div>
                       )}
+                      
                       <div className="flex justify-between pt-2 border-t border-neutral-700/40">
-                        <span className="text-neutral-400">Subtotal:</span>
+                        <span className="text-neutral-400">Subtotal (All Charges):</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.subtotal)}</span>
                       </div>
+                      
                       <div className="flex justify-between">
                         <span className="text-neutral-400">VAT (2%):</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.vat_amount)}</span>
                       </div>
+                      
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-neutral-400">Total Invoice:</span>
+                        <span className="font-bold">{formatMoney(checkoutDetails.subtotal + checkoutDetails.vat_amount)}</span>
+                      </div>
+
+                      <div className="flex justify-between pt-2 border-t border-neutral-700/40">
+                        <span className="text-neutral-400">Deposit Paid:</span>
+                        <span className="font-bold text-green-400">-{formatMoney(checkoutDetails.deposit_paid)}</span>
+                      </div>
+                      
                       <div className="flex justify-between pt-2 border-t border-neutral-700/60 text-base font-extrabold">
-                        <span className="text-primary-300">Grand Total (Settle):</span>
+                        <span className="text-primary-300">Amount Due (Settle):</span>
                         <span className="text-white">{formatMoney(checkoutDetails.grand_total)}</span>
                       </div>
                     </>
