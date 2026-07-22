@@ -71,7 +71,7 @@ export default function KitchenDashboardHub() {
       const res = await fetch("/api/orders?status=PENDING,IN_PROGRESS&category=FOOD,BEVERAGE");
       if (!res.ok) throw new Error("Lỗi tải danh sách đơn món");
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setOrders(data);
         const currentPending = data.filter((o: any) => o.status === "PENDING").length;
         if (
@@ -82,52 +82,10 @@ export default function KitchenDashboardHub() {
           playBellSound();
         }
         prevPendingCount.current = currentPending;
-      } else if (Array.isArray(data)) {
-        // If empty DB or no active orders, provide realistic demo live orders so kitchen dashboard looks amazing
-        setOrders([
-          {
-            id: "ORDER-K01",
-            booking_id: "B-101",
-            status: "PENDING",
-            total_amount: 360000,
-            notes: "Khách VIP, không cho hành lá vào phở, canh chua ít cay",
-            created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-            booking: { room: { room_number: "P205 (VIP Ocean)" } },
-            items: [
-              { id: "i1", quantity: 2, unit_price: 180000, subtotal: 360000, service: { name: "Phở Bò Kobe Đặc Biệt", category: "FOOD" } },
-            ],
-          },
-          {
-            id: "ORDER-K02",
-            booking_id: "B-102",
-            status: "IN_PROGRESS",
-            total_amount: 130000,
-            notes: "Giao gấp cùng đá riêng",
-            created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-            booking: { room: { room_number: "P102 (Deluxe)" } },
-            items: [
-              { id: "i2", quantity: 2, unit_price: 65000, subtotal: 130000, service: { name: "Nước Cam Tươi Nguyên Chất", category: "BEVERAGE" } },
-            ],
-          },
-        ]);
       }
     } catch (err) {
       console.error("Kitchen fetch error:", err);
-      // Fallback demo
-      setOrders([
-        {
-          id: "ORDER-K01",
-          booking_id: "B-101",
-          status: "PENDING",
-          total_amount: 360000,
-          notes: "Khách VIP, không cho hành lá vào phở",
-          created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-          booking: { room: { room_number: "P205 (VIP Ocean)" } },
-          items: [
-            { id: "i1", quantity: 2, unit_price: 180000, subtotal: 360000, service: { name: "Phở Bò Kobe Đặc Biệt", category: "FOOD" } },
-          ],
-        },
-      ]);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
