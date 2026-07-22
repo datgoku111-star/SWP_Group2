@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, CheckCircle2, XCircle, Clock, Search, Filter, RefreshCw, Eye, ArrowRight, Check, X } from "lucide-react";
+import { Calendar, CheckCircle2, XCircle, Clock, Search, Filter, RefreshCw, Eye, ArrowRight, Check, X, Compass } from "lucide-react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 
@@ -14,6 +14,7 @@ export interface BookingRecord {
   total_amount: number;
   special_requests?: string;
   created_at?: string;
+  user_id?: string;
   user?: {
     full_name: string;
     email: string;
@@ -500,6 +501,37 @@ export default function AdminBookingsPage() {
                          selectedBooking.status === "CANCELLED" ? "❌ Đã hủy" : "✓ Đã thanh toán"}
                       </span>
                     </div>
+
+                    {/* Stay room for experience or car */}
+                    {(isExp || isCar) && (() => {
+                      let stayRoomNumber = "";
+                      if (selectedBooking.user_id) {
+                        const activeStay = bookings.find(b => 
+                          b.user_id === selectedBooking.user_id && 
+                          b.room?.room_number && 
+                          b.status === "CHECKED_IN"
+                        ) || bookings.find(b => 
+                          b.user_id === selectedBooking.user_id && 
+                          b.room?.room_number && 
+                          b.status === "CONFIRMED"
+                        );
+                        if (activeStay) {
+                          stayRoomNumber = activeStay.room?.room_number || "";
+                        }
+                      }
+                      if (!stayRoomNumber && selectedBooking.room?.room_number) {
+                        stayRoomNumber = selectedBooking.room.room_number;
+                      }
+
+                      return (
+                        <div className="flex justify-between mt-2 p-2 rounded-xl bg-primary-50 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900/40 text-xs">
+                          <span className="text-neutral-500 font-semibold">Phòng đang lưu trú:</span>
+                          <span className="font-extrabold text-primary-700 dark:text-primary-300">
+                            {stayRoomNumber && stayRoomNumber !== "P101" ? `Phòng ${stayRoomNumber}` : "Chưa nhận phòng / Nơi khác"}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -556,6 +588,93 @@ export default function AdminBookingsPage() {
                   <p>{selectedBooking.special_requests}</p>
                 </div>
               )}
+
+              {/* Experience Itinerary Section */}
+              {isExp && (() => {
+                const titleLower = (meta?.title || "").toLowerCase();
+                let tourKey = "";
+                if (titleLower.includes("climbing") || titleLower.includes("leo núi")) tourKey = "climbing";
+                else if (titleLower.includes("rowing") || titleLower.includes("chèo thuyền")) tourKey = "rowing";
+                else if (titleLower.includes("swimming") || titleLower.includes("bơi") || titleLower.includes("tắm biển")) tourKey = "swimming";
+                else if (titleLower.includes("skiing") || titleLower.includes("trượt tuyết")) tourKey = "skiing";
+
+                const itineraries: Record<string, { gatheringTime: string, gatheringLocation: string, timeline: { time: string, title: string, desc: string }[] }> = {
+                  climbing: {
+                    gatheringTime: "07:00 AM",
+                    gatheringLocation: "Cổng số 1, Vườn Quốc Gia Hoàng Liên Sơn (Sapa, Lào Cai)",
+                    timeline: [
+                      { time: "07:00 - 07:30", title: "Tập trung & Khởi động", desc: "Gặp gỡ hướng dẫn viên chuyên nghiệp, kiểm tra trang bị an toàn cá nhân và khởi động làm nóng cơ thể." },
+                      { time: "07:30 - 11:30", title: "Chinh phục Chặng 1", desc: "Bắt đầu leo qua các dốc đá thoai thoải, xuyên qua khu rừng trúc nguyên sinh và vượt suối nhỏ." },
+                      { time: "11:30 - 12:30", title: "Nghỉ trưa tại Trạm dừng 2000m", desc: "Dùng bữa trưa dinh dưỡng với cơm lam bản địa, ngắm nhìn thung lũng Mường Hoa tuyệt đẹp từ trên cao." },
+                      { time: "12:30 - 15:30", title: "Bứt tốc lên đỉnh núi", desc: "Chinh phục các đoạn dốc đứng đá tai mèo đầy thử thách, hỗ trợ nhau bằng gậy leo núi và dây đai hỗ trợ." },
+                      { time: "15:30 - 16:30", title: "Chạm đỉnh Fansipan & Xuống núi", desc: "Chụp ảnh check-in đỉnh núi, nhận huy chương kỷ niệm chặng leo và chuẩn bị di chuyển xuống chân núi bằng hệ thống cáp treo hiện đại." }
+                    ]
+                  },
+                  rowing: {
+                    gatheringTime: "08:30 AM",
+                    gatheringLocation: "Bến thuyền du lịch sinh thái Tràng An (Ninh Bình)",
+                    timeline: [
+                      { time: "08:30 - 09:00", title: "Chuẩn bị xuất bến", desc: "Nghe hướng dẫn kỹ thuật chèo xuồng Kayak cơ bản và quy tắc an toàn sông nước, mặc áo phao cứu hộ." },
+                      { time: "09:00 - 11:30", title: "Khám phá danh thắng Tràng An", desc: "Tự tay chèo thuyền xuôi dòng sào khê, luồn lách qua các hang động đá vôi tự nhiên thạch nhũ huyền ảo." },
+                      { time: "11:30 - 12:30", title: "Ghé thăm Đền cổ ven sông", desc: "Neo thuyền nghỉ ngơi, tham quan đền Trần cổ kính linh thiêng nằm cô độc giữa lòng núi đá vôi." },
+                      { time: "12:30 - 13:30", title: "Chèo ngược dòng & Cập bến", desc: "Chèo thong thả ngắm hoàng hôn đổ bóng trên dãy núi đá vôi, cập bến an toàn và bàn giao lại trang thiết bị chèo." }
+                    ]
+                  },
+                  swimming: {
+                    gatheringTime: "09:00 AM",
+                    gatheringLocation: "Quầy lễ tân bể bơi vô cực Fis Hotel (Tầng 5 tòa nhà chính)",
+                    timeline: [
+                      { time: "09:00 - 09:15", title: "Nhận đồ & Check-in", desc: "Khách hàng xuất trình mã QR xác nhận dịch vụ tại quầy, nhận tủ đồ khóa từ thông minh và bộ khăn tắm." },
+                      { time: "09:15 - 10:30", title: "Trải nghiệm bơi vô cực ngắm thành phố", desc: "Tự do bơi lội trong làn nước mát lành, ngắm trọn vẹn view đường chân trời Hà Nội từ bể bơi vô cực trên cao." },
+                      { time: "10:30 - 11:30", title: "Thư giãn Sauna & Bể sục Jacuzzi", desc: "Tận hưởng phòng xông hơi đá muối thải độc và ngâm mình thư giãn trong dòng nước sủi bọt ấm Jacuzzi giúp hồi phục cơ bắp." }
+                    ]
+                  },
+                  skiing: {
+                    gatheringTime: "08:00 AM",
+                    gatheringLocation: "Trạm dịch vụ thiết bị trượt tuyết Zone A (Chân núi tuyết)",
+                    timeline: [
+                      { time: "08:00 - 09:00", title: "Nhận trang bị trượt tuyết", desc: "Nhận ủng, ván trượt, gậy và mũ bảo hiểm. Nghe hướng dẫn an toàn tuyết cơ bản." },
+                      { time: "09:00 - 12:00", title: "Trượt tuyết chặng sơ cấp & trung cấp", desc: "Luyện tập kỹ thuật phanh, rẽ trên dốc thoai thoải dưới sự giám sát của huấn luyện viên." },
+                      { time: "12:00 - 14:00", title: "Nghỉ ngơi & Trải nghiệm nâng cao", desc: "Dùng đồ uống nóng tại cabin gỗ và thử thách các đường trượt dốc cao hơn." }
+                    ]
+                  }
+                };
+
+                const currentItinerary = itineraries[tourKey];
+                if (!currentItinerary) return null;
+
+                return (
+                  <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 space-y-4">
+                    <h4 className="font-extrabold text-sm text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
+                      <Compass className="w-4 h-4" /> Lịch Trình Chi Tiết & Hướng Dẫn Tour
+                    </h4>
+                    
+                    <div className="bg-neutral-50 dark:bg-neutral-800/40 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-2 text-xs">
+                      <div>
+                        <strong className="text-neutral-500">Giờ tập trung:</strong> <span className="font-bold text-neutral-800 dark:text-neutral-200">{currentItinerary.gatheringTime}</span>
+                      </div>
+                      <div>
+                        <strong className="text-neutral-500">Địa điểm tập trung:</strong> <span className="font-bold text-neutral-800 dark:text-neutral-200">{currentItinerary.gatheringLocation}</span>
+                      </div>
+                    </div>
+
+                    <div className="relative border-l-2 border-emerald-100 dark:border-emerald-900/60 ml-3 pl-4 space-y-4">
+                      {currentItinerary.timeline.map((step, idx) => (
+                        <div key={idx} className="relative">
+                          {/* Dot indicator */}
+                          <div className="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-neutral-900"></div>
+                          
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] font-extrabold text-emerald-600 block">{step.time}</span>
+                            <span className="font-bold text-xs text-neutral-900 dark:text-white block">{step.title}</span>
+                            <p className="text-[11px] text-neutral-500 leading-relaxed">{step.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Footer */}
               <div className="flex justify-end pt-4 border-t border-neutral-100 dark:border-neutral-800">
