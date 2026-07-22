@@ -88,6 +88,8 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const router = useRouter();
   const { formatPrice, convertPrice, currency } = useCurrency();
   const [lockedRoom, setLockedRoom] = useState<any>(null);
+  const [checkedInRooms, setCheckedInRooms] = useState<any[]>([]);
+  const [selectedCheckedInRoom, setSelectedCheckedInRoom] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(600); // 10 minutes (600s)
   const [activeTab, setActiveTab] = useState(0); // 0: paypal, 1: card, 2: payos
   const [showPayOSModal, setShowPayOSModal] = useState(false);
@@ -446,7 +448,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     const priceVal = Number(priceParam) || 19;
     const subtotal = priceVal * nights;
     const total = subtotal;
-    const depositAmount = typeParam === "service" ? total : total * 0.1;
+    const depositAmount = (typeParam === "service" || isExperience) ? total : total * 0.1;
 
     return (
       <div className="w-full flex flex-col sm:rounded-2xl lg:border border-neutral-200 dark:border-neutral-700 space-y-6 sm:space-y-8 px-0 sm:p-6 xl:p-8">
