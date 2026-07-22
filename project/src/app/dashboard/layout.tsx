@@ -40,10 +40,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "All Bookings", href: "/bookings", icon: ClipboardList, roles: ["ADMIN", "RECEPTIONIST"] },
     { name: "Service Orders", href: "/orders", icon: UtensilsCrossed, roles: ["ADMIN", "KITCHEN", "RECEPTIONIST"] },
     { name: "Housekeeping", href: "/housekeeping", icon: SprayCan, roles: ["ADMIN", "HOUSEKEEPING", "RECEPTIONIST"] },
+    { name: "Lost & Found", href: "/dashboard/receptionist/lost-found", icon: ClipboardList, roles: ["RECEPTIONIST"] },
+    { name: "Lost & Found", href: "/admin/lost-found", icon: ClipboardList, roles: ["ADMIN"] },
     
     // Customer
     { name: "My Bookings", href: "/bookings", icon: CalendarCheck, roles: ["CUSTOMER"] },
     { name: "Order Service", href: "/services", icon: UtensilsCrossed, roles: ["CUSTOMER"] },
+    { name: "Lost & Found", href: "/lost-found", icon: ClipboardList, roles: ["CUSTOMER"] },
   ];
 
   const allowedNav = navItems.filter(item => item.roles.includes(user.role));

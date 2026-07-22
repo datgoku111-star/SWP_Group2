@@ -30,7 +30,10 @@ export default function LostFoundForm() {
       // Làm sạch dữ liệu rỗng (chuyển chuỗi rỗng thành null/undefined nếu cần)
       const payload = {
         ...data,
-        room_id: data.room_id || null, // Tránh lỗi UUID không hợp lệ nếu để trống
+        lost_location: data.where_found || "",
+        contact_phone: user?.phone || user?.email || "Chưa cập nhật",
+        lost_at: new Date().toISOString(),
+        room_id: data.room_id || null,
       };
 
       const res = await fetch("/api/lost-found", {
@@ -111,14 +114,16 @@ export default function LostFoundForm() {
           />
         </div>
 
-        {/* ID Phòng */}
+        {/* Số phòng / ID Phòng */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Phòng (Nếu nhặt trong phòng)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Số phòng / ID Phòng (Không bắt buộc)
+          </label>
           <input
             type="text"
             {...register("room_id")}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-700 sm:text-sm"
-            placeholder="Nhập UUID của phòng (Tùy chọn)"
+            placeholder="Ví dụ: 202, 305... (Để trống nếu không nhặt trong phòng)"
           />
           {errors.room_id && <p className="mt-1 text-sm text-red-500">{errors.room_id.message}</p>}
         </div>
