@@ -637,11 +637,21 @@ export default function AdminBookingsPage() {
                       { time: "09:00 - 12:00", title: "Trượt tuyết chặng sơ cấp & trung cấp", desc: "Luyện tập kỹ thuật phanh, rẽ trên dốc thoai thoải dưới sự giám sát của huấn luyện viên." },
                       { time: "12:00 - 14:00", title: "Nghỉ ngơi & Trải nghiệm nâng cao", desc: "Dùng đồ uống nóng tại cabin gỗ và thử thách các đường trượt dốc cao hơn." }
                     ]
+                  },
+                  default: {
+                    gatheringTime: "08:00 AM",
+                    gatheringLocation: "Quầy dịch vụ khách hàng tại Sảnh chính Fis Hotel",
+                    timeline: [
+                      { time: "08:00 - 08:30", title: "Gặp gỡ Hướng dẫn viên & Chuẩn bị di chuyển", desc: "Tập trung tại quầy dịch vụ sảnh chính khách sạn, gặp gỡ hướng dẫn viên và chuẩn bị xe du lịch của khách sạn." },
+                      { time: "08:30 - 11:30", title: "Khám phá danh lam thắng cảnh", desc: "Bắt đầu hành trình tham quan và trải nghiệm thực tế điểm đến theo hành trình của tour." },
+                      { time: "11:30 - 13:00", title: "Ăn trưa & Nghỉ ngơi", desc: "Thưởng thức ẩm thực đặc trưng địa phương tại nhà hàng đối tác của Fis Hotel." },
+                      { time: "13:00 - 16:30", title: "Hoạt động trải nghiệm & Tự do", desc: "Tiếp tục các hoạt động trải nghiệm, chụp ảnh kỷ niệm lưu niệm và khám phá phong cảnh xung quanh." },
+                      { time: "16:30 - 17:00", title: "Kết thúc hành trình & Đưa đón về khách sạn", desc: "Tập hợp đoàn và xe du lịch đưa đón của Fis Hotel đón quý khách trở lại khách sạn an toàn." }
+                    ]
                   }
                 };
 
-                const currentItinerary = itineraries[tourKey];
-                if (!currentItinerary) return null;
+                const currentItinerary = itineraries[tourKey] || itineraries.default;
 
                 return (
                   <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 space-y-4">
