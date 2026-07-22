@@ -511,7 +511,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           </div>
           {typeParam !== "service" && (
             <div className="flex justify-between font-bold text-primary-6000 mt-2">
-              <span>{t("checkoutDeposit") || "Deposit Payment (10%)"}</span>
+              <span>{isExperience ? "Thanh toán (100%)" : t("checkoutDeposit") || "Deposit Payment (10%)"}</span>
               <span>
                 {formatPrice(depositAmount, "USD")}
               </span>
