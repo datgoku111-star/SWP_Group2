@@ -71,7 +71,7 @@ function CheckInContent() {
   });
 
   // Check-Out Payment State
-  const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH" | "BANK_TRANSFER">("CARD");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "BANK_TRANSFER">("CASH");
   const [showQR, setShowQR] = useState(false);
   const [payosQRUrl, setPayosQRUrl] = useState<string | null>(null);
   const [transactionRef, setTransactionRef] = useState("");
@@ -901,8 +901,8 @@ function CheckInContent() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">Payment Method</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {(["CARD", "CASH", "BANK_TRANSFER"] as const).map((method) => (
+                    <div className="grid grid-cols-2 gap-3">
+                      {(["CASH", "BANK_TRANSFER"] as const).map((method) => (
                         <button
                           key={method}
                           type="button"
@@ -916,7 +916,7 @@ function CheckInContent() {
                               : "border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                           }`}
                         >
-                          <span>{method === "CARD" ? "💳 POS / Card" : method === "CASH" ? "💵 Cash" : "🏦 Bank Transfer"}</span>
+                          <span>{method === "CASH" ? "💵 Cash" : "🏦 Bank Transfer"}</span>
                         </button>
                       ))}
                     </div>
