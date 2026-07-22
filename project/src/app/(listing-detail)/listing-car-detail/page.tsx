@@ -46,6 +46,113 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const [ratingInput, setRatingInput] = useState(5);
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  const [activeBookings, setActiveBookings] = useState<any[]>([]);
+  const [selectedBookingId, setSelectedBookingId] = useState<string>("");
+  const [gplxFile, setGplxFile] = useState<any>(null);
+  const [gplxFileName, setGplxFileName] = useState<string>("");
+  const [gplxCccd, setGplxCccd] = useState<string>("");
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [blockedDates, setBlockedDates] = useState<{ start: Date; end: Date }[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      const fetchBookings = async () => {
+        try {
+          const res = await fetch("/api/bookings");
+          if (res.ok) {
+            const data = await res.json();
+            const active = data.filter((b: any) => 
+              b.user_id === user.id && ["CONFIRMED", "CHECKED_IN"].includes(b.status)
+            );
+            setActiveBookings(active);
+            if (active.length > 0) {
+              setSelectedBookingId(active[0].id);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch bookings:", err);
+        }
+      };
+      fetchBookings();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const fetchBlockedDates = async () => {
+      try {
+        const res = await fetch(`/api/car-bookings`);
+        if (res.ok) {
+          const data = await res.json();
+          const activeRentals = data.filter((cb: any) => 
+            cb.car_type.toLowerCase() === titleParam.toLowerCase() && 
+            ["waiting to return the vehicle", "return requested"].includes(cb.status_text)
+          );
+          const ranges = activeRentals.map((r: any) => ({
+            start: new Date(r.pickup_date),
+            end: new Date(r.dropoff_date),
+          }));
+          setBlockedDates(ranges);
+        }
+      } catch (err) {
+        console.error("Failed to fetch blocked dates:", err);
+      }
+    };
+    fetchBlockedDates();
+  }, [titleParam]);
+
+  const handleConfirmCarBooking = async () => {
+    if (!user) {
+      alert("Vui lòng đăng nhập để thuê xe!");
+      router.push("/hsrm-login" as any);
+      return;
+    }
+    if (!selectedBookingId) {
+      alert("Bạn cần phải có một phòng đặt đang hoạt động (Đã xác nhận hoặc Đang ở) để sử dụng dịch vụ thuê xe!");
+      return;
+    }
+    if (!gplxFileName && !gplxFile) {
+      alert("Bạn phải có GPLX để thuê xe.");
+      return;
+    }
+    if (!gplxCccd.trim()) {
+      alert("Vui lòng nhập số CCCD trên GPLX của bạn!");
+      return;
+    }
+    if (!startDate || !endDate) {
+      alert("Vui lòng chọn thời gian nhận xe và trả xe!");
+      return;
+    }
+
+    setBookingLoading(true);
+    try {
+      const res = await fetch("/api/car-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking_id: selectedBookingId,
+          car_type: titleParam,
+          pickup_date: startDate.toISOString(),
+          dropoff_date: endDate.toISOString(),
+          total_price: priceParam * daysCount + 15,
+          gplx_image: gplxFileName || "gplx_manual_upload.png",
+          gplx_cccd: gplxCccd,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Đặt xe thất bại.");
+      }
+
+      alert("🎉 Yêu cầu thuê xe đã được gửi! Lễ tân sẽ đối chiếu CCCD và phê duyệt sớm nhất. Bạn có thể kiểm tra trạng thái trong mục My Bookings.");
+      router.push("/bookings" as any);
+    } catch (err: any) {
+      alert(err.message || "Đã xảy ra lỗi khi đăng ký thuê xe.");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
@@ -461,7 +568,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
 
   const renderSidebarPrice = () => {
     return (
-      <div className="listingSectionSidebar__wrap shadow-xl">
+      <div className="listingSectionSidebar__wrap shadow-xl space-y-6">
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
@@ -478,6 +585,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           <RentalCarDatesRangeInput 
             startDate={startDate}
             endDate={endDate}
+            excludeDateIntervals={blockedDates}
             onChangeDate={(dates) => {
               const [start, end] = dates;
               setStartDate(start);
@@ -486,22 +594,101 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           />
         </form>
 
+        {/* ROOM SELECTION LINK */}
+        <div className="flex flex-col space-y-2">
+          <label className="text-sm font-bold text-neutral-700 dark:text-neutral-300">
+            Chọn phòng lưu trú liên kết:
+          </label>
+          {activeBookings.length > 0 ? (
+            <select
+              value={selectedBookingId}
+              onChange={(e) => setSelectedBookingId(e.target.value)}
+              className="w-full text-sm rounded-2xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus:ring-primary-500 focus:border-primary-500 py-2.5"
+            >
+              {activeBookings.map((b) => (
+                <option key={b.id} value={b.id}>
+                  Phòng {b.room?.room_number} ({new Date(b.check_in_date).toLocaleDateString("vi-VN")} - {new Date(b.check_out_date).toLocaleDateString("vi-VN")})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900 rounded-2xl text-xs text-red-600 dark:text-red-400 font-semibold leading-relaxed">
+              ⚠️ Bạn cần có phòng đặt hoạt động (Đã xác nhận hoặc Đang lưu trú) tại khách sạn để đăng ký thuê xe!
+            </div>
+          )}
+        </div>
+
+        {/* GPLX UPLOAD */}
+        <div className="flex flex-col space-y-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
+          <label className="text-sm font-bold text-neutral-700 dark:text-neutral-300">
+            Tải lên GPLX (Bắt buộc):
+          </label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setGplxFile(e.target.files[0]);
+                  setGplxFileName(e.target.files[0].name);
+                }
+              }}
+              className="hidden"
+              id="gplx-file-picker"
+            />
+            <label
+              htmlFor="gplx-file-picker"
+              className="cursor-pointer px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold transition-all whitespace-nowrap shadow-sm border border-neutral-200 dark:border-neutral-700"
+            >
+              📁 Chọn ảnh GPLX
+            </label>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-[170px]" title={gplxFileName}>
+              {gplxFileName || "Chưa tải lên file"}
+            </span>
+          </div>
+        </div>
+
+        {/* CCCD INPUT */}
+        <div className="flex flex-col space-y-2">
+          <label className="text-sm font-bold text-neutral-700 dark:text-neutral-300">
+            Số CCCD ghi trên GPLX:
+          </label>
+          <input
+            type="text"
+            value={gplxCccd}
+            onChange={(e) => setGplxCccd(e.target.value)}
+            placeholder="Nhập 12 số căn cước"
+            maxLength={12}
+            className="w-full text-sm rounded-2xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus:ring-primary-500 focus:border-primary-500 py-2.5 px-4"
+          />
+        </div>
+
         {/* SUM */}
-        <div className="flex flex-col space-y-4 ">
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>{formatPrice(priceParam, "USD")} x {daysCount} day</span>
+        <div className="flex flex-col space-y-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+          <div className="flex justify-between text-sm text-neutral-6000 dark:text-neutral-300 font-medium">
+            <span>{formatPrice(priceParam, "USD")} x {daysCount} ngày</span>
             <span>{formatPrice(priceParam * daysCount, "USD")}</span>
           </div>
-
-          <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-          <div className="flex justify-between font-semibold">
-            <span>Total</span>
+          <div className="flex justify-between text-sm text-neutral-500 font-medium">
+            <span>Bảo hiểm & Phí dịch vụ:</span>
+            <span>{formatPrice(15, "USD")}</span>
+          </div>
+          <div className="border-b border-neutral-100 dark:border-neutral-800"></div>
+          <div className="flex justify-between font-bold text-base text-neutral-900 dark:text-white">
+            <span>Tổng cộng:</span>
             <span>{formatPrice(priceParam * daysCount + 15, "USD")}</span>
           </div>
         </div>
 
-        {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${priceParam}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent("Car Rental")}&address=${encodeURIComponent("Tokyo, Jappan")}&beds=${seatsParam}${startDate ? `&checkIn=${startDate.toISOString().split("T")[0]}` : ""}${endDate ? `&checkOut=${endDate.toISOString().split("T")[0]}` : ""}` as any}>Reserve</ButtonPrimary>
+        {/* SUBMIT BUTTON */}
+        <ButtonPrimary 
+          onClick={handleConfirmCarBooking} 
+          loading={bookingLoading} 
+          disabled={bookingLoading}
+          className="w-full h-12 text-sm font-extrabold shadow-lg"
+        >
+          Xác nhận thuê xe
+        </ButtonPrimary>
       </div>
     );
   };

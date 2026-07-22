@@ -169,7 +169,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         }
 
         // 2. Lock room
-        const lockRes = await fetch("/api/rooms/lock", {
+        let lockRes = await fetch("/api/rooms/lock", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -179,8 +179,37 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           }),
         });
 
+        if (lockRes.status === 401) {
+          console.warn("Lock room returned 401. Trying to sync session...");
+          const { data: { session } } = await supabaseBrowser.auth.getSession();
+          if (session) {
+            const syncRes = await fetch("/api/auth/session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ session }),
+            });
+            if (syncRes.ok) {
+              // Retry lock
+              lockRes = await fetch("/api/rooms/lock", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  room_id: targetRoom.id,
+                  checkIn: checkInStr,
+                  checkOut: checkOutStr,
+                }),
+              });
+            }
+          }
+        }
+
         if (!lockRes.ok) {
           const lockData = await lockRes.json();
+          if (lockRes.status === 401 || lockData.error === "Unauthorized") {
+            alert("Phiên đăng nhập của bạn đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại!");
+            router.push(`/login?callbackUrl=${encodeURIComponent(window.location.href)}`);
+            return;
+          }
           alert(lockData.error || "Phòng đã bị giữ bởi người khác. Vui lòng chọn ngày khác hoặc phòng khác!");
           router.back();
           return;

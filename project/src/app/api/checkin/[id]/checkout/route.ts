@@ -132,10 +132,22 @@ export async function GET(
       console.warn("Could not fetch service orders for checkout calculation:", e);
     }
 
-    const totalServiceAmount = serviceOrders.reduce(
-      (sum, order) => sum + Number(order.total_amount || 0),
-      0
-    );
+    const totalServiceAmount = serviceOrders.reduce((sum, order) => {
+      let amount = Number(order.total_amount || 0);
+      try {
+        if (order.notes && order.notes.trim().startsWith("{")) {
+          const notesObj = JSON.parse(order.notes);
+          if (notesObj.is_car_rental) {
+            // Only add to bill if the car rental has been confirmed as returned (COMPLETED)
+            if (order.status !== "COMPLETED") {
+              return sum; // skip if not completed yet
+            }
+            amount = amount * 26320; // Convert USD to VND
+          }
+        }
+      } catch (e) {}
+      return sum + amount;
+    }, 0);
 
     // 4. Cộng dồn trực tiếp vào InvoiceData cuối cùng (Tiền phòng + Tiền phạt + Tiền dịch vụ đồ ăn)
     const roomCharges = Number(booking.total_amount);

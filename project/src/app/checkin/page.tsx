@@ -751,12 +751,31 @@ function CheckInContent() {
                       )}
                       {checkoutDetails.service_charges?.orders?.length > 0 && (
                         <div className="pl-3 space-y-1 text-xs border-l border-amber-500/30 my-1">
-                          {checkoutDetails.service_charges.orders.map((ord: any) => (
-                            <div key={ord.id} className="flex justify-between text-neutral-400">
-                              <span>• {ord.notes?.replace(/\[[^\]]+\]/g, "").trim() || "Service Order"}:</span>
-                              <span>{formatMoney(ord.total_amount)}</span>
-                            </div>
-                          ))}
+                          {checkoutDetails.service_charges.orders.map((ord: any) => {
+                            let displayName = "Service Order";
+                            try {
+                              if (ord.notes && ord.notes.trim().startsWith("{")) {
+                                const notesObj = JSON.parse(ord.notes);
+                                if (notesObj.is_car_rental) {
+                                  const pick = notesObj.pickup_date ? notesObj.pickup_date.split("T")[0] : "";
+                                  const drop = notesObj.dropoff_date ? notesObj.dropoff_date.split("T")[0] : "";
+                                  displayName = `Thuê xe ${notesObj.car_type} (${pick} ➔ ${drop})`;
+                                } else {
+                                  displayName = notesObj.notes || "Service Order";
+                                }
+                              } else {
+                                displayName = ord.notes?.replace(/\[[^\]]+\]/g, "").trim() || "Service Order";
+                              }
+                            } catch (e) {
+                              displayName = ord.notes?.replace(/\[[^\]]+\]/g, "").trim() || "Service Order";
+                            }
+                            return (
+                              <div key={ord.id} className="flex justify-between text-neutral-400">
+                                <span>• {displayName}:</span>
+                                <span>{formatMoney(ord.total_amount * 26320)}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       {checkoutDetails.incident_charges?.total_fine > 0 && (

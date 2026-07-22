@@ -7,7 +7,7 @@ import DashboardLayout from "../dashboard/layout";
 import Link from "next/link";
 import type { Booking } from "@/types/hotel";
 import { Route } from "@/routers/types";
-import { Eye, Calendar, User as UserIcon, Search, ArrowRight, RefreshCw, Filter, CreditCard, Users } from "lucide-react";
+import { Eye, Calendar, User as UserIcon, Search, ArrowRight, RefreshCw, Filter, CreditCard, Users, Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Input from "@/shared/Input";
 
@@ -19,6 +19,47 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
 
+  const [carBookings, setCarBookings] = useState<any[]>([]);
+  const [carLoading, setCarLoading] = useState(false);
+
+  const fetchCarBookings = async () => {
+    setCarLoading(true);
+    try {
+      const res = await fetch("/api/car-bookings");
+      if (res.ok) {
+        const data = await res.json();
+        setCarBookings(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch car bookings:", err);
+    } finally {
+      setCarLoading(false);
+    }
+  };
+
+  const handleReturnVehicle = async (cbId: string) => {
+    if (!confirm("Bạn muốn yêu cầu trả chiếc xe này?")) return;
+    try {
+      const res = await fetch(`/api/car-bookings?id=${cbId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "IN_PROGRESS",
+          status_text: "return requested",
+        }),
+      });
+      if (res.ok) {
+        alert("✅ Yêu cầu trả xe đã được gửi tới Lễ tân!");
+        fetchCarBookings();
+      } else {
+        alert("Gửi yêu cầu trả xe thất bại.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Đã xảy ra lỗi.");
+    }
+  };
+
   // Filters
   const [statusTab, setStatusTab] = useState<string>("ALL");
   const [searchKeyword, setSearchKeyword] = useState<string>("");
@@ -28,6 +69,7 @@ export default function BookingsPage() {
       router.push("/hsrm-login?callbackUrl=/bookings" as Route);
     } else if (user) {
       fetchBookings();
+      fetchCarBookings();
     }
   }, [user, isLoading, router]);
 
@@ -286,6 +328,116 @@ export default function BookingsPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Car Rentals Section */}
+      <div className="space-y-6 pt-6">
+        <div className="border-t border-neutral-200 dark:border-neutral-700 pt-6">
+          <h2 className="text-2xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-3">
+            <Car className="w-7 h-7 text-primary-6000" />
+            Dịch Vụ Thuê Xe Của Tôi (My Car Services)
+          </h2>
+          <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
+            Theo dõi trạng thái và yêu cầu trả xe cho các dịch vụ xe tự lái liên kết với phòng nghỉ của bạn.
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl overflow-hidden shadow-sm">
+          {carLoading ? (
+            <div className="p-12 text-center text-neutral-500">Đang tải danh sách đặt xe...</div>
+          ) : carBookings.length === 0 ? (
+            <div className="p-12 text-center text-neutral-500">Bạn chưa đăng ký dịch vụ thuê xe nào.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-neutral-600 dark:text-neutral-300">
+                <thead className="bg-neutral-50 dark:bg-neutral-800/80 text-neutral-800 dark:text-neutral-200 border-b border-neutral-200 dark:border-neutral-800">
+                  <tr>
+                    <th className="px-6 py-4 font-extrabold">Mã Đặt Xe</th>
+                    <th className="px-6 py-4 font-extrabold">Loại Xe</th>
+                    <th className="px-6 py-4 font-extrabold">Phòng Liên Kết</th>
+                    <th className="px-6 py-4 font-extrabold">Thời Gian Thuê</th>
+                    <th className="px-6 py-4 font-extrabold">Số CCCD GPLX</th>
+                    <th className="px-6 py-4 font-extrabold">Trạng Thế</th>
+                    <th className="px-6 py-4 font-extrabold">Tổng Chi Phí</th>
+                    <th className="px-6 py-4 font-extrabold text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  {carBookings.map((cb) => {
+                    const statusColors: any = {
+                      pending: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200",
+                      rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200",
+                      "Wait for the vehicle in the lobby.": "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200",
+                      "waiting to return the vehicle": "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200",
+                      "return requested": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200",
+                      returned: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200",
+                    };
+
+                    const statusLabels: any = {
+                      pending: "⏳ Chờ duyệt (Pending)",
+                      rejected: "❌ Từ chối (Rejected)",
+                      "Wait for the vehicle in the lobby.": "lobby Chờ nhận xe ở sảnh",
+                      "waiting to return the vehicle": "🚗 Đang thuê (Chờ trả xe)",
+                      "return requested": "⏳ Chờ xác nhận trả xe",
+                      returned: "✅ Đã trả xe thành công",
+                    };
+
+                    return (
+                      <tr key={cb.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/50 transition-colors">
+                        <td className="px-6 py-4 font-mono font-bold text-neutral-900 dark:text-white">
+                          {cb.id.split("-")[0].toUpperCase()}
+                        </td>
+                        <td className="px-6 py-4 font-extrabold text-neutral-900 dark:text-white">
+                          {cb.car_type}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="bg-primary-50 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300 font-bold px-2 py-1 rounded-lg text-xs">
+                            Phòng {cb.booking?.room?.room_number}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-neutral-800 dark:text-neutral-200">
+                            {new Date(cb.pickup_date).toLocaleDateString("vi-VN")} ➔ {new Date(cb.dropoff_date).toLocaleDateString("vi-VN")}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs">
+                          {cb.gplx_cccd}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${statusColors[cb.status_text] || "bg-gray-100 text-gray-800"}`}>
+                            {statusLabels[cb.status_text] || cb.status_text}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 font-extrabold text-neutral-900 dark:text-white">
+                          {formatMoney(cb.total_amount * 26320)} ({(cb.total_amount).toLocaleString("en-US")} USD)
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {cb.status_text === "waiting to return the vehicle" && (
+                            <button
+                              onClick={() => handleReturnVehicle(cb.id)}
+                              className="px-3.5 py-2 rounded-xl bg-primary-6000 hover:bg-primary-700 text-white font-bold text-xs shadow-sm transition-all"
+                            >
+                              Trả xe (Return vehicle)
+                            </button>
+                          )}
+                          {cb.status_text === "return requested" && (
+                            <span className="text-xs text-neutral-400 font-medium italic">Đang chờ Lễ tân xác nhận trả xe...</span>
+                          )}
+                          {cb.status_text === "returned" && (
+                            <span className="text-xs text-green-600 dark:text-green-400 font-bold">✓ Đã hoàn tất</span>
+                          )}
+                          {cb.status_text === "rejected" && (
+                            <span className="text-xs text-red-600 dark:text-red-400 font-bold">✓ Bị từ chối</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
       </div>

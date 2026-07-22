@@ -14,6 +14,7 @@ export interface RentalCarDatesRangeInputProps {
   startDate: Date | null;
   endDate: Date | null;
   onChangeDate: (dates: [Date | null, Date | null]) => void;
+  excludeDateIntervals?: { start: Date; end: Date }[];
 }
 
 const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
@@ -21,6 +22,7 @@ const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
   startDate,
   endDate,
   onChangeDate,
+  excludeDateIntervals,
 }) => {
 
   const renderInput = () => {
@@ -94,6 +96,7 @@ const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
                     monthsShown={2}
                     showPopperArrow={false}
                     inline
+                    excludeDateIntervals={excludeDateIntervals}
                     renderCustomHeader={(p) => (
                       <DatePickerCustomHeaderTwoMonth {...p} />
                     )}

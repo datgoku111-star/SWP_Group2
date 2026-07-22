@@ -21,7 +21,8 @@ import {
   Home, 
   ChevronRight,
   User,
-  CheckCheck
+  CheckCheck,
+  Car
 } from "lucide-react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
@@ -33,7 +34,7 @@ export default function ReceptionistServiceHub() {
   const [services, setServices] = useState<Service[]>([]);
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState<"ROOMS" | "ORDERS">("ROOMS");
+  const [activeSubTab, setActiveSubTab] = useState<"ROOMS" | "ORDERS" | "CAR_RENTALS">("ROOMS");
   const [filterFloor, setFilterFloor] = useState<number | "ALL">("ALL");
 
   // Modal State for Ordering Room Service / F&B
@@ -43,13 +44,16 @@ export default function ReceptionistServiceHub() {
   const [orderNotes, setOrderNotes] = useState("");
   const [serviceCategory, setServiceCategory] = useState<string>("ALL");
 
+  const [carRentals, setCarRentals] = useState<any[]>([]);
+
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [roomsRes, servicesRes, ordersRes] = await Promise.all([
+      const [roomsRes, servicesRes, ordersRes, carRes] = await Promise.all([
         fetch("/api/rooms?all=true"),
         fetch("/api/services?all=true"),
         fetch("/api/orders?status=PENDING,IN_PROGRESS,COMPLETED"),
+        fetch("/api/car-bookings"),
       ]);
 
       if (roomsRes.ok) {
@@ -78,6 +82,13 @@ export default function ReceptionistServiceHub() {
         const oData = await ordersRes.json();
         if (Array.isArray(oData)) {
           setActiveOrders(oData);
+        }
+      }
+
+      if (carRes.ok) {
+        const cData = await carRes.json();
+        if (Array.isArray(cData)) {
+          setCarRentals(cData);
         }
       }
     } catch (err) {
@@ -246,6 +257,25 @@ export default function ReceptionistServiceHub() {
     }
   };
 
+  const handleUpdateCarBookingStatus = async (cbId: string, status: string, statusText: string) => {
+    try {
+      const res = await fetch(`/api/car-bookings?id=${cbId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, status_text: statusText }),
+      });
+      if (res.ok) {
+        alert("✅ Đã cập nhật trạng thái thuê xe thành công!");
+        fetchAllData();
+      } else {
+        alert("Cập nhật trạng thái thất bại.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Đã xảy ra lỗi.");
+    }
+  };
+
   const handleCancelOrder = async (orderId: string) => {
     if (!confirm("Bạn có chắc chắn muốn từ chối/hủy yêu cầu gọi món này?")) return;
     try {
@@ -303,6 +333,17 @@ export default function ReceptionistServiceHub() {
           >
             <Clock className="w-4 h-4" />
             Đơn Dịch Vụ Đang Xử Lý ({activeOrders.length})
+          </button>
+          <button
+            onClick={() => setActiveSubTab("CAR_RENTALS")}
+            className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
+              activeSubTab === "CAR_RENTALS"
+                ? "bg-white text-primary-700 shadow-lg scale-105"
+                : "bg-white/10 text-white hover:bg-white/20"
+            }`}
+          >
+            <Car className="w-4 h-4" />
+            Dịch Vụ Thuê Xe ({carRentals.length})
           </button>
           <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title="Làm mới">
             <RefreshCw className="w-5 h-5" />
@@ -543,6 +584,179 @@ export default function ReceptionistServiceHub() {
                         </button>
                       </div>
                     )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB 3: CAR RENTALS VERIFICATION & DISPATCH */}
+      {activeSubTab === "CAR_RENTALS" && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-700 pb-4">
+            <h3 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Car className="w-6 h-6 text-primary-600" />
+              Danh Sách Yêu Cầu Thuê Xe Tự Lái ({carRentals.length})
+            </h3>
+          </div>
+
+          {carRentals.length === 0 ? (
+            <div className="p-12 text-center text-neutral-500">
+              Chưa có yêu cầu thuê xe nào được gửi lên.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {carRentals.map((rental) => {
+                const checkInCccd = rental.booking?.guest?.id_card_number || rental.booking?.user?.id_card_number || "Chưa check-in";
+                const gplxCccd = rental.gplx_cccd;
+                const isMatching = checkInCccd && gplxCccd && checkInCccd.trim() === gplxCccd.trim();
+
+                let statusColor = "bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300";
+                let statusText = "⏳ Chờ đối chiếu duyệt GPLX (Pending)";
+
+                if (rental.status_text === "rejected") {
+                  statusColor = "bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300";
+                  statusText = "❌ Đã từ chối (CCCD không trùng khớp)";
+                } else if (rental.status_text === "Wait for the vehicle in the lobby.") {
+                  statusColor = "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300";
+                  statusText = "lobby Chờ bàn giao xe ở sảnh";
+                } else if (rental.status_text === "waiting to return the vehicle") {
+                  statusColor = "bg-purple-100 text-purple-800 border border-purple-300 dark:bg-purple-900/40 dark:text-purple-300";
+                  statusText = "🚗 Đang thuê (Chờ trả xe)";
+                } else if (rental.status_text === "return requested") {
+                  statusColor = "bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300";
+                  statusText = "⏳ Khách yêu cầu trả xe — Chờ Lễ tân nhận xe";
+                } else if (rental.status_text === "returned") {
+                  statusColor = "bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/40 dark:text-green-300";
+                  statusText = "✅ Đã trả xe thành công (Tiền xe đã cộng vào Bill)";
+                }
+
+                return (
+                  <div key={rental.id} className="p-6 rounded-3xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex flex-col gap-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-2 flex-grow">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="bg-primary-600 text-white font-black px-3 py-1 rounded-xl text-sm">
+                            Phòng {rental.booking?.room?.room_number || "P101"}
+                          </span>
+                          <span className="text-xs font-bold text-neutral-500">Mã: #{rental.id.split("-")[0].toUpperCase()}</span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
+                            {statusText}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 pt-2 text-sm">
+                          <div>
+                            <span className="text-neutral-400 font-medium">Khách hàng:</span>
+                            <span className="text-neutral-850 dark:text-neutral-200 font-bold ml-1.5">{rental.booking?.user?.full_name || rental.booking?.guest?.full_name || "Guest"}</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-400 font-medium">Xe đăng ký:</span>
+                            <span className="text-neutral-855 dark:text-neutral-200 font-bold ml-1.5">{rental.car_type}</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-400 font-medium">Thời gian thuê:</span>
+                            <span className="text-neutral-860 dark:text-neutral-200 font-bold ml-1.5">
+                              {new Date(rental.pickup_date).toLocaleDateString("vi-VN")} ➔ {new Date(rental.dropoff_date).toLocaleDateString("vi-VN")}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                          <div className="space-y-1">
+                            <div className="text-xs text-neutral-400 uppercase font-bold">Số CCCD Check-in phòng:</div>
+                            <div className="text-sm font-black font-mono text-neutral-800 dark:text-neutral-200">
+                              💳 {checkInCccd}
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-xs text-neutral-400 uppercase font-bold">Số CCCD trên GPLX tự khai:</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black font-mono text-neutral-800 dark:text-neutral-200">
+                                🪪 {gplxCccd || "Chưa nhập"}
+                              </span>
+                              {checkInCccd && gplxCccd ? (
+                                isMatching ? (
+                                  <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-[10px] font-black px-1.5 py-0.5 rounded-md border border-green-200">CCCD TRÙNG KHỚP</span>
+                                ) : (
+                                  <span className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-[10px] font-black px-1.5 py-0.5 rounded-md border border-red-200">CCCD LỆCH</span>
+                                )
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-neutral-500 flex items-center gap-1.5 pt-1">
+                          <span>📂 File ảnh GPLX thủ công:</span>
+                          <span className="text-primary-600 underline font-bold select-all cursor-pointer">{rental.gplx_image || "gplx_manual_upload.png"}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex flex-col justify-between items-end gap-2">
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-neutral-400">Giá trị thuê xe</div>
+                          <div className="text-xl font-black text-primary-600 dark:text-primary-400">
+                            {(rental.total_amount * 26320).toLocaleString("vi-VN")} đ
+                          </div>
+                          <span className="text-xs text-neutral-400 font-mono">({(rental.total_amount).toLocaleString("en-US")} USD)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-700 justify-end items-center">
+                      {rental.status_text === "pending" && (
+                        <>
+                          <button
+                            onClick={() => handleUpdateCarBookingStatus(rental.id, "CANCELLED", "rejected")}
+                            className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 rounded-xl text-xs font-bold transition-colors"
+                          >
+                            ❌ Từ chối (CCCD không khớp)
+                          </button>
+                          <button
+                            onClick={() => handleUpdateCarBookingStatus(rental.id, "IN_PROGRESS", "Wait for the vehicle in the lobby.")}
+                            className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+                          >
+                            <Check className="w-4 h-4" /> Duyệt GPLX & Chờ ở Sảnh
+                          </button>
+                        </>
+                      )}
+
+                      {rental.status_text === "Wait for the vehicle in the lobby." && (
+                        <button
+                          onClick={() => handleUpdateCarBookingStatus(rental.id, "IN_PROGRESS", "waiting to return the vehicle")}
+                          className="px-5 py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+                        >
+                          <Car className="w-4 h-4" /> 🚗 Giao xe cho Khách hàng
+                        </button>
+                      )}
+
+                      {rental.status_text === "return requested" && (
+                        <button
+                          onClick={() => handleUpdateCarBookingStatus(rental.id, "COMPLETED", "returned")}
+                          className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+                        >
+                          <CheckCheck className="w-4 h-4" /> ✓ Xác nhận trả xe & Ghi nợ phòng
+                        </button>
+                      )}
+
+                      {rental.status_text === "waiting to return the vehicle" && (
+                        <span className="text-xs text-neutral-400 font-medium italic">Khách hàng đang thuê xe. Chờ khách trả xe trên giao diện...</span>
+                      )}
+
+                      {rental.status_text === "returned" && (
+                        <span className="text-xs text-green-600 dark:text-green-400 font-bold flex items-center gap-1">
+                          ✓ Đã thanh toán & hoàn tất bàn giao
+                        </span>
+                      )}
+
+                      {rental.status_text === "rejected" && (
+                        <span className="text-xs text-red-600 dark:text-red-400 font-bold">
+                          ✓ Đã từ chối do lệch thông tin
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}

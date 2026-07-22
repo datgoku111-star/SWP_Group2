@@ -111,7 +111,20 @@ const LoginPageContent = () => {
         return;
       }
 
-      // Successful Supabase login - AuthContext subscription will handle updating state
+      // Successful Supabase login - Sync session to cookie first to prevent race conditions on redirect
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        if (session) {
+          await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session }),
+          });
+        }
+      } catch (syncErr) {
+        console.error("Failed to sync session on login:", syncErr);
+      }
+
       router.push(callbackUrl as Route);
     } catch (err: any) {
       console.error("Login failed:", err);
