@@ -169,7 +169,7 @@ export default function CustomerCarBookingsPage() {
             <AlertCircle className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
             <p className="text-neutral-500 dark:text-neutral-450 font-medium text-lg">Bạn chưa đăng ký sử dụng dịch vụ thuê xe nào.</p>
             <button 
-              onClick={() => router.push("/services")}
+              onClick={() => router.push("/listing-car")}
               className="mt-4 px-5 py-2.5 bg-primary-6000 text-white rounded-xl text-xs font-bold shadow-md hover:bg-primary-700 transition-all flex items-center gap-1.5 mx-auto"
             >
               Đặt dịch vụ ngay <ArrowRight className="w-4 h-4" />

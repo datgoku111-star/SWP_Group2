@@ -334,7 +334,6 @@ export const NAVIGATION_DEMO_2: NavItemType[] = [
     name: "Listing pages",
     children: [
       { id: ncNanoId(), href: "/listing-car", name: "Cars listings" },
-      { id: ncNanoId(), href: "/listing-car-map", name: "Cars listings (map)" },
       { id: ncNanoId(), href: "/listing-car-detail", name: "Car detail" },
       {
         id: ncNanoId(),
