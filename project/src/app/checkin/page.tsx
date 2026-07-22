@@ -73,6 +73,7 @@ function CheckInContent() {
   // Check-Out Payment State
   const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH" | "BANK_TRANSFER">("CARD");
   const [showQR, setShowQR] = useState(false);
+  const [payosQRUrl, setPayosQRUrl] = useState<string | null>(null);
   const [transactionRef, setTransactionRef] = useState("");
   const [customAmount, setCustomAmount] = useState<number | null>(null);
   const [checkoutDetails, setCheckoutDetails] = useState<any | null>(null);
@@ -279,9 +280,32 @@ function CheckInContent() {
   };
 
   // Action 2: Confirm Check-Out & Settle Bill
-  const handleCheckoutClick = () => {
+  const handleCheckoutClick = async () => {
     if (paymentMethod === "BANK_TRANSFER" && !showQR) {
-      setShowQR(true);
+      setActionLoading(true);
+      setError("");
+      try {
+        const amountToPay = customAmount !== null ? customAmount : getAmountToSettle();
+        const payOSRes = await fetch("http://localhost:5000/api/payment/create-embedded-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookingId: booking?.id || "",
+            type: "checkout",
+            roomName: `Checkout Room ${booking?.room?.room_number}`,
+            totalPrice: amountToPay,
+          }),
+        });
+        const payOSData = await payOSRes.json();
+        if (!payOSRes.ok) throw new Error(payOSData.error || "Lỗi tạo mã PayOS");
+        
+        setPayosQRUrl(payOSData.qrCode);
+        setShowQR(true);
+      } catch (err: any) {
+        setError(err.message || "Không thể tạo mã VietQR từ PayOS");
+      } finally {
+        setActionLoading(false);
+      }
       return;
     }
     confirmCheckOut();
@@ -899,15 +923,22 @@ function CheckInContent() {
 
                     {paymentMethod === "BANK_TRANSFER" && booking && showQR && (
                       <div className="mt-5 p-5 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 flex flex-col items-center">
-                        <span className="text-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-200">Quét mã VietQR (Thanh toán)</span>
-                        <div className="p-3 bg-white rounded-xl shadow-sm border border-neutral-200">
+                        <span className="text-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                          Quét mã VietQR (PayOS) để thanh toán
+                        </span>
+                        <div className="p-3 bg-white rounded-xl shadow-sm border border-neutral-200 relative overflow-hidden group">
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`VIETQR-DEMO-${booking.id}-${getAmountToSettle()}`)}`}
+                            src={payosQRUrl && payosQRUrl.startsWith("http") ? payosQRUrl : `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(payosQRUrl || "")}`}
                             alt="VietQR Code"
-                            className="w-40 h-40 object-contain"
+                            className="w-48 h-48 object-contain"
                           />
+                          {/* Scanning Animation line */}
+                          <div className="absolute left-0 right-0 h-0.5 bg-primary-500 opacity-60 animate-bounce top-0 group-hover:block"></div>
                         </div>
-                        <p className="text-xs text-neutral-500 mt-3 text-center px-4">Khách hàng có thể quét mã này bằng ứng dụng ngân hàng để thanh toán nhanh.</p>
+                        <p className="text-xs text-neutral-500 mt-4 text-center px-4 leading-relaxed">
+                          Mã QR VietQR đã được tạo tự động bởi PayOS. Vui lòng nhắc khách hàng giữ nguyên nội dung chuyển khoản để hệ thống xác nhận thanh toán.
+                        </p>
                       </div>
                     )}
                   </div>
