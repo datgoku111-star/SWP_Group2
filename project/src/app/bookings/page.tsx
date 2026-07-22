@@ -121,7 +121,7 @@ export default function BookingsPage() {
   const handleCancelBooking = async () => {
     if (!bookingToCancel) return;
     if (isStaff && !cancelReason.trim()) {
-      alert("Vui lòng nhập lý do hủy phòng.");
+      alert("Please enter a cancellation reason.");
       return;
     }
 
@@ -355,7 +355,7 @@ export default function BookingsPage() {
                           }}
                           className="inline-flex items-center px-3 py-1.5 rounded-xl bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 font-semibold text-xs transition-all"
                         >
-                          <XCircle className="w-3.5 h-3.5 mr-1" /> Hủy phòng
+                          <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel booking
                         </button>
                       )}
                       <Link
@@ -403,20 +403,20 @@ export default function BookingsPage() {
             >
               <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-neutral-900 shadow-xl rounded-2xl">
                 <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                  Xác nhận hủy đặt phòng
+                  Confirm Cancellation
                 </Dialog.Title>
                 <div className="mt-2 text-sm text-gray-500 dark:text-neutral-400">
-                  Bạn có chắc chắn muốn hủy đặt phòng{" "}
+                  Are you sure you want to cancel booking{" "}
                   <span className="font-bold text-gray-800 dark:text-gray-200">
                     {bookingToCancel?.id.split("-")[0].toUpperCase()}
                   </span>
                   ?
                   {isStaff ? (
                     <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-xl font-medium text-left">
-                      Lưu ý: Tiền cọc sẽ được hoàn trả lại cho khách hàng.
+                      Note: The deposit will be refunded to the customer.
                       <textarea
                         className="w-full mt-3 p-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-neutral-900 text-sm font-normal text-neutral-700 dark:text-neutral-300"
-                        placeholder="Nhập lý do hủy phòng..."
+                        placeholder="Enter cancellation reason..."
                         value={cancelReason}
                         onChange={(e) => setCancelReason(e.target.value)}
                         rows={3}
@@ -424,19 +424,19 @@ export default function BookingsPage() {
                     </div>
                   ) : (
                     <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl font-medium">
-                      Lưu ý: Hủy phòng sẽ làm bạn mất khoản tiền cọc là 10% tổng giá trị (
+                      Note: Canceling the booking will result in the loss of your 10% deposit (
                       <span className="font-bold">{formatMoney((bookingToCancel?.total_amount || 0) * 0.1)}</span>
-                      ). Hành động này không thể hoàn tác.
+                      ). This action cannot be undone.
                     </div>
                   )}
                 </div>
 
                 <div className="mt-6 flex justify-end gap-3">
                   <ButtonSecondary onClick={() => setCancelModalOpen(false)} disabled={isCancelling}>
-                    Không, giữ lại
+                    No, keep it
                   </ButtonSecondary>
                   <ButtonPrimary onClick={handleCancelBooking} loading={isCancelling} className="bg-red-600 hover:bg-red-700">
-                    Đồng ý hủy
+                    Yes, cancel
                   </ButtonPrimary>
                 </div>
               </div>
