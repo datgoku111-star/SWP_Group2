@@ -33,6 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Experiences", href: "/admin/experiences", icon: Compass },
     { name: "Bookings", href: "/admin/bookings", icon: CalendarCheck },
     { name: "Payments", href: "/admin/payments", icon: CreditCard },
+    { name: "Lost & Found", href: "/admin/lost-found", icon: Compass },
     { name: "User Management", href: "/admin/users", icon: Users },
   ];
 

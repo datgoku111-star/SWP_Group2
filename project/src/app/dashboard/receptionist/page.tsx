@@ -25,6 +25,7 @@ import {
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import Input from "@/shared/Input";
 import type { Room, Booking, RoomType } from "@/types/hotel";
+import { ReceptionistLostFoundDashboard } from "@/components/lost-found/ReceptionistLostFoundDashboard";
 
 export default function ReceptionistDashboard() {
   const { user, isLoading } = useAuth();
@@ -515,7 +516,7 @@ export default function ReceptionistDashboard() {
       </div>
 
       {/* Quick Navigation Footer Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
         <Link
           href="/checkin"
           className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-primary-500 transition-all flex items-center gap-4 group"
@@ -550,8 +551,21 @@ export default function ReceptionistDashboard() {
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="font-extrabold text-base text-neutral-900 dark:text-white">Housekeeping Grid & Override</h4>
-            <p className="text-xs text-neutral-500 mt-0.5">Monitor room cleanliness & perform emergency turnover</p>
+            <h4 className="font-extrabold text-base text-neutral-900 dark:text-white">Housekeeping Grid</h4>
+            <p className="text-xs text-neutral-500 mt-0.5">Monitor room cleanliness & turnover</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/dashboard/receptionist/lost-found"
+          className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-amber-500 transition-all flex items-center gap-4 group"
+        >
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
+            <Search className="w-6 h-6" />
+          </div>
+          <div>
+            <h4 className="font-extrabold text-base text-neutral-900 dark:text-white">Lost & Found Hub</h4>
+            <p className="text-xs text-neutral-500 mt-0.5">Tiếp nhận & xử lý khai báo đồ thất lạc từ khách</p>
           </div>
         </Link>
       </div>
@@ -609,6 +623,17 @@ export default function ReceptionistDashboard() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Embedded Lost & Found Management Module */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
+        <div>
+          <h3 className="text-xl font-bold text-neutral-900 dark:text-white">Lost & Found Management Console</h3>
+          <p className="text-sm text-neutral-500 mt-1">
+            Tiếp nhận báo cáo đồ thất lạc trực tiếp từ Khách hàng, xem thông tin và xác nhận chuyển Admin xử lý.
+          </p>
+        </div>
+        <ReceptionistLostFoundDashboard />
       </div>
     </div>
   );

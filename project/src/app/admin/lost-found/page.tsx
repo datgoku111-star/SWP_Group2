@@ -1,44 +1,27 @@
-import React from 'react';
-import { supabaseServer as supabase } from '@/lib/supabase';
-import LostFoundTable from '@/components/lost-found/LostFoundTable';
-import { LostFoundItem } from '@/types/lost-found';
-import { Route } from '@/routers/types';
+"use client";
 
-export const revalidate = 0; // Tắt cache
+import React, { useState } from "react";
+import { AdminLostFoundDashboard } from "@/components/lost-found/AdminLostFoundDashboard";
 
-export default async function LostFoundPage() {
-  const { data, error } = await supabase
-    .from('lost_found_items')
-    .select('*')
-    .order('found_at', { ascending: false });
-
-  if (error) {
-    console.error('Lỗi khi fetch đồ thất lạc:', error);
-  }
-
-  const items = (data || []) as LostFoundItem[];
+export default function LostFoundPage() {
+  const [activeTab, setActiveTab] = useState<"CUSTOMER_REPORTS">("CUSTOMER_REPORTS");
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Đồ thất lạc</h1>
-          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-            Danh sách các vật dụng khách hàng để quên hoặc thất lạc tại khách sạn.
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          {/* Nút này sẽ dẫn đến trang tạo mới đồ thất lạc (Có thể làm ở phase phụ nếu cần) */}
-          <a
-            href={"/admin/lost-found/create" as Route}
-            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
-            + Ghi nhận đồ thất lạc
-          </a>
-        </div>
+    <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-7xl mx-auto space-y-6">
+      <div className="flex border-b border-gray-200 dark:border-gray-700 gap-6">
+        <button
+          onClick={() => setActiveTab("CUSTOMER_REPORTS")}
+          className={`pb-3 text-sm font-bold border-b-2 transition ${
+            activeTab === "CUSTOMER_REPORTS"
+              ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          🔍 QL Báo Cáo Đồ Thất Lạc Từ Khách Hàng (Quy Trình 9 Trạng Thái)
+        </button>
       </div>
 
-      <LostFoundTable items={items} />
+      <AdminLostFoundDashboard />
     </div>
   );
 }
