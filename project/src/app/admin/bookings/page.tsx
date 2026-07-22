@@ -142,7 +142,7 @@ export default function AdminBookingsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-neutral-800 p-6 rounded-3xl border border-neutral-100 dark:border-neutral-700 shadow-sm">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-primary-600" />
+            <Calendar className="w-8 h-8 text-primary-6000" />
             Quản Lý Toàn Bộ Đơn Đặt Phòng (`Bookings Directory`)
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
@@ -167,7 +167,7 @@ export default function AdminBookingsPage() {
             placeholder="Tìm theo Mã Booking, Tên Khách Hàng hoặc Số Phòng..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 text-sm outline-none focus:ring-2 focus:ring-primary-600"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 text-sm outline-none focus:ring-2 focus:ring-primary-6000"
           />
         </div>
 
@@ -178,7 +178,7 @@ export default function AdminBookingsPage() {
               onClick={() => setStatusFilter(st)}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 statusFilter === st
-                  ? "bg-primary-600 text-white shadow-md"
+                  ? "bg-primary-6000 text-white shadow-md"
                   : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200"
               }`}
             >
@@ -228,29 +228,79 @@ export default function AdminBookingsPage() {
                     CHECKED_OUT: "🚪 Đã trả (CHECKED_OUT)",
                     CANCELLED: "❌ Đã hủy",
                   };
+
+                  // Parse booking type
+                  let isExp = false;
+                  let isCar = false;
+                  let meta: any = null;
+                  if (b.special_requests) {
+                    try {
+                      meta = JSON.parse(b.special_requests);
+                      if (meta) {
+                        if (meta.isExperience) isExp = true;
+                        if (meta.isCar) isCar = true;
+                      }
+                    } catch (e) {}
+                  }
+
+                  const isUSD = isExp || isCar;
+                  const displayPrice = isUSD 
+                    ? `$${Number(b.total_amount).toFixed(2)}` 
+                    : `${b.total_amount.toLocaleString("vi-VN")} đ`;
+
                   return (
                     <tr key={b.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-700/30 transition-colors">
                       <td className="py-4 px-6">
-                        <div className="font-extrabold text-neutral-900 dark:text-white text-base">
-                          {b.guest?.full_name || b.user?.full_name || "Khách Hàng HSRM"}
+                        <div className="font-extrabold text-neutral-900 dark:text-white text-base flex items-center gap-2">
+                          <span>{b.guest?.full_name || b.user?.full_name || "Khách Hàng HSRM"}</span>
+                          {isExp && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                              Trải nghiệm
+                            </span>
+                          )}
+                          {isCar && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                              Thuê xe
+                            </span>
+                          )}
                         </div>
-                        <div className="text-xs text-primary-600 font-bold mt-0.5">#{b.id}</div>
+                        <div className="text-xs text-primary-6000 font-bold mt-0.5">#{b.id}</div>
                         {b.user?.phone && <div className="text-xs text-neutral-400 mt-0.5">{b.user.phone}</div>}
                       </td>
                       <td className="py-4 px-6">
-                        <span className="bg-primary-50 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300 font-bold px-2.5 py-1 rounded-lg text-sm">
-                          Phòng {b.room?.room_number || "P101"}
-                        </span>
-                        <div className="text-xs text-neutral-500 mt-1">{b.room?.room_type?.name || "Deluxe Ocean View"}</div>
+                        {isExp ? (
+                          <>
+                            <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 font-bold px-2.5 py-1 rounded-lg text-sm capitalize">
+                              🧗 {meta?.title || "Tour Trải nghiệm"}
+                            </span>
+                            <div className="text-xs text-neutral-500 mt-1">Dịch vụ hoạt động trải nghiệm</div>
+                          </>
+                        ) : isCar ? (
+                          <>
+                            <span className="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 font-bold px-2.5 py-1 rounded-lg text-sm">
+                              🚗 {meta?.title || "Thuê xe"}
+                            </span>
+                            <div className="text-xs text-neutral-500 mt-1">Dịch vụ phương tiện tự lái</div>
+                          </>
+                        ) : (
+                          <>
+                            <span className="bg-primary-50 dark:bg-primary-900/40 text-primary-6000 dark:text-primary-300 font-bold px-2.5 py-1 rounded-lg text-sm">
+                              Phòng {b.room?.room_number || "P101"}
+                            </span>
+                            <div className="text-xs text-neutral-500 mt-1">{b.room?.room_type?.name || "Deluxe Ocean View"}</div>
+                          </>
+                        )}
                       </td>
                       <td className="py-4 px-6">
                         <div className="font-medium text-neutral-800 dark:text-neutral-200">
                           {new Date(b.check_in_date).toLocaleDateString("vi-VN")} ➔ {new Date(b.check_out_date).toLocaleDateString("vi-VN")}
                         </div>
-                        <div className="text-xs text-neutral-400 mt-0.5">{b.num_guests} khách đi cùng</div>
+                        <div className="text-xs text-neutral-400 mt-0.5">
+                          {isExp || isCar ? `${b.num_guests} người đăng ký` : `${b.num_guests} khách đi cùng`}
+                        </div>
                       </td>
-                      <td className="py-4 px-6 font-extrabold text-primary-600 dark:text-primary-400 text-base">
-                        {b.total_amount.toLocaleString("vi-VN")} đ
+                      <td className="py-4 px-6 font-extrabold text-primary-6000 dark:text-primary-400 text-base">
+                        {displayPrice}
                       </td>
                       <td className="py-4 px-6">
                         <span className={`px-3 py-1.5 rounded-xl font-bold text-xs ${statusColors[b.status]}`}>
