@@ -6,6 +6,12 @@ import { getAvailableRooms } from "@/lib/db/rooms";
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+    const bodyText = await request.clone().text();
+    try {
+      const fs = require("fs");
+      fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] Request: body=${bodyText}, user=${JSON.stringify(user)}\n`);
+    } catch (e) {}
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -68,12 +74,20 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("Upsert room lock error:", error);
+      try {
+        const fs = require("fs");
+        fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] Upsert error: ${JSON.stringify(error)} (room_id: ${room_id}, user_id: ${user.sub})\n`);
+      } catch (e) {}
       return NextResponse.json({ error: "Failed to lock room" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, lock: data });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Lock room error:", error);
+    try {
+      const fs = require("fs");
+      fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] Exception: ${error.message || error}\n`);
+    } catch (e) {}
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
