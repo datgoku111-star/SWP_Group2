@@ -100,6 +100,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       .channel(`payment-status-${paymentInfo.bookingId}`)
       .on(
         "postgres_changes",
+        {
           table: isService ? "service_orders" : "payments",
           filter: `booking_id=eq.${paymentInfo.bookingId}`,
         },
