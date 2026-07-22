@@ -155,6 +155,22 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
       }
     };
     fetchHomeRooms();
+
+    const channel = supabaseBrowser
+      .channel("live_rooms_homepage")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rooms" },
+        (payload) => {
+          console.log("Realtime room change on homepage:", payload);
+          fetchHomeRooms();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseBrowser.removeChannel(channel);
+    };
   }, [initialStays]);
 
   const filteredStays = stays.filter((stay) => {

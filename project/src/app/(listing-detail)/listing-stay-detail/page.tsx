@@ -121,6 +121,22 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
       }
     };
     fetchLiveRoom();
+
+    const channel = supabaseBrowser
+      .channel("live_rooms_detail")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rooms" },
+        (payload) => {
+          console.log("Realtime room change on detail page:", payload);
+          fetchLiveRoom();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseBrowser.removeChannel(channel);
+    };
   }, [titleParam]);
 
   // 3. Check live rooms available for selected dates
