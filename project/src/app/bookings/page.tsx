@@ -221,10 +221,7 @@ export default function BookingsPage() {
         <div className="w-8 h-8 border-4 border-primary-6000 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-neutral-500 font-medium">Loading Reservations Database...</p>
       </div>
-    );
   }
-
-  const isStaff = ["ADMIN", "RECEPTIONIST"].includes(user?.role || "");
 
   return (
     <DashboardLayout>
