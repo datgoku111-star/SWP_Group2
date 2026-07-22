@@ -28,10 +28,10 @@ export async function PATCH(
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       }
 
-      // Housekeeping can ONLY change DIRTY -> CLEANING, or CLEANING -> AVAILABLE
-      if (currentRoom.status === "DIRTY" && status !== "CLEANING") {
+      // Housekeeping can change DIRTY -> CLEANING or AVAILABLE directly
+      if (currentRoom.status === "DIRTY" && status !== "CLEANING" && status !== "AVAILABLE") {
         return NextResponse.json(
-          { error: "Housekeeping can only update DIRTY rooms to CLEANING." },
+          { error: "Housekeeping can only update DIRTY rooms to CLEANING or AVAILABLE." },
           { status: 403 }
         );
       }
