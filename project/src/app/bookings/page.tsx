@@ -413,6 +413,15 @@ export default function BookingsPage() {
                         {displayPrice}
                       </td>
                       <td className="px-6 py-4 text-right space-x-2">
+                        {isStaff && booking.status === "PENDING" && (
+                          <button
+                            onClick={() => handleConfirmBooking(booking.id)}
+                            disabled={isConfirming === booking.id}
+                            className="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50"
+                          >
+                            <span>{isConfirming === booking.id ? "Confirming..." : "Confirm Booking"}</span>
+                          </button>
+                        )}
                         {isStaff && (booking.status === "CONFIRMED" || booking.status === "PENDING") && (
                           <Link
                             href={`/checkin?bookingId=${booking.id}`}
