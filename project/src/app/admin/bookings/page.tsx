@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, CheckCircle2, XCircle, Clock, Search, Filter, RefreshCw, Eye, ArrowRight, Check } from "lucide-react";
+import { Calendar, CheckCircle2, XCircle, Clock, Search, Filter, RefreshCw, Eye, ArrowRight, Check, X } from "lucide-react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 
@@ -22,6 +22,9 @@ export interface BookingRecord {
   guest?: {
     full_name: string;
     id_card_number?: string;
+    id_card_type?: string;
+    nationality?: string;
+    address?: string;
   };
   room?: {
     room_number: string;
@@ -37,6 +40,8 @@ export default function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -307,43 +312,82 @@ export default function AdminBookingsPage() {
                           {statusLabels[b.status]}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-right space-x-2">
-                        {b.status === "PENDING" && (
-                          <button
-                            onClick={() => updateBookingStatus(b.id, "CONFIRMED")}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition-all inline-flex items-center gap-1"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            Duyệt (Confirm)
-                          </button>
-                        )}
-                        {b.status === "CONFIRMED" && (
-                          <button
-                            onClick={() => updateBookingStatus(b.id, "CHECKED_IN")}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition-all inline-flex items-center gap-1"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Check-In Ngay
-                          </button>
-                        )}
-                        {b.status === "CHECKED_IN" && (
-                          <button
-                            onClick={() => updateBookingStatus(b.id, "CHECKED_OUT")}
-                            className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition-all inline-flex items-center gap-1"
-                          >
-                            <ArrowRight className="w-3.5 h-3.5" />
-                            Check-Out
-                          </button>
-                        )}
-                        {b.status !== "CANCELLED" && b.status !== "CHECKED_OUT" && (
-                          <button
-                            onClick={() => {
-                              if (confirm("Hủy đơn đặt phòng này?")) updateBookingStatus(b.id, "CANCELLED");
-                            }}
-                            className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 font-bold px-2.5 py-1.5 rounded-xl text-xs transition-all"
-                          >
-                            Hủy
-                          </button>
+                      <td className="py-4 px-6 text-right space-x-2 whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(b);
+                            setIsDetailModalOpen(true);
+                          }}
+                          className="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-200 font-bold px-3 py-1.5 rounded-xl text-xs transition-all inline-flex items-center gap-1"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Chi tiết
+                        </button>
+
+                        {/* Room Specific Actions */}
+                        {!isExp && !isCar ? (
+                          <>
+                            {b.status === "PENDING" && (
+                              <button
+                                onClick={() => updateBookingStatus(b.id, "CONFIRMED")}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition-all inline-flex items-center gap-1"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                Duyệt (Confirm)
+                              </button>
+                            )}
+                            {b.status === "CONFIRMED" && (
+                              <button
+                                onClick={() => updateBookingStatus(b.id, "CHECKED_IN")}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition-all inline-flex items-center gap-1"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Check-In Ngay
+                              </button>
+                            )}
+                            {b.status === "CHECKED_IN" && (
+                              <button
+                                onClick={() => updateBookingStatus(b.id, "CHECKED_OUT")}
+                                className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition-all inline-flex items-center gap-1"
+                              >
+                                <ArrowRight className="w-3.5 h-3.5" />
+                                Check-Out
+                              </button>
+                            )}
+                            {b.status !== "CANCELLED" && b.status !== "CHECKED_OUT" && (
+                              <button
+                                onClick={() => {
+                                  if (confirm("Hủy đơn đặt phòng này?")) updateBookingStatus(b.id, "CANCELLED");
+                                }}
+                                className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 font-bold px-2.5 py-1.5 rounded-xl text-xs transition-all"
+                              >
+                                Hủy
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          /* Experience / Car Specific Actions */
+                          <>
+                            {b.status === "PENDING" && (
+                              <button
+                                onClick={() => updateBookingStatus(b.id, "CONFIRMED")}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition-all inline-flex items-center gap-1"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                Duyệt thanh toán
+                              </button>
+                            )}
+                            {b.status !== "PENDING" && b.status !== "CANCELLED" && (
+                              <span className="inline-block px-2.5 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl">
+                                ✓ Đã thanh toán
+                              </span>
+                            )}
+                            {b.status === "CANCELLED" && (
+                              <span className="inline-block px-2.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/40 rounded-xl">
+                                Đã hủy
+                              </span>
+                            )}
+                          </>
                         )}
                       </td>
                     </tr>
@@ -354,6 +398,178 @@ export default function AdminBookingsPage() {
           </div>
         )}
       </div>
+      {/* View Detail Modal */}
+      {isDetailModalOpen && selectedBooking && (() => {
+        let isExp = false;
+        let isCar = false;
+        let meta: any = null;
+        if (selectedBooking.special_requests) {
+          try {
+            meta = JSON.parse(selectedBooking.special_requests);
+            if (meta) {
+              if (meta.isExperience) isExp = true;
+              if (meta.isCar) isCar = true;
+            }
+          } catch (e) {}
+        }
+
+        const isUSD = isExp || isCar;
+        const displayPrice = isUSD 
+          ? `$${Number(selectedBooking.total_amount).toFixed(2)}` 
+          : `${selectedBooking.total_amount.toLocaleString("vi-VN")} đ`;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center pb-4 border-b border-neutral-100 dark:border-neutral-800">
+                <div>
+                  <h3 className="text-xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <span>Chi Tiết Đơn Đặt Chỗ</span>
+                    <span className="text-xs font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-500 font-normal">
+                      #{selectedBooking.id.split("-")[0].toUpperCase()}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Đặt lúc: {selectedBooking.created_at ? new Date(selectedBooking.created_at).toLocaleString("vi-VN") : "-"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="text-neutral-400 hover:text-neutral-600 dark:hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left side: Booking metadata */}
+                <div className="space-y-4">
+                  <h4 className="font-extrabold text-sm text-primary-6000 uppercase tracking-wider">Thông tin dịch vụ</h4>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Loại đơn hàng:</span>
+                      <span className="font-bold">
+                        {isExp ? "🧗 Trải nghiệm" : isCar ? "🚗 Thuê xe" : "🏨 Phòng nghỉ Stay"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Tên dịch vụ:</span>
+                      <span className="font-bold text-neutral-900 dark:text-white capitalize">
+                        {isExp ? (meta?.title || "Trải nghiệm") : isCar ? (meta?.title || "Thuê xe") : (selectedBooking.room?.room_type?.name || "Phòng nghỉ")}
+                      </span>
+                    </div>
+
+                    {!isExp && !isCar && (
+                      <div className="flex justify-between">
+                        <span className="text-neutral-400">Số Phòng:</span>
+                        <span className="font-bold text-neutral-900 dark:text-white">
+                          Room {selectedBooking.room?.room_number} (Tầng {selectedBooking.room?.floor})
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Thời gian:</span>
+                      <span className="font-bold text-neutral-900 dark:text-white">
+                        {new Date(selectedBooking.check_in_date).toLocaleDateString("vi-VN")} ➔ {new Date(selectedBooking.check_out_date).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Số lượng:</span>
+                      <span className="font-bold text-neutral-900 dark:text-white">
+                        {selectedBooking.num_guests} {isExp || isCar ? "Người tham gia" : "Khách lưu trú"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                      <span className="text-neutral-400 font-semibold">Tổng thanh toán:</span>
+                      <span className="font-extrabold text-lg text-primary-6000 dark:text-primary-400">
+                        {displayPrice}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Trạng thái thanh toán:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {selectedBooking.status === "PENDING" ? "⏳ Chờ duyệt thanh toán" :
+                         selectedBooking.status === "CANCELLED" ? "❌ Đã hủy" : "✓ Đã thanh toán"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right side: Check-in Guest Information (inputted by receptionist) */}
+                <div className="space-y-4">
+                  <h4 className="font-extrabold text-sm text-primary-6000 uppercase tracking-wider">Thông tin khách hàng khai báo</h4>
+                  
+                  <div className="bg-neutral-50 dark:bg-neutral-800/40 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-3 text-sm">
+                    {/* User profile info */}
+                    <div>
+                      <span className="text-xs text-neutral-400 block">Tài khoản đặt (User):</span>
+                      <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                        {selectedBooking.user?.full_name || "-"} ({selectedBooking.user?.email || "-"})
+                      </span>
+                    </div>
+
+                    {/* Reception check-in guest info */}
+                    <div>
+                      <span className="text-xs text-neutral-400 block">Họ tên khách ở (Check-In Guest):</span>
+                      <span className="font-extrabold text-base text-primary-6000 dark:text-primary-400">
+                        {selectedBooking.guest?.full_name || selectedBooking.user?.full_name || "Chưa khai báo"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-xs text-neutral-400 block">Số CCCD / Hộ chiếu:</span>
+                      <span className="font-bold text-neutral-800 dark:text-neutral-200 font-mono">
+                        {selectedBooking.guest?.id_card_number || "Chưa khai báo"} 
+                        {selectedBooking.guest?.id_card_type ? ` (${selectedBooking.guest.id_card_type})` : ""}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-xs text-neutral-400 block">Quốc tịch:</span>
+                      <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                        {selectedBooking.guest?.nationality || "Chưa khai báo"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-xs text-neutral-400 block">Địa chỉ thường trú:</span>
+                      <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                        {selectedBooking.guest?.address || "Chưa khai báo"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Special Requests / Notes */}
+              {selectedBooking.special_requests && !isExp && !isCar && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-neutral-700 dark:text-neutral-300 rounded-2xl text-xs space-y-1">
+                  <span className="font-bold block uppercase tracking-wider text-amber-800 dark:text-amber-400">Yêu cầu đặc biệt của khách hàng:</span>
+                  <p>{selectedBooking.special_requests}</p>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex justify-end pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                <button
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="px-6 py-2 text-sm font-bold rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700 transition-colors"
+                >
+                  Đóng cửa sổ
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
