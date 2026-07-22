@@ -237,7 +237,7 @@ export default function ReceptionistServiceHub() {
       };
 
       setActiveOrders((prev) => [newOrderUI, ...prev]);
-      alert(`✅ Đã tạo đơn dịch vụ & chuyển ngay xuống Nhà bếp cho Phòng ${selectedRoomForService?.room_number}! Tổng cộng: ${totalOrderAmount.toLocaleString("vi-VN")} đ.`);
+      alert(`✅ Đã tạo đơn dịch vụ & chuyển ngay xuống Nhà bếp cho Phòng ${selectedRoomForService?.room_number}! Tổng cộng: $${totalOrderAmount.toFixed(2)}.`);
       setIsOrderModalOpen(false);
     } catch (err: any) {
       alert("Lỗi tạo đơn dịch vụ: " + err.message);
@@ -565,7 +565,7 @@ export default function ReceptionistServiceHub() {
                       <div className="text-right">
                         <div className="text-xs text-neutral-400">Tổng tiền ghi nợ phòng</div>
                         <div className="text-xl font-black text-primary-600 dark:text-primary-400">
-                          {order.total_amount.toLocaleString("vi-VN")} đ
+                           {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.total_amount)}
                         </div>
                         <div className="text-xs text-neutral-400 mt-1">Ghi lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</div>
                       </div>
@@ -841,7 +841,7 @@ export default function ReceptionistServiceHub() {
                   <div key={srv.id} className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between">
                     <div>
                       <div className="font-extrabold text-sm text-neutral-900 dark:text-white">{srv.name}</div>
-                      <div className="text-xs font-bold text-primary-600 mt-0.5">{srv.price.toLocaleString("vi-VN")} đ</div>
+                      <div className="text-xs font-bold text-primary-600 mt-0.5">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(srv.price)}</div>
                     </div>
                     <button
                       type="button"
@@ -858,7 +858,7 @@ export default function ReceptionistServiceHub() {
               <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
                 <h4 className="font-bold text-sm text-neutral-900 dark:text-white flex items-center justify-between">
                   <span>🛒 Các Món / Dịch Vụ Đã Chọn ({orderItems.length})</span>
-                  <span className="text-primary-600 font-extrabold">{totalOrderAmount.toLocaleString("vi-VN")} đ</span>
+                  <span className="text-primary-600 font-extrabold">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(totalOrderAmount)}</span>
                 </h4>
 
                 {orderItems.length === 0 ? (
@@ -871,7 +871,7 @@ export default function ReceptionistServiceHub() {
                       <div key={item.service.id} className="flex items-center justify-between bg-white dark:bg-neutral-800 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
                         <div>
                           <span className="font-bold text-sm">{item.service.name}</span>
-                          <span className="text-xs text-neutral-400 block">{item.service.price.toLocaleString("vi-VN")} đ / đơn vị</span>
+                          <span className="text-xs text-neutral-400 block">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.service.price)} / đơn vị</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <button
@@ -914,7 +914,7 @@ export default function ReceptionistServiceHub() {
               <div>
                 <span className="text-xs text-neutral-400">Tổng cộng thanh toán</span>
                 <div className="text-2xl font-black text-primary-600 dark:text-primary-400">
-                  {totalOrderAmount.toLocaleString("vi-VN")} đ
+                  {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(totalOrderAmount)}
                 </div>
               </div>
 

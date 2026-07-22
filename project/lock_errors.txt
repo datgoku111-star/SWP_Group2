@@ -1,0 +1,10 @@
+[2026-07-22T18:25:26.882Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T18:25:27.299Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T18:27:45.962Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=fb8e32c7-b800-46bc-8163-269520d22a43
+[2026-07-22T18:27:49.009Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-23, user=fb8e32c7-b800-46bc-8163-269520d22a43
+[2026-07-22T18:28:02.966Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-23, user=fb8e32c7-b800-46bc-8163-269520d22a43
+[2026-07-22T18:28:04.202Z] Request: body={"room_id":"c077415c-0631-4be9-a312-68fc1691abea","checkIn":"2026-07-22","checkOut":"2026-07-23"}, user={"sub":"fb8e32c7-b800-46bc-8163-269520d22a43","email":"customer@hotel.com","role":"CUSTOMER","name":"Nguyen Van A","iat":1784744787,"exp":1785349587}
+[2026-07-22T18:28:42.791Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T18:28:43.310Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T19:14:35.954Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T19:14:36.624Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985

@@ -231,7 +231,7 @@ export default function LaundryOrdersHubPage() {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {filteredOrders.map((order) => {
-              const formattedPrice = order.total_amount.toLocaleString("vi-VN") + " đ";
+              const formattedPrice = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.total_amount);
               const formattedDate = new Date(order.created_at).toLocaleString("vi-VN", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -300,7 +300,7 @@ export default function LaundryOrdersHubPage() {
                         {order.items?.map((item: any, idx: number) => (
                           <div key={idx} className="flex justify-between items-center text-xs text-neutral-700 dark:text-neutral-300">
                             <span className="font-semibold">{item.quantity}x {item.service?.name.replace("Laundry - ", "")}</span>
-                            <span className="font-mono text-neutral-500">({item.unit_price.toLocaleString("vi-VN")} đ/món)</span>
+                            <span className="font-mono text-neutral-500">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.unit_price)}/món)</span>
                           </div>
                         ))}
                       </div>

@@ -165,7 +165,7 @@ export default function HousekeepingDashboardHub() {
         alert("Bạn phải nhập mô tả đồ đạc hỏng.");
         return;
       }
-      const chargeStr = prompt("Nhập số tiền ước tính đền bù (VND):", "0");
+      const chargeStr = prompt("Nhập số tiền ước tính đền bù (USD):", "0");
       estimatedCharge = parseInt(chargeStr || "0", 10);
       if (isNaN(estimatedCharge) || estimatedCharge < 0) {
         alert("Số tiền không hợp lệ.");
@@ -792,7 +792,7 @@ export default function HousekeepingDashboardHub() {
                         {order.items?.map((it: any, i: number) => (
                           <div key={i} className="flex justify-between items-center text-xs">
                             <span className="font-semibold">{it.quantity}x {it.service?.name.replace("Laundry - ", "")}</span>
-                            <span className="text-neutral-500 font-mono text-[10px]">({(it.unit_price).toLocaleString("vi-VN")} đ/cái)</span>
+                             <span className="text-neutral-500 font-mono text-[10px]">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(it.unit_price)}/cái)</span>
                           </div>
                         ))}
                       </div>
@@ -805,7 +805,7 @@ export default function HousekeepingDashboardHub() {
                       
                       <div className="flex justify-between text-[11px] text-neutral-400 pt-2 border-t border-neutral-100 dark:border-neutral-850">
                         <span>Đặt lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN")} - {new Date(order.created_at).toLocaleDateString("vi-VN")}</span>
-                        <span className="font-bold text-red-600 dark:text-red-400">Tổng cộng: {order.total_amount?.toLocaleString("vi-VN")} đ</span>
+                         <span className="font-bold text-red-600 dark:text-red-400">Tổng cộng: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.total_amount || 0)}</span>
                       </div>
                     </div>
 

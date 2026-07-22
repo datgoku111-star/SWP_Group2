@@ -298,8 +298,8 @@ export default function ServicesPage() {
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800">
               <span className="font-semibold text-primary-6000">
                 {new Intl.NumberFormat(
-                  i18n.language === "vn" ? "vi-VN" : "en-US",
-                  { style: "currency", currency: "VND" },
+                  "en-US",
+                  { style: "currency", currency: "USD" },
                 ).format(service.price)}
               </span>
 
@@ -373,8 +373,8 @@ export default function ServicesPage() {
                           <h4 className="font-medium">{service.name}</h4>
                           <span className="text-sm text-neutral-500">
                             {new Intl.NumberFormat(
-                              i18n.language === "vn" ? "vi-VN" : "en-US",
-                              { style: "currency", currency: "VND" },
+                              "en-US",
+                              { style: "currency", currency: "USD" },
                             ).format(service.price)}{" "}
                             x {qty}
                           </span>
@@ -382,8 +382,8 @@ export default function ServicesPage() {
                         <div className="flex items-center space-x-4">
                           <span className="font-semibold">
                             {new Intl.NumberFormat(
-                              i18n.language === "vn" ? "vi-VN" : "en-US",
-                              { style: "currency", currency: "VND" },
+                              "en-US",
+                              { style: "currency", currency: "USD" },
                             ).format(service.price * qty)}
                           </span>
                           <button
@@ -431,8 +431,8 @@ export default function ServicesPage() {
 
                   <span className="text-primary-6000">
                     {new Intl.NumberFormat(
-                      i18n.language === "vn" ? "vi-VN" : "en-US",
-                      { style: "currency", currency: "VND" },
+                      "en-US",
+                      { style: "currency", currency: "USD" },
                     ).format(cartTotal)}
                   </span>
                 </div>

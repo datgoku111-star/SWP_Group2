@@ -184,7 +184,7 @@ export default function CustomerLaundryBookingsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {laundryBookings.map((booking) => {
-              const formattedPrice = booking.total_amount.toLocaleString("vi-VN") + " đ";
+              const formattedPrice = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(booking.total_amount);
               const dateObj = new Date(booking.created_at);
               const formattedDate = dateObj.toLocaleDateString("vi-VN") + " " + dateObj.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
@@ -214,7 +214,7 @@ export default function CustomerLaundryBookingsPage() {
                         {booking.items?.map((item: any, idx: number) => (
                           <div key={idx} className="flex justify-between items-center text-neutral-700 dark:text-neutral-300">
                             <span className="font-semibold">{item.quantity}x {item.service?.name.replace("Laundry - ", "")}</span>
-                            <span className="font-mono text-neutral-500">({item.unit_price.toLocaleString("vi-VN")} đ/cái)</span>
+                             <span className="font-mono text-neutral-500">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.unit_price)}/cái)</span>
                           </div>
                         ))}
                       </div>

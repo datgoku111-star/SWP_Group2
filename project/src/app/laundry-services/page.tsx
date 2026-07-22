@@ -257,7 +257,7 @@ export default function LaundryServicesPage() {
                 <div>
                   <span className="text-[10px] text-neutral-400 block uppercase font-bold">Giá gốc:</span>
                   <span className="font-extrabold text-primary-6000 text-lg">
-                    {service.price.toLocaleString("vi-VN")} đ
+                    {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(service.price)}
                   </span>
                 </div>
 
@@ -338,12 +338,12 @@ export default function LaundryServicesPage() {
                               {service.name.replace("Laundry - ", "")}
                             </h4>
                             <span className="text-xs text-neutral-500 dark:text-neutral-450 font-medium">
-                              {adjustedPrice.toLocaleString("vi-VN")} đ x {qty}
+                              {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(adjustedPrice)} x {qty}
                             </span>
                           </div>
                           <div className="flex items-center space-x-3">
                             <span className="font-extrabold text-sm text-neutral-850 dark:text-neutral-150">
-                              {(adjustedPrice * qty).toLocaleString("vi-VN")} đ
+                              {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(adjustedPrice * qty)}
                             </span>
                             <button
                               onClick={() => clearItemFromCart(id)}
@@ -422,7 +422,7 @@ export default function LaundryServicesPage() {
                   <span className="font-extrabold text-sm text-neutral-750 dark:text-neutral-300">Tổng thanh toán (nợ phòng):</span>
                   <div className="text-right">
                     <span className="text-xl font-black text-red-600 dark:text-red-400 block">
-                      {finalTotal.toLocaleString("vi-VN")} đ
+                      {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalTotal)}
                     </span>
                     <span className="text-[10px] text-neutral-400 block font-mono">
                       (Đã nhân hệ số loại giặt x{multiplier})
