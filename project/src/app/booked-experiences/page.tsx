@@ -75,7 +75,15 @@ export default function BookingsPage() {
       const res = await fetch("/api/bookings");
       if (res.ok) {
         const data = await res.json();
-        let filtered = data.filter((b: any) => b.room_id === "99999999-9999-9999-9999-999999999999");
+        let filtered = data.filter((b: any) => {
+          if (b.special_requests) {
+            try {
+              const meta = JSON.parse(b.special_requests);
+              if (meta?.isExperience) return true;
+            } catch(e) {}
+          }
+          return false;
+        });
         if (user?.role === "CUSTOMER") {
           filtered = filtered.filter((b: any) => b.user_id === user.id);
         }
@@ -99,7 +107,15 @@ export default function BookingsPage() {
       if (res.ok) {
         const data = await res.json();
         let filtered = Array.isArray(data) ? data : [];
-        filtered = filtered.filter((b: any) => b.room_id === "99999999-9999-9999-9999-999999999999");
+        filtered = filtered.filter((b: any) => {
+          if (b.special_requests) {
+            try {
+              const meta = JSON.parse(b.special_requests);
+              if (meta?.isExperience) return true;
+            } catch(e) {}
+          }
+          return false;
+        });
         if (user?.role === "CUSTOMER") {
           filtered = filtered.filter((b: any) => b.user_id === user.id);
         }
