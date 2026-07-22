@@ -233,12 +233,12 @@ export default function HousekeepingDashboardHub() {
         >
           <div className="flex items-center justify-between">
             <p className={`text-sm font-bold ${activeWorkflow === "CHECKOUT_FLOW" ? "text-white" : "text-purple-800 dark:text-purple-300"}`}>
-              🟣 Kiểm Tra (CHECKOUT)
+              🟣 CHECKOUT INSPECT
             </p>
             <AlertTriangle className="w-6 h-6" />
           </div>
           <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{checkoutRequests.length}</h3>
-          <p className={`text-xs mt-1 ${activeWorkflow === "CHECKOUT_FLOW" ? "text-purple-100" : "text-neutral-500"}`}>Khách yêu cầu trả phòng</p>
+          <p className={`text-xs mt-1 ${activeWorkflow === "CHECKOUT_FLOW" ? "text-purple-100" : "text-neutral-500"}`}>Checkout requests</p>
         </div>
 
         <div
@@ -382,16 +382,16 @@ export default function HousekeepingDashboardHub() {
         <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
           <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              🟣 LUỒNG KIỂM TRA TRẢ PHÒNG (Checkout Inspection)
+              🟣 CHECKOUT INSPECTION FLOW
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
-              Khách hàng gửi yêu cầu trả phòng. Lễ tân đã điều động bạn lên kiểm tra xem có hư hỏng hay mất mát đồ đạc gì không trước khi khách thanh toán.
+              Guest requested checkout. Receptionist dispatched you to inspect for damages or lost items before payment.
             </p>
           </div>
 
           {checkoutRequests.length === 0 ? (
             <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
-              Không có yêu cầu kiểm tra phòng nào hiện tại.
+              No checkout inspection requests at the moment.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -512,7 +512,7 @@ export default function HousekeepingDashboardHub() {
         <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
           <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              🔴 LUỒNG 2: QUY TRÌNH QUẢN LÝ BẢO TRÌ & SỬA CHỮA SỰ CỐ (Maintenance & Repairs)
+              🔴 LUỒNG 2: QUY TRÌNH QUẢN LÝ MAINTENANCE & SỬA CHỮA SỰ CỐ (Maintenance & Repairs)
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
               Các buồng phòng gặp sự cố kỹ thuật (điện, nước, khóa cửa, điều hòa) bị khóa tạm thời khỏi danh sách đặt phòng của Lễ tân. Khi kỹ thuật viên sửa chữa xong và vệ sinh sạch, nhấn <strong>"🛠️ Nghiệm Thu Sửa Chữa Xong"</strong> để khôi phục phòng về trạng thái <strong>AVAILABLE</strong>.

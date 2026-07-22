@@ -509,7 +509,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           </div>
           {typeParam !== "service" && (
             <div className="flex justify-between font-bold text-primary-6000 mt-2">
-              <span>{t("checkoutDeposit") || "Thanh toán cọc (10%)"}</span>
+              <span>{t("checkoutDeposit") || "Deposit Payment (10%)"}</span>
               <span>
                 {formatPrice(depositAmount, "USD")}
               </span>
@@ -768,12 +768,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                             const checkRes = await fetch(`/api/payment/check/${paymentInfo.orderCode}`);
                             const checkData = await checkRes.json();
                             if (!checkRes.ok || checkData.status !== "PAID") {
-                              alert("Khách hàng chưa thanh toán thành công qua mã QR. Vui lòng kiểm tra lại!");
+                              alert("Guest has not successfully paid via QR. Please check again!");
                               return;
                             }
                           } catch (e) {
                             console.error("Payment check failed:", e);
-                            alert("Có lỗi xảy ra khi kiểm tra trạng thái thanh toán.");
+                            alert("Error checking payment status.");
                             return;
                           }
 
@@ -800,7 +800,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                         }}
                         className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium text-center rounded-xl transition-all shadow-md text-sm"
                       >
-                        {t("checkoutAlreadyPaid") || "Đã thanh toán"}
+                        {t("checkoutAlreadyPaid") || "Already paid"}
                       </button>
                      <button
                        type="button"

@@ -176,7 +176,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 disabled={isConfirming}
                 className="flex items-center text-white font-medium bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
               >
-                {isConfirming ? "Đang xác nhận..." : "Xác nhận phòng"}
+                {isConfirming ? "Confirming..." : "Confirm Booking"}
               </button>
             )}
             {canCancel && (
@@ -184,7 +184,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 onClick={() => setCancelModalOpen(true)}
                 className="flex items-center text-red-600 hover:text-red-700 font-medium bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition-colors"
               >
-                <XCircle className="w-5 h-5 mr-2" /> Hủy phòng
+                <XCircle className="w-5 h-5 mr-2" /> Cancel Booking
               </button>
             )}
             {canRequestCheckout && (
@@ -193,7 +193,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 disabled={isRequestingCheckout}
                 className="flex items-center text-white font-medium bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
               >
-                {isRequestingCheckout ? "Đang gửi..." : "Yêu cầu Trả phòng (Checkout)"}
+                {isRequestingCheckout ? "Sending..." : "Request Checkout"}
               </button>
             )}
             <button className="flex items-center text-primary-6000 hover:text-primary-700 font-medium bg-primary-50 px-4 py-2 rounded-lg" onClick={() => window.print()}>
@@ -207,26 +207,26 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
         {!isStaff && b.checkout_step && b.checkout_step !== "NONE" && (
           <div className="p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl">
-            <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-2">Trạng thái Yêu cầu Trả phòng:</h3>
+            <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-2">Checkout Request Status:</h3>
             <div className="flex items-center gap-3 mb-2">
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                 b.checkout_step === "REQUESTED" ? "bg-amber-200 text-amber-900" :
                 b.checkout_step === "INSPECTING" ? "bg-blue-200 text-blue-900" :
                 "bg-green-200 text-green-900"
               }`}>
-                {b.checkout_step === "REQUESTED" ? "Đang chờ Lễ tân" :
-                 b.checkout_step === "INSPECTING" ? "Đang kiểm tra phòng" :
-                 "Đã kiểm tra xong"}
+                {b.checkout_step === "REQUESTED" ? "Waiting for Receptionist" :
+                 b.checkout_step === "INSPECTING" ? "Inspecting Room" :
+                 "Inspection Complete"}
               </span>
             </div>
             {b.checkout_message && (
               <p className="text-sm text-amber-900 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 p-3 rounded-lg mt-3">
-                <span className="font-bold">Lễ tân:</span> {b.checkout_message}
+                <span className="font-bold">Receptionist:</span> {b.checkout_message}
               </p>
             )}
             {b.checkout_step === "INSPECTED" && (
               <p className="text-sm font-medium mt-3 text-green-700 dark:text-green-400">
-                Phòng đã được kiểm tra xong. Vui lòng xuống quầy Lễ tân để hoàn tất thanh toán.
+                Room inspection is complete. Please go to the reception desk to finalize your payment.
               </p>
             )}
           </div>
