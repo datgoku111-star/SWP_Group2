@@ -15,7 +15,7 @@ export async function createBooking(booking: {
     .from("bookings")
     .select("id")
     .eq("room_id", booking.room_id)
-    .not("status", "in", '("CANCELLED","CHECKED_OUT")')
+    .in("status", ["PENDING", "CONFIRMED", "CHECKED_IN"])
     .lt("check_in_date", booking.check_out_date)
     .gt("check_out_date", booking.check_in_date);
 
