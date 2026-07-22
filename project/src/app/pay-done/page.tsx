@@ -9,6 +9,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useAuth } from "@/lib/auth-context";
 import { Route } from "@/routers/types";
+import carsListingData from "@/data/jsons/__carsListing.json";
 
 export interface PayPageProps {}
 
@@ -156,6 +157,83 @@ const PayPageContent: FC = () => {
   const renderContent = () => {
     const isService = type === "service";
 
+    // Resolve booking type and details from database bookingData to prevent loss on redirect
+    let displayTitle = title;
+    let displayImg = img;
+    let displayCategory = category;
+    let displayAddress = address;
+    let displaySubInfo = "";
+
+    if (bookingData && !isService) {
+      let isExp = false;
+      let isCar = false;
+      let meta: any = null;
+
+      if (bookingData.special_requests) {
+        try {
+          meta = JSON.parse(bookingData.special_requests);
+          if (meta) {
+            if (meta.isExperience) isExp = true;
+            if (meta.isCar) isCar = true;
+          }
+        } catch (e) {}
+      }
+
+      if (isExp) {
+        const tourTitle = meta.title || "Experience Tour";
+        const tourTitleLower = tourTitle.toLowerCase();
+        
+        displayTitle = tourTitle.charAt(0).toUpperCase() + tourTitle.slice(1);
+        displayCategory = "Trải nghiệm";
+        
+        if (tourTitleLower.includes("climbing") || tourTitleLower.includes("leo núi")) {
+          displayTitle = "Leo núi (Climbing Experience)";
+          displayAddress = "Fansipan, Sapa";
+          displayImg = "https://images.pexels.com/photos/5205846/pexels-photo-5205846.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260";
+        } else if (tourTitleLower.includes("rowing") || tourTitleLower.includes("chèo thuyền")) {
+          displayTitle = "Chèo thuyền (Rowing Experience)";
+          displayAddress = "Tràng An, Ninh Bình";
+          displayImg = "https://images.pexels.com/photos/2583852/pexels-photo-2583852.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260";
+        } else if (tourTitleLower.includes("swimming") || tourTitleLower.includes("tắm biển")) {
+          displayTitle = "Tắm biển (Swimming Experience)";
+          displayAddress = "Bể bơi vô cực, Fis Hotel";
+          displayImg = "https://images.pexels.com/photos/189349/pexels-photo-189349.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260";
+        } else if (tourTitleLower.includes("skiing") || tourTitleLower.includes("trượt tuyết")) {
+          displayTitle = "Trượt tuyết (Skiing Experience)";
+          displayAddress = "Alpine Zone, Núi tuyết";
+          displayImg = "https://images.pexels.com/photos/848618/pexels-photo-848618.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260";
+        } else {
+          displayAddress = "Fis Hotel Resort";
+          displayImg = "https://images.pexels.com/photos/5205846/pexels-photo-5205846.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260";
+        }
+        
+        displaySubInfo = "Trải nghiệm du lịch trọn gói";
+      } else if (isCar) {
+        const carTitle = meta.title || "Rental Car";
+        displayTitle = carTitle;
+        displayCategory = "Thuê xe";
+        displayAddress = "Nhận xe tại quầy lễ tân";
+        
+        // Find car image
+        const foundCar = carsListingData.find((c: any) => c.title.toLowerCase() === carTitle.toLowerCase());
+        if (foundCar) {
+          displayImg = foundCar.featuredImage || foundCar.galleryImgs?.[0] || img;
+        } else {
+          displayImg = "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=compress&cs=tinysrgb&w=800";
+        }
+        
+        displaySubInfo = "Dịch vụ thuê xe tự lái";
+      } else {
+        // Normal room booking
+        displayTitle = title !== "The Lounge & Bar" ? title : (bookingData.room?.room_type?.name || "Hotel room");
+        displayCategory = category;
+        displayAddress = address;
+        displaySubInfo = bookingData.room ? `Phòng ${bookingData.room.room_number} - Tầng ${bookingData.room.floor} (${bookingData.room.room_type?.name || "Standard"})` : "2 beds · 2 baths";
+      }
+    } else if (isService) {
+      displaySubInfo = bookingData?.room?.room_number ? `Giao tới Phòng ${bookingData.room.room_number} (Tầng ${bookingData.room.floor})` : "Dịch vụ phòng";
+    }
+
     return (
       <div className="w-full flex flex-col sm:rounded-2xl space-y-10 px-0 sm:p-6 xl:p-8">
         <h2 className="text-3xl lg:text-4xl font-semibold">
@@ -174,24 +252,21 @@ const PayPageContent: FC = () => {
                   fill
                   alt=""
                   className="object-cover"
-                  src={img}
+                  src={displayImg}
                 />
               </div>
             </div>
             <div className="pt-5  sm:pb-5 sm:px-5 space-y-3">
               <div>
                 <span className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                  {isService ? "Dịch vụ gọi món & đồ uống" : `${category} in ${address}`}
+                  {isService ? "Dịch vụ gọi món & đồ uống" : `${displayCategory} in ${displayAddress}`}
                 </span>
                 <span className="text-base sm:text-lg font-medium mt-1 block">
-                  {title}
+                  {displayTitle}
                 </span>
               </div>
               <span className="block  text-sm text-neutral-500 dark:text-neutral-400">
-                {isService 
-                  ? (bookingData?.room?.room_number ? `Giao tới Phòng ${bookingData.room.room_number} (Tầng ${bookingData.room.floor})` : "Dịch vụ phòng")
-                  : (bookingData?.room ? `Phòng ${bookingData.room.room_number} - Tầng ${bookingData.room.floor} (${bookingData.room.room_type?.name || "Standard"})` : "2 beds · 2 baths")
-                }
+                {displaySubInfo}
               </span>
               <div className="w-10 border-b border-neutral-200  dark:border-neutral-700"></div>
               <StartRating />
