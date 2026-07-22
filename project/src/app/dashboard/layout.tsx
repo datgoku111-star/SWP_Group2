@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Route } from "@/routers/types";
 import { 
-  LayoutDashboard, 
+  Compass, LayoutDashboard, 
   BedDouble, 
   Users, 
   UtensilsCrossed, 
