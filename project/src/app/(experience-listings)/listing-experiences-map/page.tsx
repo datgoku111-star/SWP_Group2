@@ -177,6 +177,45 @@ const ExperienceItineraryPage: FC = () => {
             }
           });
 
+          // Quét các order dịch vụ (service_orders) được thêm bởi lễ tân
+          for (const b of data) {
+            if (b.status === "CHECKED_IN") {
+              try {
+                const ordersRes = await fetch(`/api/orders?booking_id=${b.id}`);
+                if (ordersRes.ok) {
+                  const orders = await ordersRes.json();
+                  if (Array.isArray(orders)) {
+                    orders.forEach((order: any) => {
+                      if (order.status === "IN_PROGRESS" || order.status === "COMPLETED") {
+                        order.items?.forEach((item: any) => {
+                          const nameLower = (item.service_name || "").toLowerCase();
+                          let key = "";
+                          if (nameLower.includes("climbing") || nameLower.includes("leo núi")) key = "climbing";
+                          else if (nameLower.includes("rowing") || nameLower.includes("chèo thuyền")) key = "rowing";
+                          else if (nameLower.includes("swimming") || nameLower.includes("bể bơi") || nameLower.includes("tắm biển")) key = "swimming";
+                          else if (nameLower.includes("skiing") || nameLower.includes("trượt tuyết")) key = "skiing";
+                          
+                          if (key) {
+                            validExps.push({
+                              bookingId: `${b.id}-service-${item.id}`,
+                              title: key,
+                              category: "Experience (Counter)",
+                              checkInDate: b.check_in_date,
+                              checkOutDate: b.check_out_date,
+                              totalAmount: Number(item.subtotal || 0)
+                            });
+                          }
+                        });
+                      }
+                    });
+                  }
+                }
+              } catch (err) {
+                console.error("Failed to fetch service orders for booking:", b.id, err);
+              }
+            }
+          }
+
           setExperiences(validExps);
         }
       } catch (err: any) {

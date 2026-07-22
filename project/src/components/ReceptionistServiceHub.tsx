@@ -587,7 +587,7 @@ export default function ReceptionistServiceHub() {
                 >
                   Tất cả
                 </button>
-                {["FOOD", "BEVERAGE", "LAUNDRY", "AMENITY"].map((cat) => (
+                {["FOOD", "BEVERAGE", "LAUNDRY", "AMENITY", "OTHER"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setServiceCategory(cat)}
@@ -599,6 +599,7 @@ export default function ReceptionistServiceHub() {
                     {cat === "BEVERAGE" && "🍹 Thức uống"}
                     {cat === "LAUNDRY" && "👔 Giặt ủi"}
                     {cat === "AMENITY" && "🧼 Tiện ích"}
+                    {cat === "OTHER" && "🧗 Trải nghiệm & Khác"}
                   </button>
                 ))}
               </div>
