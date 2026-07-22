@@ -74,6 +74,7 @@ function CheckInContent() {
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "BANK_TRANSFER">("CASH");
   const [showQR, setShowQR] = useState(false);
   const [payosQRUrl, setPayosQRUrl] = useState<string | null>(null);
+  const [payosOrderCode, setPayosOrderCode] = useState<number | null>(null);
   const [transactionRef, setTransactionRef] = useState("");
   const [customAmount, setCustomAmount] = useState<number | null>(null);
   const [checkoutDetails, setCheckoutDetails] = useState<any | null>(null);
@@ -300,6 +301,7 @@ function CheckInContent() {
         if (!payOSRes.ok) throw new Error(payOSData.error || "Lỗi tạo mã PayOS");
         
         setPayosQRUrl(payOSData.qrCode);
+        setPayosOrderCode(payOSData.orderCode);
         setShowQR(true);
       } catch (err: any) {
         setError(err.message || "Không thể tạo mã VietQR từ PayOS");
@@ -317,12 +319,22 @@ function CheckInContent() {
     setError("");
     setSuccess("");
     try {
+      if (paymentMethod === "BANK_TRANSFER") {
+        if (!payosOrderCode) throw new Error("Vui lòng tạo mã QR trước khi thanh toán.");
+        const checkRes = await fetch(`/api/payment/check/${payosOrderCode}`);
+        const checkData = await checkRes.json();
+        if (!checkRes.ok) throw new Error(checkData.error || "Lỗi kiểm tra trạng thái thanh toán.");
+        if (checkData.status !== "PAID") {
+          throw new Error("Khách hàng chưa thanh toán thành công qua mã QR. Vui lòng kiểm tra lại!");
+        }
+      }
+
       const res = await fetch(`/api/checkin/${booking.id}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          payment_method: paymentMethod,
-          amount: customAmount || booking.total_amount || 0,
+          payment_method: paymentMethod === "BANK_TRANSFER" ? "TRANSFER" : paymentMethod,
+          amount: customAmount !== null ? customAmount : getAmountToSettle(),
           transaction_ref: transactionRef || "TXN-COUNTER-" + Date.now(),
         }),
       });

@@ -87,6 +87,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     description: string;
     checkoutUrl: string;
     bookingId: string;
+    orderCode: number;
     serviceOrderId?: string;
   } | null>(null);
 
@@ -321,6 +322,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         description: payOSData.description,
         checkoutUrl: payOSData.checkoutUrl,
         bookingId,
+        orderCode: payOSData.orderCode,
         serviceOrderId,
       });
       setShowPayOSModal(true);
@@ -702,6 +704,19 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                       <button
                         type="button"
                         onClick={async () => {
+                          try {
+                            const checkRes = await fetch(`/api/payment/check/${paymentInfo.orderCode}`);
+                            const checkData = await checkRes.json();
+                            if (!checkRes.ok || checkData.status !== "PAID") {
+                              alert("Khách hàng chưa thanh toán thành công qua mã QR. Vui lòng kiểm tra lại!");
+                              return;
+                            }
+                          } catch (e) {
+                            console.error("Payment check failed:", e);
+                            alert("Có lỗi xảy ra khi kiểm tra trạng thái thanh toán.");
+                            return;
+                          }
+
                           setShowPayOSModal(false);
                           
                           // Mock Webhook for local testing to auto-confirm payment without admin
