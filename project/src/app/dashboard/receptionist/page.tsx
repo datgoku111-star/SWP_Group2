@@ -144,6 +144,26 @@ export default function ReceptionistDashboard() {
   const arrivals: Booking[] = dashboardData?.arrivals || [];
   const departures: Booking[] = dashboardData?.departures || [];
   const roomsSummary = dashboardData?.roomsSummary || { AVAILABLE: 0, IN_USE: 0, DIRTY: 0, MAINTENANCE: 0, total: 0 };
+  const checkoutRequests = dashboardData?.checkoutRequests || [];
+
+  const handleSendCleaner = async (bookingId: string) => {
+    try {
+      const res = await fetch("/api/receptionist/checkout-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, action: "SEND_CLEANER", message: "Lễ tân đã nhận yêu cầu. Nhân viên đang lên kiểm tra phòng..." }),
+      });
+      if (res.ok) {
+        fetchDashboardData();
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error sending cleaner");
+    }
+  };
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val || 0);
@@ -274,6 +294,71 @@ export default function ReceptionistDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Guest Checkout Requests */}
+      {checkoutRequests && checkoutRequests.length > 0 && (
+        <div className="bg-white dark:bg-neutral-900 border-2 border-amber-400 dark:border-amber-600 rounded-3xl p-6 shadow-sm overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-extrabold text-amber-900 dark:text-amber-400 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              <span>Pending Check-Out Requests</span>
+            </h3>
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs font-bold animate-pulse">
+              {checkoutRequests.length} Request(s)
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {checkoutRequests.map((req: any) => (
+              <div key={req.id} className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="font-bold text-neutral-900 dark:text-white">Room {req.room?.room_number}</span>
+                    <span className="text-xs text-neutral-500 ml-2 block sm:inline">{req.user?.full_name || req.guest?.full_name}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    req.checkout_step === "REQUESTED" ? "bg-amber-200 text-amber-900" :
+                    req.checkout_step === "INSPECTING" ? "bg-blue-200 text-blue-900" :
+                    "bg-green-200 text-green-900"
+                  }`}>
+                    {req.checkout_step}
+                  </span>
+                </div>
+                
+                <div className="text-xs text-neutral-500">
+                  Requested at: {new Date(req.checkout_requested_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+
+                <div className="flex gap-2 mt-auto pt-2">
+                  {req.checkout_step === "REQUESTED" && (
+                    <ButtonPrimary
+                      sizeClass="py-2 px-3"
+                      className="w-full text-xs font-bold bg-amber-600 hover:bg-amber-700 shadow-sm"
+                      onClick={() => handleSendCleaner(req.id)}
+                    >
+                      Báo nhân viên kiểm tra
+                    </ButtonPrimary>
+                  )}
+                  {req.checkout_step === "INSPECTING" && (
+                    <button disabled className="w-full py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-500 rounded-xl text-xs font-bold">
+                      Đang đợi kiểm tra...
+                    </button>
+                  )}
+                  {req.checkout_step === "INSPECTED" && (
+                    <Link
+                      href={`/checkin?bookingId=${req.id}&mode=checkout`}
+                      className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold text-center block"
+                    >
+                      Tiến hành Checkout
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* TRUY VẤN KIỂM TRA PHÒNG TRỐNG (Room Availability Search Module) */}
       <div className="bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-neutral-700 relative overflow-hidden">
