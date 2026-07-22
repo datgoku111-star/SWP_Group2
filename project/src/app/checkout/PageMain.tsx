@@ -148,7 +148,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         const rooms = await roomsRes.json();
         
         if (!rooms || rooms.length === 0) {
-          alert("Không còn phòng trống cho khoảng thời gian đã chọn. Vui lòng chọn ngày khác!");
+          alert("No rooms available for the selected dates. Please choose another date!");
           router.back();
           return;
         }
@@ -181,7 +181,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
 
         if (!lockRes.ok) {
           const lockData = await lockRes.json();
-          alert(lockData.error || "Phòng đã bị giữ bởi người khác. Vui lòng chọn ngày khác hoặc phòng khác!");
+          alert(lockData.error || "Room has been locked by another user. Please select another date or room!");
           router.back();
           return;
         }
@@ -191,7 +191,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         activeRoomId = targetRoom.id;
       } catch (err: any) {
         console.error("Locking failed on checkout load:", err);
-        alert(err.message || "Đã xảy ra lỗi khi giữ phòng tạm thời.");
+        alert(err.message || "An error occurred while temporarily locking the room.");
         router.back();
       }
     };
@@ -246,7 +246,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
             keepalive: true,
           })
             .then(() => {
-              alert("Thời gian giữ phòng tạm thời (10 phút) đã hết hạn. Bạn sẽ được chuyển hướng về trang trước.");
+              alert("Temporary room lock (10 minutes) has expired. You will be redirected to the previous page.");
               router.back();
             })
             .catch(console.error);
