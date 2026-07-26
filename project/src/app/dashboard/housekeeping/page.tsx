@@ -463,9 +463,15 @@ export default function HousekeepingDashboardHub() {
                         {room.room_type?.name || "Deluxe Ocean"} — Tầng {room.floor}
                       </h4>
                     </div>
-                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-200 dark:bg-amber-900/60 px-3 py-1 rounded-full uppercase">
-                      Chờ Dọn (DIRTY)
-                    </span>
+                    {room.status === "DIRTY" ? (
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-200 dark:bg-amber-900/60 px-3 py-1 rounded-full uppercase">
+                        Chờ Dọn (DIRTY)
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-200 dark:bg-blue-900/60 px-3 py-1 rounded-full uppercase animate-pulse">
+                        Đang Dọn Dẹp (CLEANING)
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -480,25 +486,49 @@ export default function HousekeepingDashboardHub() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2">
-                    <button
-                      onClick={() => changeStatus(room.id, "AVAILABLE")}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      ✨ HOÀN TẤT DỌN DẸP (➔ AVAILABLE)
-                    </button>
-                    <button
-                      onClick={() => {
-                        const reason = prompt("Nhập lý do hỏng hóc cần bảo trì (VD: Hỏng điều hòa, rò nước...):", "Hỏng thiết bị điện nước");
-                        if (reason !== null) changeStatus(room.id, "MAINTENANCE", reason);
-                      }}
-                      className="bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-800 dark:text-red-300 font-semibold py-3 px-4 rounded-2xl transition-all text-sm flex items-center gap-1.5"
-                      title="Báo lỗi kỹ thuật / chuyển sang Luồng 2"
-                    >
-                      <Wrench className="w-4 h-4" />
-                      Báo Hỏng
-                    </button>
+                  <div className="flex flex-col gap-3 pt-2">
+                    {room.status === "DIRTY" && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => changeStatus(room.id, "CLEANING", "Đang dọn nhanh (20p)")}
+                          className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-3 rounded-xl transition-all shadow flex items-center justify-center gap-1.5 text-xs"
+                        >
+                          <Zap className="w-3.5 h-3.5" />
+                          Dọn nhanh 20p
+                        </button>
+                        <button
+                          onClick={() => changeStatus(room.id, "CLEANING", "Đang dọn kỹ (45p)")}
+                          className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 px-3 rounded-xl transition-all shadow flex items-center justify-center gap-1.5 text-xs"
+                        >
+                          <SprayCan className="w-3.5 h-3.5" />
+                          Dọn kỹ 45p
+                        </button>
+                      </div>
+                    )}
+                    
+                    {room.status === "CLEANING" && (
+                      <button
+                        onClick={() => changeStatus(room.id, "AVAILABLE")}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        ✨ HOÀN TẤT DỌN DẸP (➔ AVAILABLE)
+                      </button>
+                    )}
+                    
+                    {room.status === "DIRTY" && (
+                      <button
+                        onClick={() => {
+                          const reason = prompt("Nhập lý do hỏng hóc cần bảo trì (VD: Hỏng điều hòa, rò nước...):", "Hỏng thiết bị điện nước");
+                          if (reason !== null) changeStatus(room.id, "MAINTENANCE", reason);
+                        }}
+                        className="bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-800 dark:text-red-300 font-semibold py-2 px-4 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 mx-auto w-full mt-2"
+                        title="Báo lỗi kỹ thuật / chuyển sang Luồng 2"
+                      >
+                        <Wrench className="w-3.5 h-3.5" />
+                        Báo Hỏng / Bảo trì
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
