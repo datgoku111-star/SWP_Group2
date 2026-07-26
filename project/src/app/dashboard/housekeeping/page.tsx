@@ -23,7 +23,72 @@ export default function HousekeepingDashboardHub() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW" | "CHECKOUT_FLOW">("DIRTY_FLOW");
-  const [checkoutRequests, setCheckoutRequests] = useState<any[]>([]);
+    const [checkoutRequests, setCheckoutRequests] = useState<any[]>([]);
+  const [reportingRoomId, setReportingRoomId] = useState<string | null>(null);
+  const [selectedDamages, setSelectedDamages] = useState<{name: string, price: number}[]>([]);
+  const [customDamageName, setCustomDamageName] = useState("");
+  const [customDamagePrice, setCustomDamagePrice] = useState("");
+  const [isSubmittingDamage, setIsSubmittingDamage] = useState(false);
+  
+  const PREDEFINED_DAMAGES = [
+    { name: "Hỏng chăn", price: 50000 },
+    { name: "Hỏng gối", price: 40000 },
+    { name: "Hỏng bình nước", price: 30000 },
+    { name: "Hỏng điều hòa", price: 100000 },
+  ];
+  
+  const handleToggleDamage = (damage: {name: string, price: number}) => {
+    setSelectedDamages(prev => 
+      prev.find(d => d.name === damage.name) 
+        ? prev.filter(d => d.name !== damage.name)
+        : [...prev, damage]
+    );
+  };
+  
+  const submitDamageReport = async () => {
+    if (!reportingRoomId) return;
+    
+    let allDamages = [...selectedDamages];
+    if (customDamageName && customDamagePrice) {
+      allDamages.push({ name: customDamageName, price: Number(customDamagePrice) || 0 });
+    }
+    
+    if (allDamages.length === 0) {
+      alert("Vui lòng chọn ít nhất một mục hỏng hóc hoặc nhập tùy chỉnh.");
+      return;
+    }
+    
+    const totalCharge = allDamages.reduce((sum, item) => sum + item.price, 0);
+    const description = allDamages.map(d => `${d.name} (${d.price.toLocaleString()}đ)`).join(', ');
+    
+    setIsSubmittingDamage(true);
+    try {
+      const res = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          room_id: reportingRoomId,
+          incident_type: 'DAMAGE',
+          severity: 'MEDIUM',
+          description: description,
+          estimated_charge: totalCharge,
+          is_chargeable: true
+        })
+      });
+      
+      if (!res.ok) throw new Error("Failed to report incident");
+      
+      await changeStatus(reportingRoomId, "MAINTENANCE", `Báo hỏng: ${description}`);
+      setReportingRoomId(null);
+      setSelectedDamages([]);
+      setCustomDamageName("");
+      setCustomDamagePrice("");
+    } catch (err) {
+      alert("Lỗi khi báo hỏng: " + (err as Error).message);
+    } finally {
+      setIsSubmittingDamage(false);
+    }
+  };
   const [rooms, setRooms] = useState<RoomTurnover[]>([]);
   const [loading, setLoading] = useState(true);
   const [laundryOrders, setLaundryOrders] = useState<any[]>([]);
@@ -518,10 +583,7 @@ export default function HousekeepingDashboardHub() {
                     
                     {room.status === "DIRTY" && (
                       <button
-                        onClick={() => {
-                          const reason = prompt("Nhập lý do hỏng hóc cần bảo trì (VD: Hỏng điều hòa, rò nước...):", "Hỏng thiết bị điện nước");
-                          if (reason !== null) changeStatus(room.id, "MAINTENANCE", reason);
-                        }}
+                        onClick={() => setReportingRoomId(room.id)}
                         className="bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-800 dark:text-red-300 font-semibold py-2 px-4 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 mx-auto w-full mt-2"
                         title="Báo lỗi kỹ thuật / chuyển sang Luồng 2"
                       >
