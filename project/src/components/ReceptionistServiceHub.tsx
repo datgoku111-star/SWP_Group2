@@ -473,6 +473,15 @@ export default function ReceptionistServiceHub() {
                 MAINTENANCE: { label: "🔧 Bảo Trì Kỹ Thuật", color: "bg-red-600 text-white" },
               };
               const currentBadge = statusBadge[room.status as keyof typeof statusBadge] || statusBadge.AVAILABLE;
+              const currentBooking = bookings.find((b: any) => b.room_id === room.id && b.status === "CHECKED_IN");
+              let isOverdue = false;
+              if (currentBooking && currentBooking.check_out_date) {
+                // If today is past the checkout date
+                const checkoutDate = new Date(currentBooking.check_out_date).setHours(0,0,0,0);
+                const today = new Date().setHours(0,0,0,0);
+                if (today > checkoutDate) isOverdue = true;
+              }
+
 
               return (
                 <div key={room.id} className={`rounded-3xl border-2 p-6 shadow-sm flex flex-col justify-between space-y-4 transition-all ${statusBorder[room.status as keyof typeof statusBorder]}`}>
@@ -498,7 +507,34 @@ export default function ReceptionistServiceHub() {
                   )}
 
                   {/* Actions based on status */}
-                  <div className="pt-3 border-t border-neutral-200/60 dark:border-neutral-700/60 flex items-center gap-2">
+                  {isOverdue && (
+                    <div className="mt-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border border-red-200 dark:border-red-800">
+                      <span>⚠️ QUÁ HẠN TRẢ PHÒNG</span>
+                      <button 
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/receptionist/checkout-request', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ bookingId: currentBooking.id, action: 'REQUEST_OVERDUE' })
+                            });
+                            if (res.ok) {
+                              alert('Đã gửi yêu cầu trả phòng cho khách.');
+                              fetchAllData();
+                            } else {
+                              alert('Lỗi khi gửi yêu cầu trả phòng.');
+                            }
+                          } catch (e) {
+                            alert('Lỗi hệ thống.');
+                          }
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg mt-1 w-full"
+                      >
+                        Gửi yêu cầu trả phòng
+                      </button>
+                    </div>
+                  )}
+                  <div className="pt-3 border-t border-neutral-200/60 dark:border-neutral-700/60 flex flex-wrap gap-2">
                     {room.status === "IN_USE" && (
                       <button
                         onClick={() => openServiceOrderingModal(room)}
