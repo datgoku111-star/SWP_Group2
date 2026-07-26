@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Wrench, Check, ArrowRight, BedDouble, Clock, CheckCheck, Plus, ClipboardList, Shirt, Truck } from "lucide-react";
+import { Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Wrench, Check, ArrowRight, BedDouble, Clock, CheckCheck, Plus, ClipboardList, Shirt, Truck, SprayCan, Zap } from "lucide-react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 import { useAuth } from "@/lib/auth-context";
@@ -11,7 +11,7 @@ export interface RoomTurnover {
   id: string;
   room_number: string;
   floor: number;
-  status: "AVAILABLE" | "IN_USE" | "DIRTY" | "MAINTENANCE";
+  status: "AVAILABLE" | "IN_USE" | "DIRTY" | "CLEANING" | "MAINTENANCE";
   notes?: string;
   room_type?: {
     name: string;
@@ -150,7 +150,7 @@ export default function HousekeepingDashboardHub() {
     }
   };
 
-  const dirtyRooms = rooms.filter((r) => r.status === "DIRTY");
+  const dirtyRooms = rooms.filter((r) => r.status === "DIRTY" || r.status === "CLEANING");
   const maintenanceRooms = rooms.filter((r) => r.status === "MAINTENANCE");
   const inUseRooms = rooms.filter((r) => r.status === "IN_USE");
   const availableRooms = rooms.filter((r) => r.status === "AVAILABLE");
