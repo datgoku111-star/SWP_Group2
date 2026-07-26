@@ -47,3 +47,100 @@
 [2026-07-22T17:46:40.991Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
 [2026-07-22T18:37:06.893Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
 [2026-07-22T18:40:44.549Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:43:48.279Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:44:39.342Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:44:54.867Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:44:55.070Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:45:29.846Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:45:29.849Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:45:30.546Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:45:39.203Z] GET /api/rooms checkIn=2026-08-23, checkOut=2026-08-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:45:57.539Z] GET /api/rooms checkIn=2026-08-23, checkOut=2026-08-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:45:58.588Z] Request: body={"room_id":"4c6905df-3317-4b92-8b3b-21d80c86edc3","checkIn":"2026-08-23","checkOut":"2026-08-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784745895,"exp":1785350695}
+[2026-07-22T18:46:10.160Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:10.161Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:11.334Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:22.945Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:22.945Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:28.444Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:28.445Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:32.525Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:32.526Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:46:46.917Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T18:46:47.151Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T18:49:24.220Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T18:49:24.517Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-22T18:50:47.930Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:50:47.932Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:50:50.599Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-23, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:50:59.366Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-23, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:51:00.394Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-22","checkOut":"2026-07-23"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784746239,"exp":1785351039}
+[2026-07-22T18:51:58.546Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-23, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:52:52.728Z] GET /api/rooms checkIn=2026-07-22, checkOut=2026-07-27, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-22T18:52:53.619Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:30:28.441Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-23T00:30:28.864Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-23T00:30:47.983Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-23T00:30:48.366Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-23T00:30:48.744Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-23T00:30:49.125Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-23T00:34:16.947Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:34:16.948Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:34:38.064Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:34:38.065Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:34:54.535Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:34:54.537Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:00.711Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:00.712Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:11.231Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:11.232Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:20.903Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:20.904Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:59.737Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:35:59.737Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:36:08.334Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:36:08.334Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:40:40.504Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:40:40.505Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:45:42.772Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:45:42.774Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:46:22.001Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:46:39.623Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:46:41.112Z] Request: body={"room_id":"aa84393b-7f4d-43b3-9b61-798ded100661","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767527,"exp":1785372327}
+[2026-07-23T00:47:08.440Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:47:09.406Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:47:09.417Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767628,"exp":1785372428}
+[2026-07-23T00:47:10.914Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767628,"exp":1785372428}
+[2026-07-23T00:47:20.658Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:47:21.203Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:47:21.209Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767640,"exp":1785372440}
+[2026-07-23T00:47:21.842Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767640,"exp":1785372440}
+[2026-07-23T00:47:45.037Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:47:48.251Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:47:48.254Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767667,"exp":1785372467}
+[2026-07-23T00:47:49.628Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767667,"exp":1785372467}
+[2026-07-23T00:48:16.468Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:48:17.515Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:48:17.519Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767696,"exp":1785372496}
+[2026-07-23T00:48:18.206Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767696,"exp":1785372496}
+[2026-07-23T00:48:33.197Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:48:33.198Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:49:38.999Z] GET /api/rooms checkIn=2026-07-30, checkOut=2026-07-31, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:49:49.720Z] GET /api/rooms checkIn=2026-07-30, checkOut=2026-07-31, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:49:51.054Z] Request: body={"room_id":"4c6905df-3317-4b92-8b3b-21d80c86edc3","checkIn":"2026-07-30","checkOut":"2026-07-31"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767696,"exp":1785372496}
+[2026-07-23T00:50:03.411Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:50:03.411Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-28, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:50:09.442Z] GET /api/rooms checkIn=2026-07-30, checkOut=2026-07-31, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:50:28.839Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:50:29.739Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:50:29.743Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767828,"exp":1785372628}
+[2026-07-23T00:50:30.798Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767828,"exp":1785372628}
+[2026-07-23T00:51:14.807Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:51:15.537Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:51:15.546Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767874,"exp":1785372674}
+[2026-07-23T00:51:16.349Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767874,"exp":1785372674}
+[2026-07-23T00:51:55.871Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:51:57.722Z] GET /api/rooms checkIn=2026-07-23, checkOut=2026-07-24, user=7662e82b-ea34-49bf-a7ae-d339d2b019b6
+[2026-07-23T00:51:57.727Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767917,"exp":1785372717}
+[2026-07-23T00:51:58.672Z] Request: body={"room_id":"f9b7eaef-b9b4-437c-b406-b77bfced88a9","checkIn":"2026-07-23","checkOut":"2026-07-24"}, user={"sub":"7662e82b-ea34-49bf-a7ae-d339d2b019b6","email":"leanh03122013@gmail.com","role":"CUSTOMER","name":"Anh","iat":1784767917,"exp":1785372717}
+[2026-07-23T00:57:33.565Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=14bbd10c-2b1b-4c16-b145-fb7db4b37504
