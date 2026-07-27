@@ -33,17 +33,10 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
             {startDate?.toLocaleDateString("en-US", {
               month: "short",
               day: "2-digit",
-            }) || "Add dates"}
-            {endDate
-              ? " - " +
-                endDate?.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
-                })
-              : ""}
+            }) || "Add date"}
           </span>
           <span className="block mt-1 text-sm text-neutral-400 leading-none font-light">
-            {"Check in - Check out"}
+            {"Experience date"}
           </span>
         </div>
       </>
@@ -78,10 +71,7 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
               <div className="overflow-hidden rounded-3xl shadow-lg ring-1 ring-black ring-opacity-5 bg-white dark:bg-neutral-800 p-8">
                 <DatePicker
                   selected={startDate}
-                  onChange={onChangeDate}
-                  startDate={startDate}
-                  endDate={endDate}
-                  selectsRange
+                  onChange={(date: Date | null) => onChangeDate([date, date])}
                   monthsShown={2}
                   showPopperArrow={false}
                   inline
