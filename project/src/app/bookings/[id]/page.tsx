@@ -159,6 +159,14 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   
   const canRequestCheckout = !isStaff && b.status === "CHECKED_IN" && (!b.checkout_step || b.checkout_step === "NONE");
   
+  let cancelReasonText = null;
+  if (b.special_requests) {
+    const match = b.special_requests.match(/\[CANCEL_REASON:\s*(.*?)\]/);
+    if (match && match[1]) {
+      cancelReasonText = match[1];
+    }
+  }
+
   const formatMoney = (amount: number) => 
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 
@@ -260,6 +268,11 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
               <p className="font-medium">Room {b.room?.room_number} ({b.room?.room_type?.name})</p>
               <p className="text-neutral-500 text-sm">{b.check_in_date} — {b.check_out_date}</p>
               <p className="text-neutral-500 text-sm">Status: <span className="font-semibold">{b.status}</span></p>
+              {b.status === "CANCELLED" && cancelReasonText && (
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-1 font-medium italic break-words">
+                    Lý do hủy: {cancelReasonText}
+                  </p>
+                )}
             </div>
           </div>
 

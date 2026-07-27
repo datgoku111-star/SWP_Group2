@@ -333,6 +333,8 @@ export default function BookingsPage() {
                   let isExp = false;
                   let isCar = false;
                   let meta: any = null;
+                  let cancelReasonText = null;
+                  
                   if (booking.special_requests) {
                     try {
                       meta = JSON.parse(booking.special_requests);
@@ -341,6 +343,11 @@ export default function BookingsPage() {
                         if (meta.isCar) isCar = true;
                       }
                     } catch (e) {}
+                    
+                    const match = booking.special_requests.match(/\[CANCEL_REASON:\s*(.*?)\]/);
+                    if (match && match[1]) {
+                      cancelReasonText = match[1];
+                    }
                   }
 
                   const isUSD = isExp || isCar;
@@ -411,6 +418,11 @@ export default function BookingsPage() {
                         >
                           {booking.status}
                         </span>
+                        {booking.status === "CANCELLED" && cancelReasonText && (
+                          <div className="text-[10px] text-red-600 dark:text-red-400 mt-2 font-medium italic break-words max-w-[150px]">
+                            Lý do: {cancelReasonText}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 font-extrabold text-neutral-900 dark:text-white">
                         {displayPrice}

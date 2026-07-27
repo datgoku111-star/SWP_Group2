@@ -46,7 +46,7 @@ export async function POST(
           .from("payments")
           .insert({
             booking_id: bookingId,
-            amount: booking.total_amount,
+            amount: booking.total_amount * 0.1, // Only 10% deposit is paid when confirming
             method: "TRANSFER",
             status: "COMPLETED",
             transaction_ref: `CONFIRM_FALLBACK_${Math.floor(100000 + Math.random() * 900000)}`
