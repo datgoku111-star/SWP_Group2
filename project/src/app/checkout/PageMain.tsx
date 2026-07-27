@@ -44,7 +44,17 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const categoryParam = searchParams.get("category") || "Hotel room";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "2";
-  const isExperience = categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience");
+  const isExperience = typeParam === "experience" || categoryParam.toLowerCase().includes("tour") || categoryParam.toLowerCase().includes("experience") || categoryParam.toLowerCase().includes("climbing") || categoryParam.toLowerCase().includes("hiking");
+  const isRoomBooking = 
+    typeParam !== "service" &&
+    typeParam !== "experience" &&
+    typeParam !== "car" &&
+    categoryParam && 
+    !categoryParam.toLowerCase().includes("tour") &&
+    !categoryParam.toLowerCase().includes("experience") &&
+    !categoryParam.toLowerCase().includes("climbing") &&
+    !categoryParam.toLowerCase().includes("hiking") &&
+    !categoryParam.toLowerCase().includes("car");
   const specialRequestsValue = isExperience
     ? JSON.stringify({ isExperience: true, title: titleParam, category: categoryParam })
     : "";
@@ -78,6 +88,8 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const router = useRouter();
   const { formatPrice, convertPrice, currency } = useCurrency();
   const [lockedRoom, setLockedRoom] = useState<any>(null);
+  const [checkedInRooms, setCheckedInRooms] = useState<any[]>([]);
+  const [selectedCheckedInRoom, setSelectedCheckedInRoom] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(600); // 10 minutes (600s)
   const [activeTab, setActiveTab] = useState(0); // 0: paypal, 1: card, 2: payos
   const [showPayOSModal, setShowPayOSModal] = useState(false);
@@ -102,19 +114,22 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
       .on(
         "postgres_changes",
         {
+          event: "*",
+          schema: "public",
           table: isService ? "service_orders" : "payments",
           filter: `booking_id=eq.${paymentInfo.bookingId}`,
         },
         (payload) => {
           console.log("Real-time status update:", payload);
+          const newRecord = payload.new as any;
           if (isService) {
-            if (payload.new.status === "IN_PROGRESS" || payload.new.status === "COMPLETED") {
+            if (newRecord.status === "IN_PROGRESS" || newRecord.status === "COMPLETED") {
               setShowPayOSModal(false);
-              const sOrderId = payload.new.id;
+              const sOrderId = newRecord.id;
               router.push(`/pay-done?bookingId=${paymentInfo.bookingId}&serviceOrderId=${sOrderId}&type=service&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
             }
           } else {
-            if (payload.new.status === "COMPLETED") {
+            if (newRecord.status === "COMPLETED") {
               setShowPayOSModal(false);
               router.push(`/pay-done?bookingId=${paymentInfo.bookingId}&title=${encodeURIComponent(titleParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}`);
             }
@@ -140,6 +155,20 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         const checkInStr = startDate ? startDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
         const checkOutStr = endDate ? endDate.toISOString().split("T")[0] : new Date(Date.now() + 24*60*60*1000).toISOString().split("T")[0];
         
+        if (!isRoomBooking) {
+          // For non-room bookings (experiences/cars), we bypass availability checks and locks.
+          // We just fetch any room to satisfy the DB bookings schema foreign key constraint.
+          const roomsRes = await fetch("/api/rooms?all=true");
+          if (!roomsRes.ok) throw new Error("Failed to load room details.");
+          const rooms = await roomsRes.json();
+          if (rooms && rooms.length > 0) {
+            setLockedRoom({ room_id: rooms[0].id, dummy: true });
+          } else {
+            throw new Error("No rooms found in database to link the booking.");
+          }
+          return;
+        }
+
         // 1. Fetch available rooms
         const roomsRes = await fetch(`/api/rooms?checkIn=${checkInStr}&checkOut=${checkOutStr}`);
         if (!roomsRes.ok) throw new Error("Failed to check room availability.");
@@ -202,22 +231,21 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         }
 
         if (!lockRes.ok) {
-          const lockData = await lockRes.json();
-          if (lockRes.status === 401 || lockData.error === "Unauthorized") {
+          const errData = await lockRes.json();
+          if (lockRes.status === 401 || errData.error === "Unauthorized") {
             alert("Your session has expired or is invalid. Please log in again!");
             router.push(`/login?callbackUrl=${encodeURIComponent(window.location.href)}`);
             return;
           }
-          alert(lockData.error || "Room has been locked by another user. Please select another date or room!");
-          router.back();
-          return;
+          throw new Error(errData.error || "Room has been locked by another user. Please select another date or room!");
         }
 
         const lockData = await lockRes.json();
-        setLockedRoom(targetRoom);
+        setLockedRoom(lockData.lock);
         activeRoomId = targetRoom.id;
       } catch (err: any) {
         console.error("Locking failed on checkout load:", err);
+        setError(err.message || "An error occurred while temporarily locking the room. Vui lòng thử lại!");
         alert(err.message || "An error occurred while temporarily locking the room.");
         router.back();
       }
@@ -236,11 +264,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         }).catch(console.error);
       }
     };
-  }, [typeParam, user, startDate, endDate, router]);
+  }, [roomIdParam, titleParam, startDate, endDate, user, router, typeParam, isRoomBooking]);
 
   // Tab Close / Page Refresh Event Listener to unlock room
   useEffect(() => {
-    if (!lockedRoom) return;
+    if (!lockedRoom || lockedRoom.dummy) return;
 
     const handleBeforeUnload = () => {
       fetch("/api/rooms/unlock", {
@@ -318,7 +346,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            room_id: targetRoom.id,
+            room_id: targetRoom.room_id || targetRoom.id,
             check_in_date: checkInStr,
             check_out_date: checkOutStr,
             num_guests: (guests.guestAdults || 1) + (guests.guestChildren || 0),
@@ -420,7 +448,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     const priceVal = Number(priceParam) || 19;
     const subtotal = priceVal * nights;
     const total = subtotal;
-    const depositAmount = typeParam === "service" ? total : total * 0.1;
+    const depositAmount = (typeParam === "service" || isExperience) ? total : total * 0.1;
 
     return (
       <div className="w-full flex flex-col sm:rounded-2xl lg:border border-neutral-200 dark:border-neutral-700 space-y-6 sm:space-y-8 px-0 sm:p-6 xl:p-8">
@@ -483,7 +511,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           </div>
           {typeParam !== "service" && (
             <div className="flex justify-between font-bold text-primary-6000 mt-2">
-              <span>{t("checkoutDeposit") || "Thanh toán cọc (10%)"}</span>
+              <span>{isExperience ? "Thanh toán (100%)" : t("checkoutDeposit") || "Deposit Payment (10%)"}</span>
               <span>
                 {formatPrice(depositAmount, "USD")}
               </span>
@@ -500,7 +528,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
         <h2 className="text-3xl lg:text-4xl font-semibold">
           {t("checkoutConfirmAndPay")}
         </h2>
-        {lockedRoom && (
+        {isRoomBooking && lockedRoom && !lockedRoom.dummy && (
           <div className="p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-2xl text-orange-800 dark:text-orange-300 text-sm flex justify-between items-center animate-pulse">
             <span className="font-semibold flex items-center">
               <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -742,12 +770,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                             const checkRes = await fetch(`/api/payment/check/${paymentInfo.orderCode}`);
                             const checkData = await checkRes.json();
                             if (!checkRes.ok || checkData.status !== "PAID") {
-                              alert("Khách hàng chưa thanh toán thành công qua mã QR. Vui lòng kiểm tra lại!");
+                              alert("Guest has not successfully paid via QR. Please check again!");
                               return;
                             }
                           } catch (e) {
                             console.error("Payment check failed:", e);
-                            alert("Có lỗi xảy ra khi kiểm tra trạng thái thanh toán.");
+                            alert("Error checking payment status.");
                             return;
                           }
 
@@ -774,7 +802,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                         }}
                         className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium text-center rounded-xl transition-all shadow-md text-sm"
                       >
-                        {t("checkoutAlreadyPaid") || "Đã thanh toán"}
+                        {t("checkoutAlreadyPaid") || "Already paid"}
                       </button>
                      <button
                        type="button"

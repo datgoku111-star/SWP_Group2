@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       .from("bookings")
       .update({
         checkout_step: "INSPECTED",
-        checkout_message: "Phòng đã được kiểm tra hoàn tất.",
+        checkout_message: "Room inspection has been completed successfully.",
       })
       .eq("id", bookingId);
 

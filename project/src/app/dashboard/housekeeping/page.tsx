@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Wrench, Check, ArrowRight, BedDouble, Clock, CheckCheck, Plus, ClipboardList, Shirt, Truck } from "lucide-react";
+import { Sparkles, CheckCircle2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Wrench, Check, ArrowRight, BedDouble, Clock, CheckCheck, Plus, ClipboardList, Shirt, Truck, SprayCan, Zap } from "lucide-react";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 import { useAuth } from "@/lib/auth-context";
@@ -13,7 +13,7 @@ export interface RoomTurnover {
   id: string;
   room_number: string;
   floor: number;
-  status: "AVAILABLE" | "IN_USE" | "DIRTY" | "MAINTENANCE";
+  status: "AVAILABLE" | "IN_USE" | "DIRTY" | "CLEANING" | "MAINTENANCE";
   notes?: string;
   room_type?: {
     name: string;
@@ -27,7 +27,72 @@ export default function HousekeepingDashboardHub() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW" | "CHECKOUT_FLOW">("DIRTY_FLOW");
-  const [checkoutRequests, setCheckoutRequests] = useState<any[]>([]);
+    const [checkoutRequests, setCheckoutRequests] = useState<any[]>([]);
+  const [reportingRoomId, setReportingRoomId] = useState<string | null>(null);
+  const [selectedDamages, setSelectedDamages] = useState<{name: string, price: number}[]>([]);
+  const [customDamageName, setCustomDamageName] = useState("");
+  const [customDamagePrice, setCustomDamagePrice] = useState("");
+  const [isSubmittingDamage, setIsSubmittingDamage] = useState(false);
+  
+  const PREDEFINED_DAMAGES = [
+    { name: "Hỏng chăn", price: 50000 },
+    { name: "Hỏng gối", price: 40000 },
+    { name: "Hỏng bình nước", price: 30000 },
+    { name: "Hỏng điều hòa", price: 100000 },
+  ];
+  
+  const handleToggleDamage = (damage: {name: string, price: number}) => {
+    setSelectedDamages(prev => 
+      prev.find(d => d.name === damage.name) 
+        ? prev.filter(d => d.name !== damage.name)
+        : [...prev, damage]
+    );
+  };
+  
+  const submitDamageReport = async () => {
+    if (!reportingRoomId) return;
+    
+    let allDamages = [...selectedDamages];
+    if (customDamageName && customDamagePrice) {
+      allDamages.push({ name: customDamageName, price: Number(customDamagePrice) || 0 });
+    }
+    
+    if (allDamages.length === 0) {
+      alert("Vui lòng chọn ít nhất một mục hỏng hóc hoặc nhập tùy chỉnh.");
+      return;
+    }
+    
+    const totalCharge = allDamages.reduce((sum, item) => sum + item.price, 0);
+    const description = allDamages.map(d => `${d.name} (${d.price.toLocaleString()}đ)`).join(', ');
+    
+    setIsSubmittingDamage(true);
+    try {
+      const res = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          room_id: reportingRoomId,
+          incident_type: 'DAMAGE',
+          severity: 'MEDIUM',
+          description: description,
+          estimated_charge: totalCharge,
+          is_chargeable: true
+        })
+      });
+      
+      if (!res.ok) throw new Error("Failed to report incident");
+      
+      await changeStatus(reportingRoomId, "MAINTENANCE", `Báo hỏng: ${description}`);
+      setReportingRoomId(null);
+      setSelectedDamages([]);
+      setCustomDamageName("");
+      setCustomDamagePrice("");
+    } catch (err) {
+      alert("Lỗi khi báo hỏng: " + (err as Error).message);
+    } finally {
+      setIsSubmittingDamage(false);
+    }
+  };
   const [rooms, setRooms] = useState<RoomTurnover[]>([]);
   const [loading, setLoading] = useState(true);
   const [laundryOrders, setLaundryOrders] = useState<any[]>([]);
@@ -154,7 +219,7 @@ export default function HousekeepingDashboardHub() {
     }
   };
 
-  const dirtyRooms = rooms.filter((r) => r.status === "DIRTY");
+  const dirtyRooms = rooms.filter((r) => r.status === "DIRTY" || r.status === "CLEANING");
   const maintenanceRooms = rooms.filter((r) => r.status === "MAINTENANCE");
   const inUseRooms = rooms.filter((r) => r.status === "IN_USE");
   const availableRooms = rooms.filter((r) => r.status === "AVAILABLE");
@@ -237,12 +302,12 @@ export default function HousekeepingDashboardHub() {
         >
           <div className="flex items-center justify-between">
             <p className={`text-sm font-bold ${activeWorkflow === "CHECKOUT_FLOW" ? "text-white" : "text-purple-800 dark:text-purple-300"}`}>
-              🟣 Kiểm Tra (CHECKOUT)
+              🟣 CHECKOUT INSPECT
             </p>
             <AlertTriangle className="w-6 h-6" />
           </div>
           <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{checkoutRequests.length}</h3>
-          <p className={`text-xs mt-1 ${activeWorkflow === "CHECKOUT_FLOW" ? "text-purple-100" : "text-neutral-500"}`}>Khách yêu cầu trả phòng</p>
+          <p className={`text-xs mt-1 ${activeWorkflow === "CHECKOUT_FLOW" ? "text-purple-100" : "text-neutral-500"}`}>Checkout requests</p>
         </div>
 
         <div
@@ -386,16 +451,16 @@ export default function HousekeepingDashboardHub() {
         <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
           <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              🟣 LUỒNG KIỂM TRA TRẢ PHÒNG (Checkout Inspection)
+              🟣 CHECKOUT INSPECTION FLOW
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
-              Khách hàng gửi yêu cầu trả phòng. Lễ tân đã điều động bạn lên kiểm tra xem có hư hỏng hay mất mát đồ đạc gì không trước khi khách thanh toán.
+              Guest requested checkout. Receptionist dispatched you to inspect for damages or lost items before payment.
             </p>
           </div>
 
           {checkoutRequests.length === 0 ? (
             <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
-              Không có yêu cầu kiểm tra phòng nào hiện tại.
+              No checkout inspection requests at the moment.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -467,9 +532,15 @@ export default function HousekeepingDashboardHub() {
                         {room.room_type?.name || "Deluxe Ocean"} — Tầng {room.floor}
                       </h4>
                     </div>
-                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-200 dark:bg-amber-900/60 px-3 py-1 rounded-full uppercase">
-                      Chờ Dọn (DIRTY)
-                    </span>
+                    {room.status === "DIRTY" ? (
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-200 dark:bg-amber-900/60 px-3 py-1 rounded-full uppercase">
+                        Chờ Dọn (DIRTY)
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-200 dark:bg-blue-900/60 px-3 py-1 rounded-full uppercase animate-pulse">
+                        Đang Dọn Dẹp (CLEANING)
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -484,25 +555,46 @@ export default function HousekeepingDashboardHub() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2">
-                    <button
-                      onClick={() => changeStatus(room.id, "AVAILABLE")}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      ✨ HOÀN TẤT DỌN DẸP (➔ AVAILABLE)
-                    </button>
-                    <button
-                      onClick={() => {
-                        const reason = prompt("Nhập lý do hỏng hóc cần bảo trì (VD: Hỏng điều hòa, rò nước...):", "Hỏng thiết bị điện nước");
-                        if (reason !== null) changeStatus(room.id, "MAINTENANCE", reason);
-                      }}
-                      className="bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-800 dark:text-red-300 font-semibold py-3 px-4 rounded-2xl transition-all text-sm flex items-center gap-1.5"
-                      title="Báo lỗi kỹ thuật / chuyển sang Luồng 2"
-                    >
-                      <Wrench className="w-4 h-4" />
-                      Báo Hỏng
-                    </button>
+                  <div className="flex flex-col gap-3 pt-2">
+                    {room.status === "DIRTY" && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => changeStatus(room.id, "CLEANING", "Đang dọn nhanh (20p)")}
+                          className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-3 rounded-xl transition-all shadow flex items-center justify-center gap-1.5 text-xs"
+                        >
+                          <Zap className="w-3.5 h-3.5" />
+                          Dọn nhanh 20p
+                        </button>
+                        <button
+                          onClick={() => changeStatus(room.id, "CLEANING", "Đang dọn kỹ (45p)")}
+                          className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 px-3 rounded-xl transition-all shadow flex items-center justify-center gap-1.5 text-xs"
+                        >
+                          <SprayCan className="w-3.5 h-3.5" />
+                          Dọn kỹ 45p
+                        </button>
+                      </div>
+                    )}
+                    
+                    {room.status === "CLEANING" && (
+                      <button
+                        onClick={() => changeStatus(room.id, "AVAILABLE")}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        ✨ HOÀN TẤT DỌN DẸP (➔ AVAILABLE)
+                      </button>
+                    )}
+                    
+                    {room.status === "DIRTY" && (
+                      <button
+                        onClick={() => setReportingRoomId(room.id)}
+                        className="bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-800 dark:text-red-300 font-semibold py-2 px-4 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 mx-auto w-full mt-2"
+                        title="Báo lỗi kỹ thuật / chuyển sang Luồng 2"
+                      >
+                        <Wrench className="w-3.5 h-3.5" />
+                        Báo Hỏng / Bảo trì
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -516,7 +608,7 @@ export default function HousekeepingDashboardHub() {
         <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
           <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              🔴 LUỒNG 2: QUY TRÌNH QUẢN LÝ BẢO TRÌ & SỬA CHỮA SỰ CỐ (Maintenance & Repairs)
+              🔴 LUỒNG 2: QUY TRÌNH QUẢN LÝ MAINTENANCE & SỬA CHỮA SỰ CỐ (Maintenance & Repairs)
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
               Các buồng phòng gặp sự cố kỹ thuật (điện, nước, khóa cửa, điều hòa) bị khóa tạm thời khỏi danh sách đặt phòng của Lễ tân. Khi kỹ thuật viên sửa chữa xong và vệ sinh sạch, nhấn <strong>"🛠️ Nghiệm Thu Sửa Chữa Xong"</strong> để khôi phục phòng về trạng thái <strong>AVAILABLE</strong>.

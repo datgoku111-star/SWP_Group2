@@ -10,19 +10,31 @@ export async function createBooking(booking: {
   total_amount: number;
   special_requests?: string;
 }) {
-  // 1. Dynamic Check for overlapping bookings
-  const { data: overlaps, error: overlapError } = await supabaseServer
-    .from("bookings")
-    .select("id")
-    .eq("room_id", booking.room_id)
-    .in("status", ["PENDING", "CONFIRMED", "CHECKED_IN"])
-    .lt("check_in_date", booking.check_out_date)
-    .gt("check_out_date", booking.check_in_date);
+  // 1. Dynamic Check for overlapping bookings (Bypass for experiences/cars)
+  let isExperienceOrCar = false;
+  try {
+    if (booking.special_requests) {
+      const parsed = JSON.parse(booking.special_requests);
+      if (parsed.isExperience || parsed.isCar) {
+        isExperienceOrCar = true;
+      }
+    }
+  } catch (e) {}
 
-  if (overlapError) throw overlapError;
+  if (!isExperienceOrCar) {
+    const { data: overlaps, error: overlapError } = await supabaseServer
+      .from("bookings")
+      .select("id")
+      .eq("room_id", booking.room_id)
+      .in("status", ["PENDING", "CONFIRMED", "CHECKED_IN"])
+      .lt("check_in_date", booking.check_out_date)
+      .gt("check_out_date", booking.check_in_date);
 
-  if (overlaps && overlaps.length > 0) {
-    throw new Error("Phòng không còn trống trong khoảng thời gian đã chọn.");
+    if (overlapError) throw overlapError;
+
+    if (overlaps && overlaps.length > 0) {
+      throw new Error("Phòng không còn trống trong khoảng thời gian đã chọn.");
+    }
   }
 
   // 2. Insert the booking

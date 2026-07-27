@@ -79,10 +79,10 @@ export default function BookingsPage() {
           if (b.special_requests) {
             try {
               const meta = JSON.parse(b.special_requests);
-              if (meta?.isExperience || meta?.isCar) return false;
+              if (meta?.isExperience) return true;
             } catch(e) {}
           }
-          return true;
+          return false;
         });
         if (user?.role === "CUSTOMER") {
           filtered = filtered.filter((b: any) => b.user_id === user.id);
@@ -111,10 +111,10 @@ export default function BookingsPage() {
           if (b.special_requests) {
             try {
               const meta = JSON.parse(b.special_requests);
-              if (meta?.isExperience || meta?.isCar) return false;
+              if (meta?.isExperience) return true;
             } catch(e) {}
           }
-          return true;
+          return false;
         });
         if (user?.role === "CUSTOMER") {
           filtered = filtered.filter((b: any) => b.user_id === user.id);
@@ -234,7 +234,7 @@ export default function BookingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-700 pb-6">
         <div>
           <h1 className="text-3xl font-extrabold sm:text-4xl text-neutral-900 dark:text-white">
-            {user?.role === "CUSTOMER" ? "My Bookings" : "Reservations & Billing Management"}
+            {"Booked Experiences"}
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">
             {isStaff
@@ -333,8 +333,6 @@ export default function BookingsPage() {
                   let isExp = false;
                   let isCar = false;
                   let meta: any = null;
-                  let cancelReasonText = null;
-                  
                   if (booking.special_requests) {
                     try {
                       meta = JSON.parse(booking.special_requests);
@@ -343,11 +341,6 @@ export default function BookingsPage() {
                         if (meta.isCar) isCar = true;
                       }
                     } catch (e) {}
-                    
-                    const match = booking.special_requests.match(/\[CANCEL_REASON:\s*(.*?)\]/);
-                    if (match && match[1]) {
-                      cancelReasonText = match[1];
-                    }
                   }
 
                   const isUSD = isExp || isCar;
@@ -418,11 +411,6 @@ export default function BookingsPage() {
                         >
                           {booking.status}
                         </span>
-                        {booking.status === "CANCELLED" && cancelReasonText && (
-                          <div className="text-[10px] text-red-600 dark:text-red-400 mt-2 font-medium italic break-words max-w-[150px]">
-                            Lý do: {cancelReasonText}
-                          </div>
-                        )}
                       </td>
                       <td className="px-6 py-4 font-extrabold text-neutral-900 dark:text-white">
                         {displayPrice}
