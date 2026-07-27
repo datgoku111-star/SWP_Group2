@@ -33,65 +33,29 @@ export default function HousekeepingDashboardHub() {
   const [customDamageName, setCustomDamageName] = useState("");
   const [customDamagePrice, setCustomDamagePrice] = useState("");
   const [isSubmittingDamage, setIsSubmittingDamage] = useState(false);
-  
-  const PREDEFINED_DAMAGES = [
-    { name: "Hỏng chăn", price: 50000 },
-    { name: "Hỏng gối", price: 40000 },
-    { name: "Hỏng bình nước", price: 30000 },
-    { name: "Hỏng điều hòa", price: 100000 },
-  ];
-  
+  const [targetBookingId, setTargetBookingId] = useState<string | null>(null);
+  const [damageNote, setDamageNote] = useState("");
+  const [damageImage, setDamageImage] = useState<string | null>(null);
+  const [incidents, setIncidents] = useState<any[]>([]);
+
+  const fetchIncidents = async () => {
+    try {
+      const res = await fetch("/api/incidents?active=true");
+      if (res.ok) {
+        const data = await res.json();
+        setIncidents(data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch active incidents:", e);
+    }
+  };
+
   const handleToggleDamage = (damage: {name: string, price: number}) => {
     setSelectedDamages(prev => 
       prev.find(d => d.name === damage.name) 
         ? prev.filter(d => d.name !== damage.name)
         : [...prev, damage]
     );
-  };
-  
-  const submitDamageReport = async () => {
-    if (!reportingRoomId) return;
-    
-    let allDamages = [...selectedDamages];
-    if (customDamageName && customDamagePrice) {
-      allDamages.push({ name: customDamageName, price: Number(customDamagePrice) || 0 });
-    }
-    
-    if (allDamages.length === 0) {
-      alert("Vui lòng chọn ít nhất một mục hỏng hóc hoặc nhập tùy chỉnh.");
-      return;
-    }
-    
-    const totalCharge = allDamages.reduce((sum, item) => sum + item.price, 0);
-    const description = allDamages.map(d => `${d.name} (${d.price.toLocaleString()}đ)`).join(', ');
-    
-    setIsSubmittingDamage(true);
-    try {
-      const res = await fetch('/api/incidents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room_id: reportingRoomId,
-          incident_type: 'DAMAGE',
-          severity: 'MEDIUM',
-          description: description,
-          estimated_charge: totalCharge,
-          is_chargeable: true
-        })
-      });
-      
-      if (!res.ok) throw new Error("Failed to report incident");
-      
-      await changeStatus(reportingRoomId, "MAINTENANCE", `Báo hỏng: ${description}`);
-      setReportingRoomId(null);
-      setSelectedDamages([]);
-      setCustomDamageName("");
-      setCustomDamagePrice("");
-    } catch (err) {
-      alert("Lỗi khi báo hỏng: " + (err as Error).message);
-    } finally {
-      setIsSubmittingDamage(false);
-    }
   };
   const [rooms, setRooms] = useState<RoomTurnover[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +73,7 @@ export default function HousekeepingDashboardHub() {
   const fetchRooms = async () => {
     setLoading(true);
     try {
+      fetchIncidents();
       const res = await fetch("/api/rooms?all=true");
       const coRes = await fetch("/api/housekeeping/checkout-requests");
       
@@ -225,28 +190,17 @@ export default function HousekeepingDashboardHub() {
   const availableRooms = rooms.filter((r) => r.status === "AVAILABLE");
 
   const handleCompleteInspection = async (bookingId: string, roomId: string, hasDamage: boolean) => {
-    let damageDescription = "";
-    let estimatedCharge = 0;
-
     if (hasDamage) {
-      damageDescription = prompt("Nhập mô tả đồ đạc bị hỏng (VD: Vỡ bình hoa, rách rèm...):") || "";
-      if (!damageDescription.trim()) {
-        alert("Bạn phải nhập mô tả đồ đạc hỏng.");
-        return;
-      }
-      const chargeStr = prompt("Nhập số tiền ước tính đền bù (USD):", "0");
-      estimatedCharge = parseInt(chargeStr || "0", 10);
-      if (isNaN(estimatedCharge) || estimatedCharge < 0) {
-        alert("Số tiền không hợp lệ.");
-        return;
-      }
+      setTargetBookingId(bookingId);
+      setReportingRoomId(roomId);
+      return;
     }
 
     try {
       const res = await fetch("/api/housekeeping/checkout-requests/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, roomId, hasDamage, damageDescription, estimatedCharge }),
+        body: JSON.stringify({ bookingId, roomId, hasDamage, damageDescription: "", estimatedCharge: 0 }),
       });
       if (res.ok) {
         alert("Đã hoàn tất kiểm tra phòng.");
@@ -621,46 +575,77 @@ export default function HousekeepingDashboardHub() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {maintenanceRooms.map((room) => (
-                <div key={room.id} className="bg-red-50/60 dark:bg-red-950/20 border-2 border-red-300 dark:border-red-800/60 p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="bg-red-600 text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow">
-                        Phòng {room.room_number}
-                      </span>
-                      <h4 className="text-lg font-bold text-neutral-900 dark:text-white mt-2">
-                        {room.room_type?.name || "Presidential Suite"} — Tầng {room.floor}
-                      </h4>
-                    </div>
-                    <span className="text-xs font-bold text-red-700 dark:text-red-300 bg-red-200 dark:bg-red-900/60 px-3 py-1 rounded-full uppercase">
-                      Đang Bảo Trì (LOCKED)
-                    </span>
-                  </div>
-
-                  <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-2xl text-sm text-red-900 dark:text-red-200 border border-red-200 dark:border-red-800/40 flex items-start gap-2.5">
-                    <Wrench className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="font-bold">Sự cố kỹ thuật:</strong> {room.notes || "Đang kiểm tra hệ thống điện nước"}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    {user?.role === "HOUSEKEEPING" ? (
-                      <div className="text-[11px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-                        Chỉ Kỹ thuật viên / Giám sát mới được Nghiệm thu bảo trì
+              {maintenanceRooms.map((room) => {
+                const roomIncident = incidents.find((inc) => inc.room_id === room.id);
+                return (
+                  <div key={room.id} className="bg-red-50/60 dark:bg-red-950/20 border-2 border-red-300 dark:border-red-800/60 p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="bg-red-600 text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow">
+                          Phòng {room.room_number}
+                        </span>
+                        <h4 className="text-lg font-bold text-neutral-900 dark:text-white mt-2">
+                          {room.room_type?.name || "Presidential Suite"} — Tầng {room.floor}
+                        </h4>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ")}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
-                      >
-                        <CheckCheck className="w-5 h-5" />
-                        🛠️ NGHIỆM THU SỬA CHỮA XONG (➔ AVAILABLE)
-                      </button>
-                    )}
+                      <span className="text-xs font-bold text-red-700 dark:text-red-300 bg-red-200 dark:bg-red-900/60 px-3 py-1 rounded-full uppercase">
+                        Đang Bảo Trì (LOCKED)
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-red-200 dark:border-red-800/40">
+                      <div className="flex items-start gap-2.5 text-sm text-red-900 dark:text-red-200">
+                        <Wrench className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="font-bold">Sự cố kỹ thuật:</strong> {roomIncident?.description || room.notes || "Đang kiểm tra hệ thống điện nước"}
+                        </div>
+                      </div>
+                      
+                      {roomIncident?.detailed_note && (
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 pl-7">
+                          <span className="font-semibold text-neutral-700 dark:text-neutral-300">Chi tiết:</span> {roomIncident.detailed_note}
+                        </div>
+                      )}
+
+                      {roomIncident?.incident_evidence && roomIncident.incident_evidence.length > 0 && (
+                        <div className="mt-3 pl-7">
+                          <p className="text-[11px] font-semibold text-neutral-400 mb-1">Ảnh hiện trường:</p>
+                          <img
+                            src={roomIncident.incident_evidence[0].file_url}
+                            alt="Evidence photo"
+                            className="w-full max-h-40 object-cover rounded-xl border border-neutral-200 dark:border-neutral-700"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                      {user?.role === "HOUSEKEEPING" ? (
+                        <div className="text-[11px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
+                          Chỉ Kỹ thuật viên / Giám sát mới được Nghiệm thu bảo trì
+                        </div>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            if (roomIncident) {
+                              await fetch(`/api/incidents/${roomIncident.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'RESOLVED', note: 'Kỹ thuật viên nghiệm thu hoàn tất bảo trì phòng' })
+                              });
+                            }
+                            await changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ");
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
+                        >
+                          <CheckCheck className="w-5 h-5" />
+                          🛠️ NGHIỆM THU SỬA CHỮA XONG (➔ AVAILABLE)
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -963,6 +948,244 @@ export default function HousekeepingDashboardHub() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL BÁO HỎNG / BẢO TRÌ */}
+      {reportingRoomId && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 shadow-2xl border border-neutral-100 dark:border-neutral-800 animate-scale-up">
+            <div className="flex justify-between items-center pb-3 border-b border-neutral-100 dark:border-neutral-800">
+              <h3 className="text-xl font-bold text-neutral-950 dark:text-white flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-red-600" />
+                Báo hỏng phòng {rooms.find(r => r.id === reportingRoomId)?.room_number}
+              </h3>
+              <button
+                onClick={() => {
+                  setReportingRoomId(null);
+                  setSelectedDamages([]);
+                  setCustomDamageName("");
+                  setCustomDamagePrice("");
+                  setDamageNote("");
+                  setDamageImage(null);
+                  setTargetBookingId(null);
+                }}
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-2xl font-semibold"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* PREDEFINED DAMAGES LIST */}
+            <div className="space-y-3">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Chọn danh mục hỏng hóc:
+              </label>
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                {[
+                  { name: "Hỏng Tivi", price: 150 },
+                  { name: "Hỏng Điều hòa", price: 200 },
+                  { name: "Hỏng Tủ lạnh", price: 100 },
+                  { name: "Bình nước hỏng", price: 10 },
+                  { name: "Bình nóng lạnh hỏng", price: 80 },
+                  { name: "Rách/Bẩn Ga giường", price: 30 },
+                  { name: "Mất/Hỏng khăn tắm", price: 15 },
+                ].map((item) => {
+                  const isChecked = selectedDamages.some(d => d.name === item.name);
+                  return (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => handleToggleDamage(item)}
+                      className={`p-3 rounded-2xl border text-left text-xs transition-all flex flex-col justify-between h-16 ${
+                        isChecked
+                          ? "bg-red-50 dark:bg-red-950/20 border-red-500 text-red-700 dark:text-red-400 font-bold"
+                          : "bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <span>{item.name}</span>
+                      <span className="opacity-80">${item.price}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CUSTOM DAMAGE SECTION */}
+            <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Hỏng hóc tùy chỉnh khác:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Tên đồ dùng hư hỏng..."
+                  value={customDamageName}
+                  onChange={(e) => setCustomDamageName(e.target.value)}
+                  className="flex-1 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2 text-neutral-900 dark:text-white"
+                />
+                <input
+                  type="number"
+                  placeholder="Giá (USD)"
+                  value={customDamagePrice}
+                  onChange={(e) => setCustomDamagePrice(e.target.value)}
+                  className="w-24 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2 text-neutral-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* UPLOAD IMAGE SECTION */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Tải lên hình ảnh hiện trường / bằng chứng:
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setDamageImage(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"
+                />
+              </div>
+              {damageImage && (
+                <div className="relative w-full h-24 rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-700 mt-2">
+                  <img src={damageImage} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setDamageImage(null)}
+                    className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-700"
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* DETAILED NOTE */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Ghi chú chi tiết hư hại:
+              </label>
+              <textarea
+                placeholder="Ghi chú thêm về lỗi kỹ thuật, vị trí hư hại..."
+                value={damageNote}
+                onChange={(e) => setDamageNote(e.target.value)}
+                rows={2}
+                className="w-full text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2 text-neutral-900 dark:text-white"
+              />
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setReportingRoomId(null);
+                  setSelectedDamages([]);
+                  setCustomDamageName("");
+                  setCustomDamagePrice("");
+                  setDamageNote("");
+                  setDamageImage(null);
+                  setTargetBookingId(null);
+                }}
+                className="flex-1 py-3 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-bold rounded-2xl hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingDamage}
+                onClick={async () => {
+                  let allDamages = [...selectedDamages];
+                  if (customDamageName && customDamagePrice) {
+                    allDamages.push({ name: customDamageName, price: Number(customDamagePrice) || 0 });
+                  }
+                  
+                  if (allDamages.length === 0) {
+                    alert("Vui lòng chọn hoặc nhập nhất một mục hỏng hóc.");
+                    return;
+                  }
+
+                  setIsSubmittingDamage(true);
+                  try {
+                    const totalCharge = allDamages.reduce((sum, item) => sum + item.price, 0);
+                    const description = allDamages.map(d => `${d.name} ($${d.price})`).join(', ');
+
+                    // 1. Create incident
+                    const res = await fetch('/api/incidents', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        room_id: reportingRoomId,
+                        booking_id: targetBookingId || undefined,
+                        incident_type: 'DAMAGE',
+                        severity: 'MEDIUM',
+                        description: description,
+                        detailed_note: damageNote || 'Báo cáo từ nhân viên buồng phòng',
+                        estimated_charge: totalCharge,
+                        is_chargeable: true,
+                        evidence_image: damageImage
+                      })
+                    });
+
+                    if (!res.ok) {
+                      const errData = await res.json().catch(() => ({}));
+                      let errMsg = errData.error || errData.message || "Failed to report incident";
+                      if (errData.details) {
+                        errMsg += " - Chi tiết: " + JSON.stringify(errData.details);
+                      }
+                      throw new Error(errMsg);
+                    }
+
+                    // 2. Change room status to MAINTENANCE
+                    await changeStatus(reportingRoomId!, "MAINTENANCE", `Báo hỏng: ${description}. ${damageNote}`);
+
+                    // 3. If targetBookingId is present, mark the checkout inspection completed with damage
+                    if (targetBookingId) {
+                      await fetch("/api/housekeeping/checkout-requests/complete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          bookingId: targetBookingId,
+                          roomId: reportingRoomId,
+                          hasDamage: true,
+                          damageDescription: description,
+                          estimatedCharge: totalCharge
+                        }),
+                      });
+                    }
+
+                    // Reset form
+                    setReportingRoomId(null);
+                    setSelectedDamages([]);
+                    setCustomDamageName("");
+                    setCustomDamagePrice("");
+                    setDamageNote("");
+                    setDamageImage(null);
+                    setTargetBookingId(null);
+                    fetchRooms();
+                    alert("Báo cáo hỏng hóc & Đưa phòng vào diện bảo trì thành công!");
+                  } catch (err: any) {
+                    alert("Lỗi khi báo hỏng: " + err.message);
+                  } finally {
+                    setIsSubmittingDamage(false);
+                  }
+                }}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl disabled:opacity-50 text-sm shadow flex items-center justify-center gap-2"
+              >
+                {isSubmittingDamage ? "Đang xử lý..." : "Xác nhận báo hỏng"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -8,7 +8,7 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import type { InvoiceData } from "@/types/hotel";
 import { Dialog, Transition } from "@headlessui/react";
 import ButtonSecondary from "@/shared/ButtonSecondary";
-import { Printer, CreditCard, XCircle } from "lucide-react";
+import { Printer, CreditCard, XCircle, AlertTriangle } from "lucide-react";
 
 export default function BookingDetailPage({ params }: { params: { id: string } }) {
   const { user, isLoading } = useAuth();
@@ -212,6 +212,117 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
         {error && <div className="p-4 bg-red-100 text-red-800 rounded-xl">{error}</div>}
         {success && <div className="p-4 bg-green-100 text-green-800 rounded-xl">{success}</div>}
+
+        {isStaff && invoice.incident_charges && invoice.incident_charges.incidents.length > 0 && (
+          <div className="p-6 bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800/60 rounded-3xl space-y-4 shadow-sm">
+            <h3 className="font-extrabold text-red-800 dark:text-red-400 text-lg flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Phê Duyệt Đền Bù Sự Cố / Thiệt Hại Phòng
+            </h3>
+            <p className="text-xs text-neutral-500">
+              Nhân viên buồng phòng đã báo cáo thiệt hại. Bạn hãy kiểm tra ảnh hiện trường, điều chỉnh số tiền đền bù thực tế (nếu cần) rồi xác nhận để cộng vào tổng tiền thanh toán check-out.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {invoice.incident_charges.incidents.map((incident: any) => {
+                const estimatedUSD = Math.round(Number(incident.estimated_charge) / 26320);
+                const approvedUSD = incident.approved_charge ? Math.round(Number(incident.approved_charge) / 26320) : estimatedUSD;
+                
+                return (
+                  <div key={incident.id} className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-red-150 dark:border-red-800/40 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <span className="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          Mã: {incident.incident_code}
+                        </span>
+                        <span className="text-xs font-semibold text-neutral-500 uppercase">
+                          {incident.status}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-neutral-900 dark:text-white mt-1">
+                        Sự cố: {incident.description}
+                      </h4>
+                      {incident.detailed_note && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 italic">
+                          " {incident.detailed_note} "
+                        </p>
+                      )}
+
+                      {incident.incident_evidence && incident.incident_evidence.length > 0 && (
+                        <div className="mt-2.5">
+                          <p className="text-[10px] font-bold text-neutral-400 mb-1">Ảnh hiện trường:</p>
+                          <img
+                            src={incident.incident_evidence[0].file_url}
+                            alt="Evidence photo"
+                            className="w-full max-h-32 object-cover rounded-xl border border-neutral-100 dark:border-neutral-800"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
+                      <div className="flex justify-between items-center text-xs text-neutral-500">
+                        <span>Ước tính đền bù:</span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                          {formatMoney(incident.estimated_charge)} (${estimatedUSD})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 justify-between">
+                        <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                          Tiền đền bù duyệt:
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-neutral-400">$</span>
+                          <input
+                            type="number"
+                            defaultValue={approvedUSD}
+                            id={`app-charge-${incident.id}`}
+                            className="w-20 text-xs text-right bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 text-neutral-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const inputEl = document.getElementById(`app-charge-${incident.id}`) as HTMLInputElement;
+                          const chargeUSD = Number(inputEl?.value || 0);
+                          if (isNaN(chargeUSD) || chargeUSD < 0) {
+                            alert("Vui lòng nhập số tiền đền bù hợp lệ.");
+                            return;
+                          }
+
+                          try {
+                            const res = await fetch(`/api/incidents/${incident.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                approved_charge: chargeUSD,
+                                status: 'APPROVED_CHARGE',
+                                note: `Lễ tân xác nhận số tiền đền bù thiệt hại phòng là $${chargeUSD}`
+                              })
+                            });
+                            if (res.ok) {
+                              setSuccess("Đã cập nhật tiền đền bù sự cố!");
+                              fetchInvoice();
+                            } else {
+                              const err = await res.json();
+                              setError(err.error || "Failed to update charge.");
+                            }
+                          } catch (e: any) {
+                            setError(e.message);
+                          }
+                        }}
+                        className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors shadow"
+                      >
+                        Duyệt số tiền này
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {!isStaff && b.checkout_step && b.checkout_step !== "NONE" && (
           <div className="p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl">

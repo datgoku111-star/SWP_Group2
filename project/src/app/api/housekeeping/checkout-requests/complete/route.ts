@@ -15,22 +15,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing bookingId" }, { status: 400 });
     }
 
-    if (hasDamage) {
-      // 1. Create room_incident
-      const { error: incidentError } = await supabaseServer.from("room_incidents").insert({
-        room_id: roomId,
-        booking_id: bookingId,
-        incident_type: "DAMAGE",
-        description: damageDescription,
-        status: "REQUESTED",
-        priority: "HIGH",
-        is_chargeable: true,
-        estimated_charge: estimatedCharge || 0,
-        assigned_to_user_id: user.sub
-      });
-      
-      if (incidentError) throw incidentError;
-    }
+    // Incidents are virtualized and stored directly inside rooms.notes via POST /api/incidents.
+    // So we skip writing to room_incidents here.
 
     // 2. Update booking checkout_step
     const { error: updateError } = await supabaseServer

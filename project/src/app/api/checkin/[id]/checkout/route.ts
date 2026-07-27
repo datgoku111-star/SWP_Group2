@@ -42,16 +42,40 @@ export async function POST(
       ? payments.reduce((sum, item) => sum + Number(item.amount || 0), 0)
       : 0;
 
-    const { data: incidents } = await supabaseServer
-      .from("room_incidents")
+    const { data: roomForIncident } = await supabaseServer
+      .from("rooms")
       .select("*")
-      .eq("booking_id", bookingId)
-      .eq("is_chargeable", true)
-      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+      .eq("id", booking.room_id)
+      .single();
 
-    const totalFineAmount = incidents
-      ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
-      : 0;
+    const incidents: any[] = [];
+    if (roomForIncident && roomForIncident.notes && roomForIncident.notes.includes("DAMAGE:")) {
+      try {
+        const parts = roomForIncident.notes.split("DAMAGE:");
+        const jsonStr = parts[1].trim();
+        const damageData = JSON.parse(jsonStr);
+
+        if (damageData.booking_id === bookingId && (damageData.is_chargeable ?? true)) {
+          incidents.push({
+            id: `incident-${booking.room_id}`,
+            room_id: booking.room_id,
+            booking_id: bookingId,
+            description: damageData.description,
+            detailed_note: damageData.detailed_note,
+            estimated_charge: damageData.estimated_charge || 0,
+            approved_charge: damageData.approved_charge || 0,
+            actual_charge: damageData.approved_charge || 0,
+            is_chargeable: true,
+            status: 'REPORTED',
+            incident_evidence: damageData.image ? [{ file_url: damageData.image }] : []
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse incident JSON for checkout:", e);
+      }
+    }
+
+    const totalFineAmount = incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
 
     let serviceOrders: any[] = [];
     try {
@@ -111,17 +135,25 @@ export async function POST(
       .eq("id", bookingId);
     if (ubError) throw ubError;
 
-    // Update status of paid incidents to RESOLVED
-    await supabaseServer
-      .from("room_incidents")
-      .update({ 
-        status: "RESOLVED", 
-        resolved_at: new Date().toISOString(), 
-        updated_at: new Date().toISOString() 
-      })
-      .eq("booking_id", bookingId)
-      .eq("is_chargeable", true)
-      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+    // Update status of paid incidents to RESOLVED by clearing from room notes
+    const { data: currentRoom } = await supabaseServer
+      .from("rooms")
+      .select("*")
+      .eq("id", booking.room_id)
+      .single();
+
+    if (currentRoom && currentRoom.notes && currentRoom.notes.includes("DAMAGE:")) {
+      let bedConfig = 'SINGLE';
+      if (currentRoom.notes.includes('|')) {
+        bedConfig = currentRoom.notes.split('|')[0].trim();
+      } else if (!currentRoom.notes.includes('DAMAGE:')) {
+        bedConfig = currentRoom.notes.trim();
+      }
+      await supabaseServer
+        .from("rooms")
+        .update({ notes: bedConfig })
+        .eq("id", booking.room_id);
+    }
 
     // 4. Update room status to DIRTY
     const nowIso = new Date().toISOString();
@@ -224,16 +256,40 @@ export async function GET(
       : 0;
 
     // 3. Tự động kiểm tra các khoản phạt chưa thanh toán (chargeable và chưa RESOLVED/CLOSED/CANCELLED) của booking này
-    const { data: incidents } = await supabaseServer
-      .from("room_incidents")
+    const { data: roomForIncidentGet } = await supabaseServer
+      .from("rooms")
       .select("*")
-      .eq("booking_id", bookingId)
-      .eq("is_chargeable", true)
-      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+      .eq("id", booking.room_id)
+      .single();
 
-    const totalFineAmount = incidents
-      ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
-      : 0;
+    const incidents: any[] = [];
+    if (roomForIncidentGet && roomForIncidentGet.notes && roomForIncidentGet.notes.includes("DAMAGE:")) {
+      try {
+        const parts = roomForIncidentGet.notes.split("DAMAGE:");
+        const jsonStr = parts[1].trim();
+        const damageData = JSON.parse(jsonStr);
+
+        if (damageData.booking_id === bookingId && (damageData.is_chargeable ?? true)) {
+          incidents.push({
+            id: `incident-${booking.room_id}`,
+            room_id: booking.room_id,
+            booking_id: bookingId,
+            description: damageData.description,
+            detailed_note: damageData.detailed_note,
+            estimated_charge: damageData.estimated_charge || 0,
+            approved_charge: damageData.approved_charge || 0,
+            actual_charge: damageData.approved_charge || 0,
+            is_chargeable: true,
+            status: 'REPORTED',
+            incident_evidence: damageData.image ? [{ file_url: damageData.image }] : []
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse incident JSON for checkout GET:", e);
+      }
+    }
+
+    const totalFineAmount = incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
 
     // 4. Tự động cộng tất cả đơn gọi món / dịch vụ phòng (service_orders) chưa bị hủy của booking này
     let serviceOrders: any[] = [];
