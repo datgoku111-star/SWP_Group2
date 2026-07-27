@@ -402,6 +402,39 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     setLoading(true);
     setError("");
     try {
+      // XỬ LÝ CHO ĐƠN TRẢI NGHIỆM (Experience) - Bỏ qua thanh toán trước
+      if (isExperience) {
+        if (!startDate || !endDate) throw new Error(t("checkoutSelectDatesError"));
+        if (!lockedRoom) throw new Error("No active room lock found. Please reload page.");
+        
+        const targetRoom = lockedRoom;
+        const checkInStr = startDate.toISOString().split("T")[0];
+        const checkOutStr = endDate.toISOString().split("T")[0];
+        
+        // For experiences, the price is multiplied by the number of guests
+        const totalGuests = (guests.guestAdults || 1) + (guests.guestChildren || 0);
+        const pricePerPerson = Number(priceParam) || targetRoom.room_type?.base_price || 100;
+        const totalAmount = pricePerPerson * totalGuests;
+
+        const bookingRes = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            room_id: targetRoom.room_id || targetRoom.id,
+            check_in_date: checkInStr,
+            check_out_date: checkOutStr,
+            num_guests: totalGuests,
+            total_amount: totalAmount,
+            special_requests: specialRequestsValue,
+          }),
+        });
+        const bookingData = await bookingRes.json();
+        if (!bookingRes.ok) throw new Error(bookingData.error || "Failed to create booking.");
+        
+        router.push(`/pay-done?bookingId=${bookingData.id}`);
+        return;
+      }
+
       // XỬ LÝ CHO ĐƠN DỊCH VỤ ĐỒ ĂN
       if (typeParam === "service") {
         const totalAmount = Number(priceParam);
@@ -433,8 +466,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
     }
   };
 
-  {/* tay them */}
-
   const renderSidebar = () => {
     const nights =
       startDate && endDate
@@ -446,9 +477,14 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
           )
         : 1;
     const priceVal = Number(priceParam) || 19;
-    const subtotal = priceVal * nights;
-    const total = subtotal;
-    const depositAmount = (typeParam === "service" || isExperience) ? total : total * 0.1;
+    
+    // For experiences, multiply by guests instead of nights
+    const totalGuests = (guests.guestAdults || 0) + (guests.guestChildren || 0);
+    const subtotal = isExperience ? (priceVal * Math.max(1, totalGuests)) : (priceVal * nights);
+    const depositAmount = isExperience ? 0 : (subtotal * 0.1);
+    
+    const serviceCharge = 0;
+    const total = subtotal + serviceCharge;
 
     return (
       <div className="w-full flex flex-col sm:rounded-2xl lg:border border-neutral-200 dark:border-neutral-700 space-y-6 sm:space-y-8 px-0 sm:p-6 xl:p-8">
@@ -483,7 +519,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
               {typeParam === "service"
                 ? formatPrice(priceVal, "VND")
                 : formatPrice(priceVal, "USD")}{" "}
-              x {nights} {nights > 1 ? t("checkoutDaysPlural") : t("checkoutDays")}
+              x {isExperience ? `${Math.max(1, totalGuests)} person${Math.max(1, totalGuests) > 1 ? 's' : ''}` : `${nights} ${nights > 1 ? t("checkoutDaysPlural") : t("checkoutDays")}`}
             </span>
             <span>
               {typeParam === "service"
@@ -509,9 +545,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                 : formatPrice(total, "USD")}
             </span>
           </div>
-          {typeParam !== "service" && (
+          {typeParam !== "service" && !isExperience && (
             <div className="flex justify-between font-bold text-primary-6000 mt-2">
-              <span>{isExperience ? "Thanh toán (100%)" : t("checkoutDeposit") || "Deposit Payment (10%)"}</span>
+              <span>{t("checkoutDeposit") || "Deposit Payment (10%)"}</span>
               <span>
                 {formatPrice(depositAmount, "USD")}
               </span>

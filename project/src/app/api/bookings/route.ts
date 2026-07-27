@@ -85,9 +85,45 @@ export async function POST(request: Request) {
       fs.appendFileSync("D:/Pho/Pho/project/bookings_log.txt", logMsg);
     } catch (e) {}
     
+        // Validate Experience Booking
+    let isExperience = false;
+    let specialReqObj = null;
+    try {
+      if (data.special_requests) {
+        specialReqObj = JSON.parse(data.special_requests);
+        if (specialReqObj.isExperience) {
+          isExperience = true;
+        }
+      }
+    } catch (e) {}
+    
     // Basic validation
-    if (!data.room_id || !data.check_in_date || !data.check_out_date) {
+    if (!data.check_in_date || !data.check_out_date || (!data.room_id && !isExperience)) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (isExperience) {
+      // Check if user has an active checked_in booking
+      const { data: activeBookings } = await supabaseServer
+        .from("bookings")
+        .select("id, room_id")
+        .eq("user_id", user.sub)
+        .eq("status", "CHECKED_IN");
+      
+      if (!activeBookings || activeBookings.length === 0) {
+         return NextResponse.json({ error: "You must check in before booking an experience." }, { status: 400 });
+      }
+      
+      // Attach parent booking ID to special requests
+      if (specialReqObj) {
+        specialReqObj.parent_booking_id = activeBookings[0].id;
+        data.special_requests = JSON.stringify(specialReqObj);
+      }
+      
+      // Assign the room_id from the parent booking if it's missing
+      if (!data.room_id) {
+        data.room_id = activeBookings[0].room_id;
+      }
     }
 
     // Ensure user exists in public.users to prevent foreign key violations (e.g. after database reseeding)
@@ -143,3 +179,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }
+
+
+
+

@@ -35,11 +35,13 @@ export async function GET(
       .eq("booking_id", bookingId)
       .in("status", ["IN_PROGRESS", "COMPLETED"]);
 
-    // 2.5 Fetch experience bookings
+    // 2.5 Fetch experience bookings (as linked bookings)
     const { data: experiences, error: eError } = await supabaseServer
-      .from("experience_bookings")
-      .select("id, experience_id, guests, total_price")
-      .eq("booking_id", bookingId);
+      .from("bookings")
+      .select("id, special_requests, total_amount, num_guests")
+      .eq("user_id", booking.user_id)
+      .like("special_requests", `%parent_booking_id%${bookingId}%`)
+      .in("status", ["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"]);
 
     // 2.6 Fetch car bookings
     const { data: cars, error: cError } = await supabaseServer
@@ -85,12 +87,21 @@ export async function GET(
 
     const totalServices = serviceCharges.reduce((sum, sc) => sum + sc.total, 0);
     
-    const experienceCharges = (experiences || []).map(exp => ({
-      id: exp.id,
-      experience_id: exp.experience_id,
-      guests: exp.guests,
-      total: Number(exp.total_price)
-    }));
+    const experienceCharges = (experiences || []).map(exp => {
+      let expName = "Experience";
+      try {
+        if (exp.special_requests) {
+          const req = JSON.parse(exp.special_requests);
+          expName = req.title || "Experience";
+        }
+      } catch (e) {}
+      return {
+        id: exp.id,
+        experience_id: expName,
+        guests: exp.num_guests,
+        total: Math.round(Number(exp.total_amount) * 26320) // convert to VND
+      };
+    });
     const totalExperiences = experienceCharges.reduce((sum, exp) => sum + exp.total, 0);
 
     const carCharges = (cars || []).map(car => ({

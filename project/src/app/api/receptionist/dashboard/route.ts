@@ -25,6 +25,14 @@ export async function GET() {
       .eq("status", "CHECKED_IN")
       .not("checkout_step", "in", '("NONE")')
       .order("checkout_requested_at", { ascending: false });
+      
+    // Fetch pending experience bookings
+    const { data: pendingExperiences } = await supabaseServer
+      .from("bookings")
+      .select("*, user:users(*)")
+      .eq("status", "PENDING")
+      .like("special_requests", '%"isExperience":true%')
+      .order("created_at", { ascending: false });
 
     const roomsSummary = {
       AVAILABLE: allRooms.filter((r) => r.status === "AVAILABLE").length,
@@ -40,6 +48,7 @@ export async function GET() {
       departures,
       roomsSummary,
       checkoutRequests: checkoutRequests || [],
+      pendingExperiences: pendingExperiences || [],
     });
   } catch (error) {
     console.error("GET /api/receptionist/dashboard error:", error);

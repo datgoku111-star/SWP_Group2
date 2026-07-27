@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -35,7 +35,7 @@ export default function ReceptionistDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [rooms, setRooms] = useState<any[]>([]);
 
-  // Room Availability Query State ("TRUY VẤN KIỂM TRA PHÒNG TRỐNG")
+  // Room Availability Query State ("TRUY Váº¤N KIá»‚M TRA PHĂ’NG TRá»NG")
   const [checkInDate, setCheckInDate] = useState(() => {
     return new Date().toISOString().split("T")[0];
   });
@@ -145,13 +145,14 @@ export default function ReceptionistDashboard() {
   const departures: Booking[] = dashboardData?.departures || [];
   const roomsSummary = dashboardData?.roomsSummary || { AVAILABLE: 0, IN_USE: 0, DIRTY: 0, MAINTENANCE: 0, total: 0 };
   const checkoutRequests = dashboardData?.checkoutRequests || [];
+  const pendingExperiences = dashboardData?.pendingExperiences || [];
 
   const handleSendCleaner = async (bookingId: string) => {
     try {
       const res = await fetch("/api/receptionist/checkout-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, action: "SEND_CLEANER", message: "Lễ tân đã nhận yêu cầu. Nhân viên đang lên kiểm tra phòng..." }),
+        body: JSON.stringify({ bookingId, action: "SEND_CLEANER", message: "Lá»… tĂ¢n Ä‘Ă£ nháº­n yĂªu cáº§u. NhĂ¢n viĂªn Ä‘ang lĂªn kiá»ƒm tra phĂ²ng..." }),
       });
       if (res.ok) {
         fetchDashboardData();
@@ -295,6 +296,60 @@ export default function ReceptionistDashboard() {
         </div>
       </div>
 
+            {/* Pending Experience Bookings */}
+      {pendingExperiences && pendingExperiences.length > 0 && (
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 shadow-sm mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-neutral-900 dark:text-white">Experience Requests ({pendingExperiences.length})</h3>
+              <p className="text-sm text-neutral-500">Awaiting confirmation for guest activities.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendingExperiences.map((exp: any) => {
+              let title = "Experience";
+              try {
+                const parsed = JSON.parse(exp.special_requests);
+                title = parsed.title || title;
+              } catch (e) {}
+              return (
+                <div key={exp.id} className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 flex justify-between items-center gap-4 bg-neutral-50 dark:bg-neutral-800/50">
+                  <div>
+                    <h4 className="font-bold text-neutral-900 dark:text-white text-base">{title}</h4>
+                    <p className="text-sm text-neutral-500 mt-0.5">Guest: <span className="font-semibold text-neutral-700 dark:text-neutral-300">{exp.user?.full_name || "Unknown"}</span></p>
+                    <p className="text-xs text-neutral-500">Date: {exp.check_in_date} &bull; Guests: {exp.num_guests}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (confirm("Confirm this experience and send itinerary to the guest?")) {
+                        try {
+                          const res = await fetch("/api/bookings/" + exp.id + "/confirm", { method: "POST" });
+                          if (res.ok) {
+                            alert("Experience confirmed! Itinerary sent.");
+                            fetchDashboardData();
+                          } else {
+                            const err = await res.json();
+                            alert("Error: " + err.error);
+                          }
+                        } catch (e) {
+                          alert("Network error");
+                        }
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl whitespace-nowrap transition-colors"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Guest Checkout Requests */}
       {checkoutRequests && checkoutRequests.length > 0 && (
         <div className="bg-white dark:bg-neutral-900 border-2 border-amber-400 dark:border-amber-600 rounded-3xl p-6 shadow-sm overflow-hidden relative">
@@ -337,12 +392,12 @@ export default function ReceptionistDashboard() {
                       className="w-full text-xs font-bold bg-amber-600 hover:bg-amber-700 shadow-sm"
                       onClick={() => handleSendCleaner(req.id)}
                     >
-                      Báo nhân viên kiểm tra
+                      BĂ¡o nhĂ¢n viĂªn kiá»ƒm tra
                     </ButtonPrimary>
                   )}
                   {req.checkout_step === "INSPECTING" && (
                     <button disabled className="w-full py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-500 rounded-xl text-xs font-bold">
-                      Đang đợi kiểm tra...
+                      Äang Ä‘á»£i kiá»ƒm tra...
                     </button>
                   )}
                   {req.checkout_step === "INSPECTED" && (
@@ -350,7 +405,7 @@ export default function ReceptionistDashboard() {
                       href={`/checkin?bookingId=${req.id}&mode=checkout`}
                       className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold text-center block"
                     >
-                      Tiến hành Checkout
+                      Tiáº¿n hĂ nh Checkout
                     </Link>
                   )}
                 </div>
@@ -360,14 +415,14 @@ export default function ReceptionistDashboard() {
         </div>
       )}
 
-      {/* TRUY VẤN KIỂM TRA PHÒNG TRỐNG (Room Availability Search Module) */}
+      {/* TRUY Váº¤N KIá»‚M TRA PHĂ’NG TRá»NG (Room Availability Search Module) */}
       <div className="bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-neutral-700 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary-6000/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
 
         <div className="max-w-3xl mb-6">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary-400 mb-1">
             <Search className="w-4 h-4" />
-            <span>Room Availability Query Console (Truy Vấn Kiểm Tra Phòng Trống)</span>
+            <span>Room Availability Query Console (Truy Váº¥n Kiá»ƒm Tra PhĂ²ng Trá»‘ng)</span>
           </div>
           <h2 className="text-2xl font-extrabold sm:text-3xl">Search & Check Live Room Vacancy</h2>
           <p className="text-neutral-300 text-sm mt-1">
@@ -484,7 +539,7 @@ export default function ReceptionistDashboard() {
                       href={`/checkin?roomId=${room.id}&checkIn=${checkInDate}&checkOut=${checkOutDate}`}
                       className="w-full py-2 bg-primary-6000 hover:bg-primary-700 text-white rounded-xl text-xs font-bold text-center block transition-colors shadow-sm"
                     >
-                      ⚡ Instant Walk-In Check-In
+                      â¡ Instant Walk-In Check-In
                     </Link>
                   </div>
                 ))}
@@ -698,3 +753,8 @@ export default function ReceptionistDashboard() {
     </div>
   );
 }
+
+
+
+
+

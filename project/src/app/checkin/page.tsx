@@ -845,6 +845,13 @@ function CheckInContent() {
                         </div>
                       )}
                       
+                      {checkoutDetails.experience_charges > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-blue-400 font-semibold">Experience Bookings:</span>
+                          <span className="font-bold text-blue-300">{formatMoney(checkoutDetails.experience_charges)}</span>
+                        </div>
+                      )}
+                      
                       {checkoutDetails.incident_charges?.total_fine > 0 && (
                         <div className="flex justify-between">
                           <span className="text-red-400 font-semibold">Incident Fines:</span>

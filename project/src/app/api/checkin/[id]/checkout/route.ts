@@ -160,6 +160,25 @@ export async function GET(
       return sum + amount;
     }, 0);
 
+    // 4.5 Tự động cộng các đơn Trải nghiệm (Experience) đã liên kết
+    const { data: expBookings } = await supabaseServer
+      .from("bookings")
+      .select("total_amount")
+      .eq("user_id", booking.user_id)
+      .like("special_requests", `%parent_booking_id%${bookingId}%`)
+      .in("status", ["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"]);
+    
+    const totalExperienceAmount = expBookings
+      ? expBookings.reduce((sum, item) => sum + Number(item.total_amount || 0), 0)
+      : 0;
+    
+    // Note: Experience amount is in USD, so we convert it to VND if the app treats base prices as USD * 25000 elsewhere
+    // Wait! Let's check how total_amount is stored. In PageMain.tsx, it's stored exactly as pricePerNight * nights.
+    // If the base price is 150, totalAmount = 150. We might need to multiply by 25000 if checkout calculates in VND!
+    // But roomCharges doesn't multiply by 25000 here! It's just nights * basePrice.
+    // So the conversion to VND happens in the UI component (`PageMain.tsx` or `checkin/page.tsx`).
+    // Thus we don't multiply here.
+
     // 5. Cộng dồn vào InvoiceData cuối cùng
     const calculateNights = (start: string, end: string) => {
       const diff = Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24));
@@ -171,7 +190,7 @@ export async function GET(
     const roomCharges = nights * basePrice;
     
     // Tổng số bill trước cọc
-    const subtotal = roomCharges + totalServiceAmount + totalFineAmount; 
+    const subtotal = roomCharges + totalServiceAmount + totalFineAmount + totalExperienceAmount; 
     
     // 2% VAT của tổng số bill
     const vatRate = 0.02;
@@ -188,6 +207,7 @@ export async function GET(
       deposit_paid: depositPaid,
       remaining_room_charges: remainingRoomCharges,
       service_charges: totalServiceAmount,
+      experience_charges: totalExperienceAmount,
       service_charges_detail: {
         orders: serviceOrders,
         total_service: totalServiceAmount,

@@ -19,7 +19,7 @@ export async function POST(
     // 1. Confirm room booking
     const { data: booking, error: bError } = await supabaseServer
       .from("bookings")
-      .select("*")
+      .select("*, user:users(*)")
       .eq("id", bookingId)
       .single();
 
@@ -34,23 +34,58 @@ export async function POST(
         .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
         .eq("id", bookingId);
 
-      // Upsert payment record to COMPLETED
-      const { data: existingPayment } = await supabaseServer
-        .from("payments")
-        .select("*")
-        .eq("booking_id", bookingId)
-        .eq("status", "COMPLETED");
+      // Check if this is an experience booking
+      let isExperience = false;
+      let expTitle = "Experience";
+      try {
+        if (booking.special_requests) {
+          const parsed = JSON.parse(booking.special_requests);
+          if (parsed.isExperience) {
+            isExperience = true;
+            expTitle = parsed.title || expTitle;
+          }
+        }
+      } catch (e) {}
 
-      if (!existingPayment || existingPayment.length === 0) {
-        await supabaseServer
+      // Upsert payment record to COMPLETED (skip for Experience since it requires NO deposit)
+      if (!isExperience) {
+        const { data: existingPayment } = await supabaseServer
           .from("payments")
-          .insert({
-            booking_id: bookingId,
-            amount: booking.total_amount * 0.1, // Only 10% deposit is paid when confirming
-            method: "TRANSFER",
-            status: "COMPLETED",
-            transaction_ref: `CONFIRM_FALLBACK_${Math.floor(100000 + Math.random() * 900000)}`
-          });
+          .select("*")
+          .eq("booking_id", bookingId)
+          .eq("status", "COMPLETED");
+
+        if (!existingPayment || existingPayment.length === 0) {
+          await supabaseServer
+            .from("payments")
+            .insert({
+              booking_id: bookingId,
+              amount: booking.total_amount * 0.1, // Only 10% deposit is paid when confirming
+              method: "TRANSFER",
+              status: "COMPLETED",
+              transaction_ref: `CONFIRM_FALLBACK_${Math.floor(100000 + Math.random() * 900000)}`
+            });
+        }
+      } else {
+        // Send Experience Confirmation Email
+        if (booking.user?.email) {
+          // Use the internal endpoint or direct function to send email
+          // Using fetch to the existing API is easier
+          const protocol = request.headers.get("x-forwarded-proto") || "http";
+          const host = request.headers.get("host") || "localhost:3000";
+          
+          fetch(`${protocol}://${host}/api/mail/send-experience-confirmation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: booking.user.email,
+              customerName: booking.user.full_name || "Customer",
+              title: expTitle,
+              checkInDate: booking.check_in_date,
+              checkOutDate: booking.check_out_date,
+            }),
+          }).catch(err => console.error("Failed to trigger experience email:", err));
+        }
       }
     }
 

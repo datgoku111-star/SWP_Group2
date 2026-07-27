@@ -1,14 +1,21 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import ModalSelectDate from "@/components/ModalSelectDate";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import converSelectedDateToString from "@/utils/converSelectedDateToString";
 import ModalReserveMobile from "./ModalReserveMobile";
 
 const MobileFooterSticky = () => {
+  const [isMounted, setIsMounted] = useState(false);
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [startDate, setStartDate] = useState<Date | null>(
     new Date()
   );
   const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
+
+  if (!isMounted) return null;
 
   return (
     <div className="block lg:hidden fixed bottom-0 inset-x-0 py-2 sm:py-3 bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-6000 z-40">
@@ -47,3 +54,4 @@ const MobileFooterSticky = () => {
 };
 
 export default MobileFooterSticky;
+

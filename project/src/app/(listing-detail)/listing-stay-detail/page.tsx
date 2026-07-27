@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { FC, Fragment, useState, useEffect, Suspense, useMemo } from "react";
 import { Dialog, Transition } from "@headlessui/react";
@@ -40,6 +40,11 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
   const bedsParam = searchParams.get("beds") || "6";
   const galleryParam = searchParams.get("gallery")?.split(",") || PHOTOS;
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
@@ -352,7 +357,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
         {/* 3 */}
         <div className="flex items-center space-x-4">
           <StartRating />
-          <span>·</span>
+          <span>Â·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
             <span className="ml-1"> {displayAddress}</span>
@@ -682,13 +687,13 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                                   key={idx} 
                                   className="inline-flex items-center px-2.5 py-1 m-1 rounded-lg text-xs font-mono font-medium bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50 shadow-sm"
                                 >
-                                  {checkInFormatted} → {checkOutFormatted}
+                                  {checkInFormatted} â†’ {checkOutFormatted}
                                 </span>
                               );
                             })
                           ) : (
                             <span className="text-xs text-neutral-400 dark:text-neutral-500 italic">
-                              ✓ Available (No upcoming bookings)
+                              âœ“ Available (No upcoming bookings)
                             </span>
                           )}
                         </div>
@@ -731,7 +736,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
             </a>
             <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
               <StartRating />
-              <span className="mx-2">·</span>
+              <span className="mx-2">Â·</span>
               <span> 12 places</span>
             </div>
           </div>
@@ -834,7 +839,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
               placeholder={
                 user
                   ? "Share your thoughts ..."
-                  : "Đăng nhập để viết đánh giá..."
+                  : "ÄÄƒng nháº­p Ä‘á»ƒ viáº¿t Ä‘Ă¡nh giĂ¡..."
               }
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
@@ -862,7 +867,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
                   name:
                     item.user?.full_name ||
                     item.user?.email?.split("@")[0] ||
-                    "Người dùng",
+                    "NgÆ°á»i dĂ¹ng",
                   avatar: "",
                   date: new Date(item.created_at).toLocaleDateString("vi-VN", {
                     day: "numeric",
@@ -876,8 +881,8 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
             ))
           ) : (
             <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">
-              Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của
-              bạn!
+              ChÆ°a cĂ³ Ä‘Ă¡nh giĂ¡ nĂ o. HĂ£y lĂ  ngÆ°á»i Ä‘áº§u tiĂªn chia sáº» cáº£m nghÄ© cá»§a
+              báº¡n!
             </p>
           )}
         </div>
@@ -1042,7 +1047,7 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
             return (
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-green-600 font-semibold">
-                  <span>✓ Available</span>
+                  <span>âœ“ Available</span>
                   <span className="bg-green-50 dark:bg-green-900/20 text-xs px-2.5 py-1 rounded-lg">
                     {maxAvailable} rooms ready
                   </span>
@@ -1244,3 +1249,4 @@ const ListingStayDetailPageWrapper = () => {
 };
 
 export default ListingStayDetailPageWrapper;
+
