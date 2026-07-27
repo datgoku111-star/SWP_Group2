@@ -50,8 +50,7 @@ export async function GET() {
     }
 
     if (user.role === "CUSTOMER") {
-      autoCheckoutOverdue().catch(console.error);
-      const bookings = await getBookingsByUser(user.sub);
+            const bookings = await getBookingsByUser(user.sub);
       return NextResponse.json(bookings);
     }
 
@@ -59,8 +58,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    autoCheckoutOverdue().catch(console.error);
-    const bookings = await getAllBookings();
+        const bookings = await getAllBookings();
     return NextResponse.json(bookings);
   } catch (error) {
     console.error("GET bookings error:", error);
@@ -179,6 +177,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }
+
 
 
 

@@ -75,7 +75,8 @@ export async function getBookingsByUser(userId: string) {
     .from("bookings")
     .select("*, room:rooms(*, room_type:room_types(*))")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
   if (error) throw error;
   return data as Booking[];
 }
@@ -84,7 +85,8 @@ export async function getAllBookings() {
   const { data, error } = await supabaseServer
     .from("bookings")
     .select("*, room:rooms(*, room_type:room_types(*)), user:users(id, email, full_name, role)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
   if (error) throw error;
   return data as Booking[];
 }

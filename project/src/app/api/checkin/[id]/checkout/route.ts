@@ -114,7 +114,19 @@ export async function POST(
     const basePrice = Number(booking.room?.room_type?.base_price || 0);
     const roomCharges = nights * basePrice;
     
-    const subtotal = roomCharges + totalServiceAmount + totalFineAmount; 
+    // Calculate total experiences linked to this booking
+    const { data: expBookings } = await supabaseServer
+      .from("bookings")
+      .select("total_amount")
+      .eq("user_id", booking.user_id)
+      .like("special_requests", `%parent_booking_id%${bookingId}%`)
+      .in("status", ["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"]);
+    
+    const totalExperienceAmount = expBookings
+      ? expBookings.reduce((sum, item) => sum + Number(item.total_amount || 0), 0)
+      : 0;
+
+    const subtotal = roomCharges + totalServiceAmount + totalFineAmount + totalExperienceAmount; 
     const vatRate = 0.02;
     const vatAmount = subtotal * vatRate;
 
@@ -199,6 +211,7 @@ export async function POST(
         roomCharges,
         serviceCharges: totalServiceAmount,
         serviceOrders,
+        experienceCharges: totalExperienceAmount,
         incidentCharges: totalFineAmount,
         incidents: incidents || [],
         subtotal,

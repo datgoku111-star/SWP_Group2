@@ -36,23 +36,8 @@ export async function sendEmail({ to, subject, html }: SendMailParams): Promise<
   let isEthereal = false;
 
   if (!transporter) {
-    console.log("No SMTP credentials configured. Attempting to fall back to Ethereal test account...");
-    try {
-      const testAccount = await nodemailer.createTestAccount();
-      transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-      isEthereal = true;
-    } catch (err) {
-      console.error("Failed to create Ethereal test account:", err);
-      return false;
-    }
+    console.log("No SMTP credentials configured. Email sending is skipped in dev environment.");
+    return false;
   }
 
   try {
@@ -378,6 +363,7 @@ export interface CheckoutEmailParams {
   roomCharges: number;
   serviceCharges: number;
   serviceOrders: any[];
+  experienceCharges?: number;
   incidentCharges: number;
   incidents: any[];
   subtotal: number;
@@ -617,4 +603,5 @@ export function buildCheckoutEmailTemplate(params: CheckoutEmailParams): string 
     </html>
   `;
 }
+
 

@@ -269,6 +269,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   // Tab Close / Page Refresh Event Listener to unlock room
   useEffect(() => {
     if (!lockedRoom || lockedRoom.dummy) return;
+    
+    // Clear any premature errors once lock is acquired
+    setError("");
 
     const handleBeforeUnload = () => {
       fetch("/api/rooms/unlock", {
@@ -679,7 +682,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
               <ButtonPrimary
                 onClick={handleConfirmAndPay}
                 loading={loading}
-                disabled={loading}
+                disabled={loading || (!lockedRoom && typeParam !== "service")}
               >
                 {t("checkoutConfirmAndPay")}
               </ButtonPrimary>
