@@ -98,6 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           } else {
             setUser(null);
+            try {
+              await fetch("/api/auth/logout", { method: "POST" });
+            } catch (e) {
+              console.warn("Failed to clear cookie on auth init:", e);
+            }
           }
         }
       } catch (error) {
