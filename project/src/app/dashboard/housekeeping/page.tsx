@@ -506,8 +506,10 @@ export default function HousekeepingDashboardHub() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredRooms.map((room) => (
-                  <div key={room.id} className={`border-2 ${cfg.cardBorderClass} p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm`}>
+                {filteredRooms.map((room) => {
+                  const roomIncident = incidents.find((inc) => inc.room_id === room.id);
+                  return (
+                    <div key={room.id} className={`border-2 ${cfg.cardBorderClass} p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm`}>
                     <div className="flex items-start justify-between">
                       <div>
                         <span className={`${cfg.badgeBg} text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow`}>
@@ -526,6 +528,68 @@ export default function HousekeepingDashboardHub() {
                       <div className="bg-white dark:bg-neutral-900 p-3 rounded-2xl text-xs text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 flex items-start gap-2">
                         <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <div><strong>Ghi chú:</strong> {room.notes.includes("DAMAGE:") ? room.notes.split("|")[0] : room.notes}</div>
+                      </div>
+                    )}
+                    {receptFilterStatus === "MAINTENANCE" && roomIncident && (
+                      <div className="bg-red-50/50 dark:bg-red-950/10 p-4 rounded-2xl border border-red-200 dark:border-red-800/40 text-xs space-y-2 mt-2">
+                        <div className="font-bold text-red-800 dark:text-red-300 flex items-center gap-1.5">
+                          <Wrench className="w-4 h-4 text-red-600" />
+                          <span>Chi tiết hư hỏng được báo cáo:</span>
+                        </div>
+                        <div><strong>Mô tả:</strong> {roomIncident.description}</div>
+                        <div><strong>Ước lượng phí đền bù:</strong> <span className="text-red-600 font-semibold">{roomIncident.estimated_charge.toLocaleString('vi-VN')} VND</span></div>
+                        <div className="flex items-center gap-1">
+                          <strong>Trạng thái:</strong>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            roomIncident.status === 'APPROVED' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                              : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 animate-pulse'
+                          }`}>
+                            {roomIncident.status === 'APPROVED' ? 'Đã xác nhận (Tính vào bill)' : 'Chờ Lễ Tân xác nhận'}
+                          </span>
+                        </div>
+                        
+                        {roomIncident.incident_evidence && roomIncident.incident_evidence.length > 0 && (
+                          <div className="mt-2">
+                            <span className="block font-semibold mb-1 text-neutral-500">Ảnh hiện trường:</span>
+                            <img
+                              src={roomIncident.incident_evidence[0].file_url}
+                              alt="Evidence"
+                              className="w-full max-h-32 object-cover rounded-xl border border-neutral-200 dark:border-neutral-700"
+                            />
+                          </div>
+                        )}
+
+                        {roomIncident.status === 'REPORTED' && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/incidents/${roomIncident.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    status: 'APPROVED',
+                                    approved_charge: roomIncident.estimated_charge,
+                                    is_chargeable: true
+                                  })
+                                });
+                                if (res.ok) {
+                                  alert("Đã phê duyệt hư hỏng! Chi phí này sẽ tự động cộng vào hóa đơn checkout của khách hàng.");
+                                  fetchIncidents();
+                                  fetchRooms();
+                                } else {
+                                  alert("Lỗi khi phê duyệt sự cố");
+                                }
+                              } catch (e) {
+                                console.error(e);
+                                alert("Lỗi khi kết nối đến API");
+                              }
+                            }}
+                            className="mt-2 w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all shadow text-center block text-[11px]"
+                          >
+                            ✅ Xác nhận hư hỏng (Duyệt tính phí)
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -548,7 +612,8 @@ export default function HousekeepingDashboardHub() {
                       </select>
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             )}
           </div>
@@ -777,23 +842,30 @@ export default function HousekeepingDashboardHub() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 pt-2">
-                      <button
-                        onClick={async () => {
-                          if (roomIncident) {
-                            await fetch(`/api/incidents/${roomIncident.id}`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ status: 'RESOLVED', note: 'Đã xác nhận nghiệm thu và hoàn tất bảo trì phòng' })
-                            });
-                          }
-                          await changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ");
-                        }}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
-                      >
-                        <CheckCheck className="w-5 h-5" />
-                        🛠️ XÁC NHẬN SỬA XONG & ĐƯA PHÒNG HOẠT ĐỘNG (➔ AVAILABLE)
-                      </button>
+                    <div className="flex items-center gap-3 pt-2 w-full">
+                      {roomIncident && roomIncident.status === 'REPORTED' ? (
+                        <div className="w-full text-center py-3.5 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 font-semibold rounded-2xl border border-amber-200 dark:border-amber-800 text-sm flex items-center justify-center gap-1.5 animate-pulse">
+                          <Clock className="w-4 h-4" />
+                          <span>Đợi Lễ tân xác nhận hư hại...</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            if (roomIncident) {
+                              await fetch(`/api/incidents/${roomIncident.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'RESOLVED', note: 'Đã xác nhận nghiệm thu và hoàn tất bảo trì phòng' })
+                              });
+                            }
+                            await changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ");
+                          }}
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
+                        >
+                          <CheckCheck className="w-5 h-5" />
+                          🛠️ XÁC NHẬN SỬA XONG & ĐƯA PHÒNG HOẠT ĐỘNG (➔ AVAILABLE)
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

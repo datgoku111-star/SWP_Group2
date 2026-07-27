@@ -84,3 +84,15 @@
 [2026-07-27T07:41:16.488Z] Request: body={"room_id":"98b3cfff-66aa-4f02-b5e1-6e8b33c5746e","checkIn":"2026-07-27","checkOut":"2026-07-28"}, user={"sub":"c4fe8256-7f5f-457e-b7b6-58906c2171aa","email":"tayngocnguyen2@gmail.com","role":"CUSTOMER","name":"Ngoctay","iat":1785138073,"exp":1785742873}
 [2026-07-27T07:42:15.407Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
 [2026-07-27T07:42:15.707Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-27T07:45:30.912Z] GET /api/rooms checkIn=2026-07-27, checkOut=2026-07-28, user=c4fe8256-7f5f-457e-b7b6-58906c2171aa
+[2026-07-27T07:45:31.570Z] GET /api/rooms checkIn=2026-07-27, checkOut=2026-07-28, user=c4fe8256-7f5f-457e-b7b6-58906c2171aa
+[2026-07-27T07:45:31.876Z] Request: body={"room_id":"98b3cfff-66aa-4f02-b5e1-6e8b33c5746e","checkIn":"2026-07-27","checkOut":"2026-07-28"}, user={"sub":"c4fe8256-7f5f-457e-b7b6-58906c2171aa","email":"tayngocnguyen2@gmail.com","role":"CUSTOMER","name":"Ngoctay","iat":1785138330,"exp":1785743130}
+[2026-07-27T07:45:32.513Z] Request: body={"room_id":"98b3cfff-66aa-4f02-b5e1-6e8b33c5746e","checkIn":"2026-07-27","checkOut":"2026-07-28"}, user={"sub":"c4fe8256-7f5f-457e-b7b6-58906c2171aa","email":"tayngocnguyen2@gmail.com","role":"CUSTOMER","name":"Ngoctay","iat":1785138330,"exp":1785743130}
+[2026-07-27T07:45:40.201Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-27T07:45:40.469Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-27T07:46:11.556Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=9df93b93-819e-4ee9-9b79-f0b61d333001
+[2026-07-27T07:46:42.684Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=9df93b93-819e-4ee9-9b79-f0b61d333001
+[2026-07-27T07:46:49.142Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-27T07:47:48.214Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-27T07:51:42.844Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=caa06bbc-5dd3-4398-9b60-cf54293fa985
+[2026-07-27T07:51:42.847Z] GET /api/rooms checkIn=undefined, checkOut=undefined, user=9df93b93-819e-4ee9-9b79-f0b61d333001

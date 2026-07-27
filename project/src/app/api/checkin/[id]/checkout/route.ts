@@ -66,7 +66,7 @@ export async function POST(
             approved_charge: damageData.approved_charge || 0,
             actual_charge: damageData.approved_charge || 0,
             is_chargeable: true,
-            status: 'REPORTED',
+            status: damageData.status || 'REPORTED',
             incident_evidence: damageData.image ? [{ file_url: damageData.image }] : []
           });
         }
@@ -75,7 +75,9 @@ export async function POST(
       }
     }
 
-    const totalFineAmount = incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
+    const totalFineAmount = incidents
+      .filter(item => item.status === 'APPROVED')
+      .reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
 
     let serviceOrders: any[] = [];
     try {
@@ -280,7 +282,7 @@ export async function GET(
             approved_charge: damageData.approved_charge || 0,
             actual_charge: damageData.approved_charge || 0,
             is_chargeable: true,
-            status: 'REPORTED',
+            status: damageData.status || 'REPORTED',
             incident_evidence: damageData.image ? [{ file_url: damageData.image }] : []
           });
         }
@@ -289,7 +291,9 @@ export async function GET(
       }
     }
 
-    const totalFineAmount = incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
+    const totalFineAmount = incidents
+      .filter(item => item.status === 'APPROVED')
+      .reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
 
     // 4. Tự động cộng tất cả đơn gọi món / dịch vụ phòng (service_orders) chưa bị hủy của booking này
     let serviceOrders: any[] = [];

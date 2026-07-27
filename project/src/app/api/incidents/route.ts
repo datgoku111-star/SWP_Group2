@@ -49,7 +49,7 @@ export async function GET(request: Request) {
             approved_charge: damageData.approved_charge || 0,
             actual_charge: damageData.approved_charge || 0,
             is_chargeable: damageData.is_chargeable ?? true,
-            status: room.status === 'MAINTENANCE' ? 'REPORTED' : 'RESOLVED',
+            status: room.status === 'MAINTENANCE' ? (damageData.status || 'REPORTED') : 'RESOLVED',
             incident_time: room.status_updated_at || room.updated_at || new Date().toISOString(),
             expected_completion_at: null,
             resolved_at: room.status === 'AVAILABLE' ? new Date().toISOString() : null,

@@ -43,7 +43,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       newNotes = bedConfig;
       newStatus = 'AVAILABLE';
     } else {
-      // Just update properties inside JSON metadata
+      if (status !== undefined) {
+        damageData.status = status;
+      }
       if (approved_charge !== undefined) {
         damageData.approved_charge = Number(approved_charge);
       }
