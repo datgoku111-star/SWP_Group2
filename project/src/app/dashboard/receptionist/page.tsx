@@ -166,7 +166,7 @@ export default function ReceptionistDashboard() {
   };
 
   const handleDirectCheckout = async (bookingId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn cho khách Checkout Nhanh và chuyển phòng này sang trạng thái DIRTY không?")) {
+    if (!confirm("Bạn có muốn chuyển phòng này sang trạng thái DIRTY để dọn dẹp & kiểm phòng (chưa checkout khách) không?")) {
       return;
     }
     try {
@@ -177,14 +177,14 @@ export default function ReceptionistDashboard() {
       });
       if (res.ok) {
         fetchDashboardData();
-        alert("Đã hoàn tất Checkout nhanh. Trạng thái phòng đã chuyển sang DIRTY!");
+        alert("Đã chuyển phòng sang DIRTY & gửi yêu cầu kiểm tra cho Housekeeping thành công!");
       } else {
         const err = await res.json();
         alert(`Error: ${err.error}`);
       }
     } catch (err) {
       console.error(err);
-      alert("Lỗi khi thực hiện Checkout nhanh");
+      alert("Lỗi khi thực hiện yêu cầu dọn phòng");
     }
   };
 
@@ -369,7 +369,7 @@ export default function ReceptionistDashboard() {
                         onClick={() => handleDirectCheckout(req.id)}
                         className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800/40 transition-colors"
                       >
-                        ⚡ Bỏ qua (DIRTY)
+                        ⚡ Chuyển DIRTY để dọn
                       </button>
                     </>
                   )}
@@ -382,7 +382,7 @@ export default function ReceptionistDashboard() {
                         onClick={() => handleDirectCheckout(req.id)}
                         className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800/40 transition-colors"
                       >
-                        ⚡ Checkout nhanh
+                        ⚡ Chuyển DIRTY để dọn
                       </button>
                     </>
                   )}
@@ -398,7 +398,7 @@ export default function ReceptionistDashboard() {
                         onClick={() => handleDirectCheckout(req.id)}
                         className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800/40 transition-colors animate-pulse"
                       >
-                        ⚡ Checkout nhanh
+                        ⚡ Chuyển DIRTY để dọn
                       </button>
                     </>
                   )}

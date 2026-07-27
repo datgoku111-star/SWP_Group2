@@ -285,7 +285,7 @@ function CheckInContent() {
 
   const handleDirectCheckoutClick = async () => {
     if (!booking) return;
-    if (!confirm("Bạn có chắc chắn muốn thực hiện Checkout Nhanh không? Khách sẽ được checkout ngay và phòng chuyển sang trạng thái DIRTY.")) {
+    if (!confirm("Bạn có muốn chuyển phòng này sang trạng thái DIRTY để dọn dẹp & kiểm phòng (chưa checkout khách) không?")) {
       return;
     }
     setActionLoading(true);
@@ -298,14 +298,14 @@ function CheckInContent() {
         body: JSON.stringify({ bookingId: booking.id, action: "DIRECT_CHECKOUT" }),
       });
       if (res.ok) {
-        setSuccess("Đã hoàn tất Checkout nhanh thành công! Phòng đã chuyển sang trạng thái DIRTY.");
+        setSuccess("Đã chuyển phòng sang DIRTY & gửi yêu cầu kiểm tra cho Housekeeping thành công!");
         setTimeout(() => {
           resetAllSelectionAndErrors("checkout");
           handleSearchQuery("", "CHECKED_IN");
         }, 1500);
       } else {
         const err = await res.json();
-        setError(err.error || "Lỗi khi thực hiện Checkout nhanh");
+        setError(err.error || "Lỗi khi thực hiện yêu cầu dọn phòng");
       }
     } catch (err: any) {
       setError(err.message || "Lỗi kết nối");
@@ -1074,7 +1074,7 @@ function CheckInContent() {
                     disabled={actionLoading || !booking}
                     className="w-full h-12 text-sm font-bold bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 rounded-2xl border border-red-200 dark:border-red-800/40 transition-colors shadow-sm flex items-center justify-center gap-2"
                   >
-                    ⚡ Checkout Nhanh (Chuyển DIRTY)
+                    ⚡ Yêu Cầu Dọn & Kiểm Phòng (Chuyển DIRTY)
                   </button>
                 </div>
               </div>

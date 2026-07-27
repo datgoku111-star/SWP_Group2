@@ -40,12 +40,11 @@ export async function POST(req: Request) {
         throw new Error("Booking not found");
       }
 
-      // 2. Update booking status to CHECKED_OUT and reset checkout_step
+      // 2. Update booking: set checkout_step to INSPECTING (send cleaner to inspect)
       const { error: ubError } = await supabaseServer
         .from("bookings")
         .update({
-          status: "CHECKED_OUT",
-          checkout_step: "COMPLETED",
+          checkout_step: "INSPECTING",
           updated_at: new Date().toISOString()
         })
         .eq("id", bookingId);
