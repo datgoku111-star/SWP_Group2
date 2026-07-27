@@ -11,10 +11,12 @@ import type { Service, Booking } from "@/types/hotel";
 import { ShoppingCart, Plus, Minus, X, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
+import { translateService } from "@/utils/laundry";
 
 export default function ServicesPage() {
   const { user, isLoading } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n: i18nHook } = useTranslation();
+  const isVN = i18nHook.language === "vn";
   const router = useRouter();
 
   const [services, setServices] = useState<Service[]>([]);
@@ -288,21 +290,21 @@ export default function ServicesPage() {
           >
             <div className="flex-grow">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-lg">{service.name}</h3>
+                <h3 className="font-semibold text-lg">{translateService(service.name, service.description, isVN).name}</h3>
                 <span className="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded text-xs text-neutral-500">
                   {service.category}
                 </span>
               </div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4 line-clamp-2">
-                {service.description || t("noDescription")}
+                {translateService(service.name, service.description, isVN).desc || t("noDescription")}
               </p>
             </div>
 
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800">
               <span className="font-semibold text-primary-6000">
                 {new Intl.NumberFormat(
-                  i18n.language === "vn" ? "vi-VN" : "en-US",
-                  { style: "currency", currency: "VND" },
+                  "en-US",
+                  { style: "currency", currency: "USD" },
                 ).format(service.price)}
               </span>
 
@@ -373,11 +375,11 @@ export default function ServicesPage() {
                         className="flex justify-between items-center"
                       >
                         <div>
-                          <h4 className="font-medium">{service.name}</h4>
+                          <h4 className="font-medium">{translateService(service.name, service.description, isVN).name}</h4>
                           <span className="text-sm text-neutral-500">
                             {new Intl.NumberFormat(
-                              i18n.language === "vn" ? "vi-VN" : "en-US",
-                              { style: "currency", currency: "VND" },
+                              "en-US",
+                              { style: "currency", currency: "USD" },
                             ).format(service.price)}{" "}
                             x {qty}
                           </span>
@@ -385,8 +387,8 @@ export default function ServicesPage() {
                         <div className="flex items-center space-x-4">
                           <span className="font-semibold">
                             {new Intl.NumberFormat(
-                              i18n.language === "vn" ? "vi-VN" : "en-US",
-                              { style: "currency", currency: "VND" },
+                              "en-US",
+                              { style: "currency", currency: "USD" },
                             ).format(service.price * qty)}
                           </span>
                           <button
@@ -430,12 +432,12 @@ export default function ServicesPage() {
                 )}
 
                 <div className="flex justify-between items-center mb-4 text-lg font-semibold">
-                  <span>Total</span>
+                  <span>{isVN ? "Tổng cộng" : "Total"}</span>
 
                   <span className="text-primary-6000">
                     {new Intl.NumberFormat(
-                      i18n.language === "vn" ? "vi-VN" : "en-US",
-                      { style: "currency", currency: "VND" },
+                      "en-US",
+                      { style: "currency", currency: "USD" },
                     ).format(cartTotal)}
                   </span>
                 </div>
@@ -447,7 +449,7 @@ export default function ServicesPage() {
                     disabled={orderLoading || !selectedBookingId}
                     className="w-full h-12 text-sm font-extrabold shadow-lg"
                   >
-                    ⚡ Đặt Món & Chuyển Lên Lễ Tân (Ghi Nợ Phòng)
+                    {isVN ? "⚡ Đặt Món & Chuyển Lên Lễ Tân (Ghi Nợ Phòng)" : "⚡ Order & Forward to Reception (Room Debt)"}
                   </ButtonPrimary>
                   <button
                     type="button"
@@ -455,7 +457,7 @@ export default function ServicesPage() {
                     disabled={orderLoading || !selectedBookingId}
                     className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                   >
-                    💳 Hoặc Thanh Toán VietQR / PayOS Trực Tuyến
+                    {isVN ? "💳 Hoặc Thanh Toán VietQR / PayOS Trực Tuyến" : "💳 Or Pay Online via VietQR / PayOS"}
                   </button>
                 </div>
               </div>

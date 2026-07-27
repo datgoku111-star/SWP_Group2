@@ -6,6 +6,8 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
+import { translateService } from "@/utils/laundry";
 
 export interface RoomTurnover {
   id: string;
@@ -20,6 +22,8 @@ export interface RoomTurnover {
 }
 
 export default function HousekeepingDashboardHub() {
+  const { t, i18n } = useTranslation();
+  const isVN = i18n.language === "vn";
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW" | "CHECKOUT_FLOW">("DIRTY_FLOW");
@@ -29,65 +33,29 @@ export default function HousekeepingDashboardHub() {
   const [customDamageName, setCustomDamageName] = useState("");
   const [customDamagePrice, setCustomDamagePrice] = useState("");
   const [isSubmittingDamage, setIsSubmittingDamage] = useState(false);
-  
-  const PREDEFINED_DAMAGES = [
-    { name: "Hỏng chăn", price: 50000 },
-    { name: "Hỏng gối", price: 40000 },
-    { name: "Hỏng bình nước", price: 30000 },
-    { name: "Hỏng điều hòa", price: 100000 },
-  ];
-  
+  const [targetBookingId, setTargetBookingId] = useState<string | null>(null);
+  const [damageNote, setDamageNote] = useState("");
+  const [damageImage, setDamageImage] = useState<string | null>(null);
+  const [incidents, setIncidents] = useState<any[]>([]);
+
+  const fetchIncidents = async () => {
+    try {
+      const res = await fetch("/api/incidents?active=true");
+      if (res.ok) {
+        const data = await res.json();
+        setIncidents(data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch active incidents:", e);
+    }
+  };
+
   const handleToggleDamage = (damage: {name: string, price: number}) => {
     setSelectedDamages(prev => 
       prev.find(d => d.name === damage.name) 
         ? prev.filter(d => d.name !== damage.name)
         : [...prev, damage]
     );
-  };
-  
-  const submitDamageReport = async () => {
-    if (!reportingRoomId) return;
-    
-    let allDamages = [...selectedDamages];
-    if (customDamageName && customDamagePrice) {
-      allDamages.push({ name: customDamageName, price: Number(customDamagePrice) || 0 });
-    }
-    
-    if (allDamages.length === 0) {
-      alert("Vui lòng chọn ít nhất một mục hỏng hóc hoặc nhập tùy chỉnh.");
-      return;
-    }
-    
-    const totalCharge = allDamages.reduce((sum, item) => sum + item.price, 0);
-    const description = allDamages.map(d => `${d.name} (${d.price.toLocaleString()}đ)`).join(', ');
-    
-    setIsSubmittingDamage(true);
-    try {
-      const res = await fetch('/api/incidents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room_id: reportingRoomId,
-          incident_type: 'DAMAGE',
-          severity: 'MEDIUM',
-          description: description,
-          estimated_charge: totalCharge,
-          is_chargeable: true
-        })
-      });
-      
-      if (!res.ok) throw new Error("Failed to report incident");
-      
-      await changeStatus(reportingRoomId, "MAINTENANCE", `Báo hỏng: ${description}`);
-      setReportingRoomId(null);
-      setSelectedDamages([]);
-      setCustomDamageName("");
-      setCustomDamagePrice("");
-    } catch (err) {
-      alert("Lỗi khi báo hỏng: " + (err as Error).message);
-    } finally {
-      setIsSubmittingDamage(false);
-    }
   };
   const [rooms, setRooms] = useState<RoomTurnover[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +73,7 @@ export default function HousekeepingDashboardHub() {
   const fetchRooms = async () => {
     setLoading(true);
     try {
+      fetchIncidents();
       const res = await fetch("/api/rooms?all=true");
       const coRes = await fetch("/api/housekeeping/checkout-requests");
       
@@ -221,28 +190,17 @@ export default function HousekeepingDashboardHub() {
   const availableRooms = rooms.filter((r) => r.status === "AVAILABLE");
 
   const handleCompleteInspection = async (bookingId: string, roomId: string, hasDamage: boolean) => {
-    let damageDescription = "";
-    let estimatedCharge = 0;
-
     if (hasDamage) {
-      damageDescription = prompt("Nhập mô tả đồ đạc bị hỏng (VD: Vỡ bình hoa, rách rèm...):") || "";
-      if (!damageDescription.trim()) {
-        alert("Bạn phải nhập mô tả đồ đạc hỏng.");
-        return;
-      }
-      const chargeStr = prompt("Nhập số tiền ước tính đền bù (VND):", "0");
-      estimatedCharge = parseInt(chargeStr || "0", 10);
-      if (isNaN(estimatedCharge) || estimatedCharge < 0) {
-        alert("Số tiền không hợp lệ.");
-        return;
-      }
+      setTargetBookingId(bookingId);
+      setReportingRoomId(roomId);
+      return;
     }
 
     try {
       const res = await fetch("/api/housekeeping/checkout-requests/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, roomId, hasDamage, damageDescription, estimatedCharge }),
+        body: JSON.stringify({ bookingId, roomId, hasDamage, damageDescription: "", estimatedCharge: 0 }),
       });
       if (res.ok) {
         alert("Đã hoàn tất kiểm tra phòng.");
@@ -438,7 +396,7 @@ export default function HousekeepingDashboardHub() {
           }`}
         >
           <Shirt className="w-4 h-4" />
-          Luồng 5: Dịch Vụ Giặt Là (Laundry Orders) ({laundryOrders.filter(o => ["assigned", "washing", "ready_to_receive", "delivering"].includes(o.status_text)).length})
+          {isVN ? "Luồng 5: Dịch Vụ Giặt Là" : "Flow 5: Laundry Services"} (Laundry Orders) ({laundryOrders.filter(o => ["assigned", "washing", "ready_to_receive", "delivering"].includes(o.status_text)).length})
         </button>
       </div>
 
@@ -617,46 +575,77 @@ export default function HousekeepingDashboardHub() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {maintenanceRooms.map((room) => (
-                <div key={room.id} className="bg-red-50/60 dark:bg-red-950/20 border-2 border-red-300 dark:border-red-800/60 p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="bg-red-600 text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow">
-                        Phòng {room.room_number}
-                      </span>
-                      <h4 className="text-lg font-bold text-neutral-900 dark:text-white mt-2">
-                        {room.room_type?.name || "Presidential Suite"} — Tầng {room.floor}
-                      </h4>
-                    </div>
-                    <span className="text-xs font-bold text-red-700 dark:text-red-300 bg-red-200 dark:bg-red-900/60 px-3 py-1 rounded-full uppercase">
-                      Đang Bảo Trì (LOCKED)
-                    </span>
-                  </div>
-
-                  <div className="bg-white dark:bg-neutral-900 p-3.5 rounded-2xl text-sm text-red-900 dark:text-red-200 border border-red-200 dark:border-red-800/40 flex items-start gap-2.5">
-                    <Wrench className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="font-bold">Sự cố kỹ thuật:</strong> {room.notes || "Đang kiểm tra hệ thống điện nước"}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    {user?.role === "HOUSEKEEPING" ? (
-                      <div className="text-[11px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-                        Chỉ Kỹ thuật viên / Giám sát mới được Nghiệm thu bảo trì
+              {maintenanceRooms.map((room) => {
+                const roomIncident = incidents.find((inc) => inc.room_id === room.id);
+                return (
+                  <div key={room.id} className="bg-red-50/60 dark:bg-red-950/20 border-2 border-red-300 dark:border-red-800/60 p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="bg-red-600 text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow">
+                          Phòng {room.room_number}
+                        </span>
+                        <h4 className="text-lg font-bold text-neutral-900 dark:text-white mt-2">
+                          {room.room_type?.name || "Presidential Suite"} — Tầng {room.floor}
+                        </h4>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ")}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
-                      >
-                        <CheckCheck className="w-5 h-5" />
-                        🛠️ NGHIỆM THU SỬA CHỮA XONG (➔ AVAILABLE)
-                      </button>
-                    )}
+                      <span className="text-xs font-bold text-red-700 dark:text-red-300 bg-red-200 dark:bg-red-900/60 px-3 py-1 rounded-full uppercase">
+                        Đang Bảo Trì (LOCKED)
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-red-200 dark:border-red-800/40">
+                      <div className="flex items-start gap-2.5 text-sm text-red-900 dark:text-red-200">
+                        <Wrench className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="font-bold">Sự cố kỹ thuật:</strong> {roomIncident?.description || room.notes || "Đang kiểm tra hệ thống điện nước"}
+                        </div>
+                      </div>
+                      
+                      {roomIncident?.detailed_note && (
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 pl-7">
+                          <span className="font-semibold text-neutral-700 dark:text-neutral-300">Chi tiết:</span> {roomIncident.detailed_note}
+                        </div>
+                      )}
+
+                      {roomIncident?.incident_evidence && roomIncident.incident_evidence.length > 0 && (
+                        <div className="mt-3 pl-7">
+                          <p className="text-[11px] font-semibold text-neutral-400 mb-1">Ảnh hiện trường:</p>
+                          <img
+                            src={roomIncident.incident_evidence[0].file_url}
+                            alt="Evidence photo"
+                            className="w-full max-h-40 object-cover rounded-xl border border-neutral-200 dark:border-neutral-700"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                      {user?.role === "HOUSEKEEPING" ? (
+                        <div className="text-[11px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
+                          Chỉ Kỹ thuật viên / Giám sát mới được Nghiệm thu bảo trì
+                        </div>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            if (roomIncident) {
+                              await fetch(`/api/incidents/${roomIncident.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'RESOLVED', note: 'Kỹ thuật viên nghiệm thu hoàn tất bảo trì phòng' })
+                              });
+                            }
+                            await changeStatus(room.id, "AVAILABLE", "Đã sửa chữa xong & dọn vệ sinh sạch sẽ");
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow flex items-center justify-center gap-2 text-sm"
+                        >
+                          <CheckCheck className="w-5 h-5" />
+                          🛠️ NGHIỆM THU SỬA CHỮA XONG (➔ AVAILABLE)
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -804,21 +793,21 @@ export default function HousekeepingDashboardHub() {
           <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
               <Shirt className="w-5 h-5 text-indigo-500" />
-              👕 LUỒNG 5: QUY TRÌNH XỬ LÝ YÊU CẦU GIẶT LÀ (laundry Operations)
+              {isVN ? "LUỒNG 5: QUY TRÌNH XỬ LÝ YÊU CẦU GIẶT LÀ" : "FLOW 5: LAUNDRY REQUESTS PROCESSING"} (Laundry Operations)
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
-              Nhận đồ từ phòng khách, giặt hấp sấy ủi và bàn giao trả quần áo sạch cho khách. Mọi hoạt động được đồng bộ trực tiếp tới Lễ Tân và Khách Hàng.
+              {isVN ? "Nhận đồ từ phòng khách, giặt hấp sấy ủi và bàn giao trả quần áo sạch cho khách. Mọi hoạt động được đồng bộ trực tiếp tới Lễ Tân và Khách Hàng." : "Receive items from guest rooms, wash/dry clean/press, and deliver clean clothes back to guests. All actions synced in real-time with Receptionist and Customer."}
             </p>
           </div>
 
           {laundryLoading ? (
             <div className="text-center py-10">
               <div className="w-6 h-6 border-2 border-primary-6000 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-              <p className="text-xs text-neutral-450">Đang tải danh sách đơn giặt là...</p>
+              <p className="text-xs text-neutral-450">{isVN ? "Đang tải danh sách đơn giặt là..." : "Loading laundry orders..."}</p>
             </div>
           ) : laundryOrders.length === 0 ? (
             <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
-              Chưa có đơn yêu cầu giặt là nào trong hệ thống.
+              {isVN ? "Chưa có đơn yêu cầu giặt là nào trong hệ thống." : "No laundry requests in the system."}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -835,25 +824,25 @@ export default function HousekeepingDashboardHub() {
                 let cardBorder = "";
 
                 if (isAssigned) {
-                  statusBadge = "⏳ Chờ Buồng phòng thu gom đồ";
+                  statusBadge = isVN ? "⏳ Chờ Buồng phòng thu gom đồ" : "⏳ Housekeeping collecting clothes";
                   cardBorder = "border-purple-300 dark:border-purple-800/50 bg-purple-50/20 dark:bg-purple-950/10";
                 } else if (isWashing) {
-                  statusBadge = "🌀 Đang giặt đồ (Washing)";
+                  statusBadge = isVN ? "🌀 Đang giặt đồ (Washing)" : "🌀 Washing in progress";
                   cardBorder = "border-amber-300 dark:border-amber-800/50 bg-amber-50/20 dark:bg-amber-950/10";
                 } else if (isWashed) {
-                  statusBadge = "👕 Đã giặt xong — Chờ khách ở phòng báo";
+                  statusBadge = isVN ? "👕 Đã giặt xong — Chờ khách ở phòng báo" : "👕 Washed — Waiting for guest in room";
                   cardBorder = "border-indigo-300 dark:border-indigo-800/50 bg-indigo-50/20 dark:bg-indigo-950/10";
                 } else if (isReadyToReceive) {
-                  statusBadge = "⏳ Chờ Lễ tân duyệt trả đồ";
+                  statusBadge = isVN ? "⏳ Chờ Lễ tân duyệt trả đồ" : "⏳ Waiting for receptionist delivery approval";
                   cardBorder = "border-orange-300 dark:border-orange-800/50 bg-orange-50/20 dark:bg-orange-950/10 animate-pulse";
                 } else if (isDelivering) {
-                  statusBadge = "🚚 Đang trả đồ (Delivering)";
+                  statusBadge = isVN ? "🚚 Đang trả đồ (Delivering)" : "🚚 Delivering";
                   cardBorder = "border-blue-300 dark:border-blue-800/50 bg-blue-50/20 dark:bg-blue-950/10 animate-bounce";
                 } else if (isDelivered) {
-                  statusBadge = "✅ Đã giao đồ thành công";
+                  statusBadge = isVN ? "✅ Đã giao đồ thành công" : "✅ Delivered successfully";
                   cardBorder = "border-emerald-300 dark:border-emerald-800/50 bg-emerald-50/20 dark:bg-emerald-950/10";
                 } else {
-                  statusBadge = "❌ Bị từ chối";
+                  statusBadge = isVN ? "❌ Bị từ chối" : "❌ Rejected";
                   cardBorder = "border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/20";
                 }
 
@@ -875,29 +864,29 @@ export default function HousekeepingDashboardHub() {
 
                     <div className="text-xs space-y-2">
                       <div className="font-semibold text-neutral-700 dark:text-neutral-300">
-                        Loại dịch vụ: <span className="text-indigo-600 dark:text-indigo-400 font-black">{order.service_type}</span>
+                        {isVN ? "Loại dịch vụ:" : "Service Type:"} <span className="text-indigo-600 dark:text-indigo-400 font-black">{order.service_type === "Wash & Fold" ? (isVN ? "Giặt thường (Wash & Fold)" : "Wash & Fold") : order.service_type === "Dry Cleaning" ? (isVN ? "Giặt khô / Giặt hấp" : "Dry Cleaning") : (isVN ? "Chỉ ủi / là (Pressing Only)" : "Pressing Only")}</span>
                       </div>
                       
                       {/* Items */}
                       <div className="bg-white/80 dark:bg-neutral-900/60 p-3 rounded-2xl border border-neutral-100 dark:border-neutral-850 space-y-1">
-                        <span className="text-[9px] text-neutral-400 font-bold uppercase block tracking-wider mb-1">Đồ cần giặt:</span>
+                        <span className="text-[9px] text-neutral-400 font-bold uppercase block tracking-wider mb-1">{isVN ? "Đồ cần giặt:" : "Items to wash:"}</span>
                         {order.items?.map((it: any, i: number) => (
                           <div key={i} className="flex justify-between items-center text-xs">
-                            <span className="font-semibold">{it.quantity}x {it.service?.name.replace("Laundry - ", "")}</span>
-                            <span className="text-neutral-500 font-mono text-[10px]">({(it.unit_price).toLocaleString("vi-VN")} đ/cái)</span>
+                            <span className="font-semibold">{it.quantity}x {translateService(it.service?.name || "Service", it.service?.description, isVN).name}</span>
+                            <span className="text-neutral-500 font-mono text-[10px]">({new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(it.unit_price)}/{isVN ? "cái" : "item"})</span>
                           </div>
                         ))}
                       </div>
 
                       {order.customer_notes && (
                         <div className="p-3 bg-amber-500/10 rounded-2xl text-[11px] italic text-neutral-750 dark:text-neutral-300 border border-amber-500/20">
-                          <strong>Ghi chú của khách:</strong> {order.customer_notes}
+                          <strong>{isVN ? "Ghi chú của khách:" : "Guest notes:"}</strong> {order.customer_notes}
                         </div>
                       )}
                       
                       <div className="flex justify-between text-[11px] text-neutral-400 pt-2 border-t border-neutral-100 dark:border-neutral-850">
-                        <span>Đặt lúc: {new Date(order.created_at).toLocaleTimeString("vi-VN")} - {new Date(order.created_at).toLocaleDateString("vi-VN")}</span>
-                        <span className="font-bold text-red-600 dark:text-red-400">Tổng cộng: {order.total_amount?.toLocaleString("vi-VN")} đ</span>
+                        <span>{isVN ? "Đặt lúc:" : "Ordered at:"} {new Date(order.created_at).toLocaleTimeString(isVN ? "vi-VN" : "en-US")} - {new Date(order.created_at).toLocaleDateString(isVN ? "vi-VN" : "en-US")}</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">{isVN ? "Tổng cộng:" : "Total:"} {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.total_amount || 0)}</span>
                       </div>
                     </div>
 
@@ -908,7 +897,7 @@ export default function HousekeepingDashboardHub() {
                           onClick={() => handleUpdateLaundryStatus(order.id, "PENDING", "washing")}
                           className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-900/50 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
                         >
-                          🌀 NHẬN ĐỒ VÀ ĐANG GIẶT
+                          🌀 {isVN ? "NHẬN ĐỒ VÀ ĐANG GIẶT" : "RECEIVE AND START WASHING"}
                         </button>
                       )}
 
@@ -917,13 +906,13 @@ export default function HousekeepingDashboardHub() {
                           onClick={() => handleUpdateLaundryStatus(order.id, "PENDING", "washed")}
                           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-2 text-xs"
                         >
-                          👕 ĐÃ GIẶT XONG & SẴN SÀNG GIAO
+                          👕 {isVN ? "ĐÃ GIẶT XONG & SẴN SÀNG GIAO" : "WASHED & READY FOR DELIVERY"}
                         </button>
                       )}
 
                       {isReadyToReceive && (
                         <div className="text-[10px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-                          ⏳ Chờ Lễ tân duyệt giao đồ...
+                          ⏳ {isVN ? "Chờ Lễ tân duyệt giao đồ..." : "Waiting for receptionist delivery approval..."}
                         </div>
                       )}
 
@@ -932,25 +921,25 @@ export default function HousekeepingDashboardHub() {
                           onClick={() => handleUpdateLaundryStatus(order.id, "COMPLETED", "delivered")}
                           className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow flex items-center justify-center gap-2 text-xs animate-bounce"
                         >
-                          <Truck className="w-4 h-4" /> BÀN GIAO ĐỒ XONG (Trả Đồ)
+                          <Truck className="w-4 h-4" /> {isVN ? "BÀN GIAO ĐỒ XONG (Trả Đồ)" : "DELIVERED SUCCESSFULLY"}
                         </button>
                       )}
 
                       {isWashed && (
                         <div className="text-[10px] text-neutral-500 italic text-center w-full py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
-                          ⏳ Đã giặt sạch. Đang đợi Khách hàng báo sẵn sàng ở phòng để mang lên trả...
+                          ⏳ {isVN ? "Đã giặt sạch. Đang đợi Khách hàng báo sẵn sàng ở phòng để mang lên trả..." : "Washed. Waiting for guest confirmation to deliver..."}
                         </div>
                       )}
 
                       {isDelivered && (
                         <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center w-full py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                          ✓ Đã trả xong đồ & cộng nợ phòng thành công
+                          ✓ {isVN ? "Đã trả xong đồ & cộng nợ phòng thành công" : "Delivered & debt charged successfully"}
                         </div>
                       )}
 
                       {isRejected && (
                         <div className="text-xs text-red-600 dark:text-red-400 font-bold text-center w-full py-2 bg-red-500/10 rounded-xl border border-red-500/20">
-                          Đơn hàng bị từ chối
+                          {isVN ? "Đơn hàng bị từ chối" : "Order rejected"}
                         </div>
                       )}
                     </div>
@@ -959,6 +948,244 @@ export default function HousekeepingDashboardHub() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL BÁO HỎNG / BẢO TRÌ */}
+      {reportingRoomId && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl max-w-md w-full p-6 md:p-8 space-y-6 shadow-2xl border border-neutral-100 dark:border-neutral-800 animate-scale-up">
+            <div className="flex justify-between items-center pb-3 border-b border-neutral-100 dark:border-neutral-800">
+              <h3 className="text-xl font-bold text-neutral-950 dark:text-white flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-red-600" />
+                Báo hỏng phòng {rooms.find(r => r.id === reportingRoomId)?.room_number}
+              </h3>
+              <button
+                onClick={() => {
+                  setReportingRoomId(null);
+                  setSelectedDamages([]);
+                  setCustomDamageName("");
+                  setCustomDamagePrice("");
+                  setDamageNote("");
+                  setDamageImage(null);
+                  setTargetBookingId(null);
+                }}
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-2xl font-semibold"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* PREDEFINED DAMAGES LIST */}
+            <div className="space-y-3">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Chọn danh mục hỏng hóc:
+              </label>
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                {[
+                  { name: "Hỏng Tivi", price: 150 },
+                  { name: "Hỏng Điều hòa", price: 200 },
+                  { name: "Hỏng Tủ lạnh", price: 100 },
+                  { name: "Bình nước hỏng", price: 10 },
+                  { name: "Bình nóng lạnh hỏng", price: 80 },
+                  { name: "Rách/Bẩn Ga giường", price: 30 },
+                  { name: "Mất/Hỏng khăn tắm", price: 15 },
+                ].map((item) => {
+                  const isChecked = selectedDamages.some(d => d.name === item.name);
+                  return (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => handleToggleDamage(item)}
+                      className={`p-3 rounded-2xl border text-left text-xs transition-all flex flex-col justify-between h-16 ${
+                        isChecked
+                          ? "bg-red-50 dark:bg-red-950/20 border-red-500 text-red-700 dark:text-red-400 font-bold"
+                          : "bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <span>{item.name}</span>
+                      <span className="opacity-80">${item.price}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CUSTOM DAMAGE SECTION */}
+            <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Hỏng hóc tùy chỉnh khác:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Tên đồ dùng hư hỏng..."
+                  value={customDamageName}
+                  onChange={(e) => setCustomDamageName(e.target.value)}
+                  className="flex-1 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2 text-neutral-900 dark:text-white"
+                />
+                <input
+                  type="number"
+                  placeholder="Giá (USD)"
+                  value={customDamagePrice}
+                  onChange={(e) => setCustomDamagePrice(e.target.value)}
+                  className="w-24 text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2 text-neutral-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* UPLOAD IMAGE SECTION */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Tải lên hình ảnh hiện trường / bằng chứng:
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setDamageImage(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="text-xs text-neutral-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"
+                />
+              </div>
+              {damageImage && (
+                <div className="relative w-full h-24 rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-700 mt-2">
+                  <img src={damageImage} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setDamageImage(null)}
+                    className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-700"
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* DETAILED NOTE */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300">
+                Ghi chú chi tiết hư hại:
+              </label>
+              <textarea
+                placeholder="Ghi chú thêm về lỗi kỹ thuật, vị trí hư hại..."
+                value={damageNote}
+                onChange={(e) => setDamageNote(e.target.value)}
+                rows={2}
+                className="w-full text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-2 text-neutral-900 dark:text-white"
+              />
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setReportingRoomId(null);
+                  setSelectedDamages([]);
+                  setCustomDamageName("");
+                  setCustomDamagePrice("");
+                  setDamageNote("");
+                  setDamageImage(null);
+                  setTargetBookingId(null);
+                }}
+                className="flex-1 py-3 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-bold rounded-2xl hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingDamage}
+                onClick={async () => {
+                  let allDamages = [...selectedDamages];
+                  if (customDamageName && customDamagePrice) {
+                    allDamages.push({ name: customDamageName, price: Number(customDamagePrice) || 0 });
+                  }
+                  
+                  if (allDamages.length === 0) {
+                    alert("Vui lòng chọn hoặc nhập nhất một mục hỏng hóc.");
+                    return;
+                  }
+
+                  setIsSubmittingDamage(true);
+                  try {
+                    const totalCharge = allDamages.reduce((sum, item) => sum + item.price, 0);
+                    const description = allDamages.map(d => `${d.name} ($${d.price})`).join(', ');
+
+                    // 1. Create incident
+                    const res = await fetch('/api/incidents', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        room_id: reportingRoomId,
+                        booking_id: targetBookingId || undefined,
+                        incident_type: 'DAMAGE',
+                        severity: 'MEDIUM',
+                        description: description,
+                        detailed_note: damageNote || 'Báo cáo từ nhân viên buồng phòng',
+                        estimated_charge: totalCharge,
+                        is_chargeable: true,
+                        evidence_image: damageImage
+                      })
+                    });
+
+                    if (!res.ok) {
+                      const errData = await res.json().catch(() => ({}));
+                      let errMsg = errData.error || errData.message || "Failed to report incident";
+                      if (errData.details) {
+                        errMsg += " - Chi tiết: " + JSON.stringify(errData.details);
+                      }
+                      throw new Error(errMsg);
+                    }
+
+                    // 2. Change room status to MAINTENANCE
+                    await changeStatus(reportingRoomId!, "MAINTENANCE", `Báo hỏng: ${description}. ${damageNote}`);
+
+                    // 3. If targetBookingId is present, mark the checkout inspection completed with damage
+                    if (targetBookingId) {
+                      await fetch("/api/housekeeping/checkout-requests/complete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          bookingId: targetBookingId,
+                          roomId: reportingRoomId,
+                          hasDamage: true,
+                          damageDescription: description,
+                          estimatedCharge: totalCharge
+                        }),
+                      });
+                    }
+
+                    // Reset form
+                    setReportingRoomId(null);
+                    setSelectedDamages([]);
+                    setCustomDamageName("");
+                    setCustomDamagePrice("");
+                    setDamageNote("");
+                    setDamageImage(null);
+                    setTargetBookingId(null);
+                    fetchRooms();
+                    alert("Báo cáo hỏng hóc & Đưa phòng vào diện bảo trì thành công!");
+                  } catch (err: any) {
+                    alert("Lỗi khi báo hỏng: " + err.message);
+                  } finally {
+                    setIsSubmittingDamage(false);
+                  }
+                }}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl disabled:opacity-50 text-sm shadow flex items-center justify-center gap-2"
+              >
+                {isSubmittingDamage ? "Đang xử lý..." : "Xác nhận báo hỏng"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

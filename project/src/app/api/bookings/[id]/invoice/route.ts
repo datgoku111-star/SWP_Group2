@@ -56,17 +56,52 @@ export async function GET(
       .eq("booking_id", bookingId)
       .eq("status", "COMPLETED");
 
-    // 4. Fetch room incidents that are chargeable and not resolved/closed/cancelled
-    const { data: incidents } = await supabaseServer
-      .from("room_incidents")
+    // 4. Fetch room and virtual incidents that are chargeable
+    const { data: room } = await supabaseServer
+      .from("rooms")
       .select("*")
-      .eq("booking_id", bookingId)
-      .eq("is_chargeable", true)
-      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+      .eq("id", booking.room_id)
+      .single();
 
-    const totalFineAmount = incidents
+    const incidents: any[] = [];
+    if (room && room.notes && room.notes.includes("DAMAGE:")) {
+      try {
+        const parts = room.notes.split("DAMAGE:");
+        const jsonStr = parts[1].trim();
+        const damageData = JSON.parse(jsonStr);
+
+        if (damageData.booking_id === bookingId && (damageData.is_chargeable ?? true)) {
+          incidents.push({
+            id: `incident-${room.id}`,
+            room_id: room.id,
+            booking_id: bookingId,
+            description: damageData.description,
+            detailed_note: damageData.detailed_note,
+            estimated_charge: damageData.estimated_charge || 0,
+            approved_charge: damageData.approved_charge || 0,
+            actual_charge: damageData.approved_charge || 0,
+            is_chargeable: true,
+            status: room.status === 'MAINTENANCE' ? 'REPORTED' : 'RESOLVED',
+            incident_evidence: damageData.image ? [{ file_url: damageData.image }] : []
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse incident JSON for invoice:", e);
+      }
+    }
+
+    const totalFineAmountUSD = incidents
       ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
       : 0;
+
+    const totalFineAmount = Math.round(totalFineAmountUSD * 26320);
+
+    const convertedIncidents = (incidents || []).map(item => ({
+      ...item,
+      estimated_charge: Math.round(Number(item.estimated_charge || 0) * 26320),
+      approved_charge: Math.round(Number(item.approved_charge || 0) * 26320),
+      actual_charge: Math.round(Number(item.actual_charge || 0) * 26320),
+    }));
 
     // Convert base_price of room type from USD to VND for invoice display
     if (booking.room?.room_type) {
@@ -135,7 +170,7 @@ export async function GET(
       room_charges: roomCharges,
       service_charges: serviceCharges,
       incident_charges: {
-        incidents: incidents || [],
+        incidents: convertedIncidents,
         total_fine: totalFineAmount
       },
       experience_charges: experienceCharges,

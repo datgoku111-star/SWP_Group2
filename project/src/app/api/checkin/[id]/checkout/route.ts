@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth-server";
+import { sendEmail, buildCheckoutEmailTemplate } from "@/lib/mail-sender";
 
 export async function POST(
   request: Request,
@@ -22,12 +23,100 @@ export async function POST(
     // 1. Verify booking exists and is CHECKED_IN
     const { data: booking, error: bError } = await supabaseServer
       .from("bookings")
-      .select("id, status, room_id")
+      .select("*, room:rooms(*, room_type:room_types(*)), user:users(id, email, full_name, role), guest:guests(*)")
       .eq("id", bookingId)
       .single();
 
     if (bError || !booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     if (booking.status !== "CHECKED_IN") return NextResponse.json({ error: `Cannot checkout booking with status ${booking.status}` }, { status: 400 });
+
+    // Calculate billing details BEFORE inserting the final checkout payment
+    // so that the depositPaid represents everything paid BEFORE this checkout payment.
+    const { data: payments } = await supabaseServer
+      .from("payments")
+      .select("amount")
+      .eq("booking_id", bookingId)
+      .eq("status", "COMPLETED");
+
+    const depositPaid = payments
+      ? payments.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+      : 0;
+
+    const { data: roomForIncident } = await supabaseServer
+      .from("rooms")
+      .select("*")
+      .eq("id", booking.room_id)
+      .single();
+
+    const incidents: any[] = [];
+    if (roomForIncident && roomForIncident.notes && roomForIncident.notes.includes("DAMAGE:")) {
+      try {
+        const parts = roomForIncident.notes.split("DAMAGE:");
+        const jsonStr = parts[1].trim();
+        const damageData = JSON.parse(jsonStr);
+
+        if (damageData.booking_id === bookingId && (damageData.is_chargeable ?? true)) {
+          incidents.push({
+            id: `incident-${booking.room_id}`,
+            room_id: booking.room_id,
+            booking_id: bookingId,
+            description: damageData.description,
+            detailed_note: damageData.detailed_note,
+            estimated_charge: damageData.estimated_charge || 0,
+            approved_charge: damageData.approved_charge || 0,
+            actual_charge: damageData.approved_charge || 0,
+            is_chargeable: true,
+            status: 'REPORTED',
+            incident_evidence: damageData.image ? [{ file_url: damageData.image }] : []
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse incident JSON for checkout:", e);
+      }
+    }
+
+    const totalFineAmount = incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
+
+    let serviceOrders: any[] = [];
+    try {
+      const { data: sOrders } = await supabaseServer
+        .from("service_orders")
+        .select("*, items:service_order_items(*, service:services(*))")
+        .eq("booking_id", bookingId)
+        .not("status", "eq", "CANCELLED");
+      if (sOrders) serviceOrders = sOrders;
+    } catch (e) {
+      console.warn("Could not fetch service orders for checkout calculation:", e);
+    }
+
+    const totalServiceAmount = serviceOrders.reduce((sum, order) => {
+      let amt = Number(order.total_amount || 0);
+      try {
+        if (order.notes && order.notes.trim().startsWith("{")) {
+          const notesObj = JSON.parse(order.notes);
+          if (notesObj.is_car_rental) {
+            if (order.status !== "COMPLETED") {
+              return sum;
+            }
+            amt = amt * 26320;
+          }
+        }
+      } catch (e) {}
+      return sum + amt;
+    }, 0);
+
+    const calculateNights = (start: string, end: string) => {
+      const diff = Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 1;
+    };
+
+    const nights = calculateNights(booking.check_in_date, booking.check_out_date);
+    const basePrice = Number(booking.room?.room_type?.base_price || 0);
+    const roomCharges = nights * basePrice;
+    
+    const subtotal = roomCharges + totalServiceAmount + totalFineAmount; 
+    const vatRate = 0.02;
+    const vatAmount = subtotal * vatRate;
 
     // 2. Create payment record
     const { error: pError } = await supabaseServer.from("payments").insert({
@@ -46,17 +135,25 @@ export async function POST(
       .eq("id", bookingId);
     if (ubError) throw ubError;
 
-    // Update status of paid incidents to RESOLVED
-    await supabaseServer
-      .from("room_incidents")
-      .update({ 
-        status: "RESOLVED", 
-        resolved_at: new Date().toISOString(), 
-        updated_at: new Date().toISOString() 
-      })
-      .eq("booking_id", bookingId)
-      .eq("is_chargeable", true)
-      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+    // Update status of paid incidents to RESOLVED by clearing from room notes
+    const { data: currentRoom } = await supabaseServer
+      .from("rooms")
+      .select("*")
+      .eq("id", booking.room_id)
+      .single();
+
+    if (currentRoom && currentRoom.notes && currentRoom.notes.includes("DAMAGE:")) {
+      let bedConfig = 'SINGLE';
+      if (currentRoom.notes.includes('|')) {
+        bedConfig = currentRoom.notes.split('|')[0].trim();
+      } else if (!currentRoom.notes.includes('DAMAGE:')) {
+        bedConfig = currentRoom.notes.trim();
+      }
+      await supabaseServer
+        .from("rooms")
+        .update({ notes: bedConfig })
+        .eq("id", booking.room_id);
+    }
 
     // 4. Update room status to DIRTY
     const nowIso = new Date().toISOString();
@@ -81,6 +178,46 @@ export async function POST(
       entity_id: bookingId,
       details: { payment_method, amount, transaction_ref }
     });
+
+    // Send check-out invoice email to customer
+    const recipientEmail = booking.guest?.email || booking.user?.email;
+    if (recipientEmail) {
+      const customerName = booking.guest?.full_name || booking.user?.full_name || "Quý khách";
+      const phone = booking.guest?.phone || booking.user?.phone || "";
+
+      const emailHtml = buildCheckoutEmailTemplate({
+        bookingId: booking.id,
+        customerName,
+        email: recipientEmail,
+        phone,
+        roomNumber: booking.room?.room_number || "N/A",
+        roomTypeName: booking.room?.room_type?.name || "N/A",
+        checkInDate: booking.check_in_date,
+        checkOutDate: booking.check_out_date,
+        nights,
+        basePrice,
+        roomCharges,
+        serviceCharges: totalServiceAmount,
+        serviceOrders,
+        incidentCharges: totalFineAmount,
+        incidents: incidents || [],
+        subtotal,
+        vatRate,
+        vatAmount,
+        depositPaid,
+        finalPaid: amount,
+        paymentMethod: payment_method,
+        transactionRef: transaction_ref || ""
+      });
+
+      sendEmail({
+        to: recipientEmail,
+        subject: `[HSRM Resort] Hóa đơn Thanh toán & Xác nhận Check-out - Mã: ${booking.id}`,
+        html: emailHtml
+      }).catch((err: any) => {
+        console.error("Failed to send checkout email:", err);
+      });
+    }
 
     return NextResponse.json({ message: "Checkout successful" });
 
@@ -119,16 +256,40 @@ export async function GET(
       : 0;
 
     // 3. Tự động kiểm tra các khoản phạt chưa thanh toán (chargeable và chưa RESOLVED/CLOSED/CANCELLED) của booking này
-    const { data: incidents } = await supabaseServer
-      .from("room_incidents")
+    const { data: roomForIncidentGet } = await supabaseServer
+      .from("rooms")
       .select("*")
-      .eq("booking_id", bookingId)
-      .eq("is_chargeable", true)
-      .not("status", "in", '("RESOLVED","CLOSED","CANCELLED")');
+      .eq("id", booking.room_id)
+      .single();
 
-    const totalFineAmount = incidents
-      ? incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0)
-      : 0;
+    const incidents: any[] = [];
+    if (roomForIncidentGet && roomForIncidentGet.notes && roomForIncidentGet.notes.includes("DAMAGE:")) {
+      try {
+        const parts = roomForIncidentGet.notes.split("DAMAGE:");
+        const jsonStr = parts[1].trim();
+        const damageData = JSON.parse(jsonStr);
+
+        if (damageData.booking_id === bookingId && (damageData.is_chargeable ?? true)) {
+          incidents.push({
+            id: `incident-${booking.room_id}`,
+            room_id: booking.room_id,
+            booking_id: bookingId,
+            description: damageData.description,
+            detailed_note: damageData.detailed_note,
+            estimated_charge: damageData.estimated_charge || 0,
+            approved_charge: damageData.approved_charge || 0,
+            actual_charge: damageData.approved_charge || 0,
+            is_chargeable: true,
+            status: 'REPORTED',
+            incident_evidence: damageData.image ? [{ file_url: damageData.image }] : []
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse incident JSON for checkout GET:", e);
+      }
+    }
+
+    const totalFineAmount = incidents.reduce((sum, item) => sum + Number(item.approved_charge || item.estimated_charge || 0), 0);
 
     // 4. Tự động cộng tất cả đơn gọi món / dịch vụ phòng (service_orders) chưa bị hủy của booking này
     let serviceOrders: any[] = [];

@@ -28,8 +28,12 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import ButtonThird from "@/shared/ButtonThird";
 import Input from "@/shared/Input";
 import type { Room, Service, ServiceOrder } from "@/types/hotel";
+import { useTranslation } from "react-i18next";
+import { translateService } from "@/utils/laundry";
 
 export default function ReceptionistServiceHub() {
+  const { t, i18n } = useTranslation();
+  const isVN = i18n.language === "vn";
   const [rooms, setRooms] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
@@ -206,7 +210,7 @@ export default function ReceptionistServiceHub() {
   const handleSubmitOrder = async (e?: any) => {
     if (e && e.preventDefault) e.preventDefault();
     if (orderItems.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 món ăn hoặc dịch vụ!");
+      alert(isVN ? "Vui lòng chọn ít nhất 1 món ăn hoặc dịch vụ!" : "Please select at least 1 food or service!");
       return;
     }
 
@@ -245,10 +249,10 @@ export default function ReceptionistServiceHub() {
       };
 
       setActiveOrders((prev) => [newOrderUI, ...prev]);
-      alert(`✅ Đã tạo VNDơn dịch vụ & chuyển ngay xuống Nhà bếp cho Room ${selectedRoomForService?.room_number}! Tổng cộng: ${totalOrderAmount.toLocaleString("vi-VN")} VND.`);
+      alert(isVN ? `✅ Đã tạo đơn dịch vụ & chuyển ngay xuống Nhà bếp cho Phòng ${selectedRoomForService?.room_number}! Tổng cộng: $${totalOrderAmount.toFixed(2)}.` : `✅ Created service order & forwarded to Kitchen for Room ${selectedRoomForService?.room_number}! Total: $${totalOrderAmount.toFixed(2)}.`);
       setIsOrderModalOpen(false);
     } catch (err: any) {
-      alert("Lỗi tạo VNDơn dịch vụ: " + err.message);
+      alert((isVN ? "Lỗi tạo đơn dịch vụ: " : "Error creating service order: ") + err.message);
     }
   };
 
@@ -263,9 +267,9 @@ export default function ReceptionistServiceHub() {
       setActiveOrders((prev) =>
         prev.map((o) => (o.id === order.id ? { ...o, notes: updatedNotes } : o))
       );
-      alert("✅ Đã duyệt VNDơn & chuyển xuống Nhà bếp thành công! Bếp VNDã nhận VNDược thông báo reo chuông.");
+      alert(isVN ? "✅ Đã duyệt đơn & chuyển xuống Nhà bếp thành công! Bếp đã nhận được thông báo reo chuông." : "✅ Approved and forwarded to Kitchen successfully!");
     } catch (err: any) {
-      alert("Lỗi duyệt VNDơn: " + err.message);
+      alert((isVN ? "Lỗi duyệt đơn: " : "Error approving order: ") + err.message);
     }
   };
 
@@ -277,14 +281,14 @@ export default function ReceptionistServiceHub() {
         body: JSON.stringify({ status, status_text: statusText }),
       });
       if (res.ok) {
-        alert("✅ Đã cập nhật trạng thái thuê xe thành công!");
+        alert(isVN ? "✅ Đã cập nhật trạng thái thuê xe thành công!" : "✅ Car rental status updated successfully!");
         fetchAllData();
       } else {
-        alert("Cập nhật trạng thái thất bại.");
+        alert(isVN ? "Cập nhật trạng thái thất bại." : "Status update failed.");
       }
     } catch (err) {
       console.error(err);
-      alert("Đã xảy ra lỗi.");
+      alert(isVN ? "Đã xảy ra lỗi." : "An error occurred.");
     }
   };
   const handleCheckoutAction = async (bookingId: string, action: string) => {
@@ -321,7 +325,7 @@ export default function ReceptionistServiceHub() {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn từ chối/hủy requested gọi món này?")) return;
+    if (!confirm(isVN ? "Bạn có chắc chắn muốn từ chối/hủy yêu cầu gọi món này?" : "Are you sure you want to reject/cancel this food order?")) return;
     try {
       await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
@@ -330,7 +334,7 @@ export default function ReceptionistServiceHub() {
       });
       setActiveOrders((prev) => prev.filter((o) => o.id !== orderId));
     } catch (err: any) {
-      alert("Lỗi hủy VNDơn: " + err.message);
+      alert((isVN ? "Lỗi hủy đơn: " : "Error canceling order: ") + err.message);
     }
   };
 
@@ -345,13 +349,13 @@ export default function ReceptionistServiceHub() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
             <Utensils className="w-3.5 h-3.5" />
-            Receptionist Service Hub
+            {isVN ? "Cổng Phục Vụ Khách Hàng & Dịch Vụ Lễ Tân (Receptionist Service Hub)" : "Guest Service & Receptionist Hub"}
           </div>
           <h2 className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
-            Room Management & Direct Ordering
+            {isVN ? "Điều Hành Buồng Phòng & Gọi Món Trực Tiếp" : "Room Management & Direct Ordering"}
           </h2>
           <p className="text-primary-100 text-sm max-w-2xl">
-            Easily monitor real-time room status, request urgent cleaning, or order F&B directly to the guest's bill.
+            {isVN ? "Lễ tân dễ dàng theo dõi tình trạng buồng phòng thực tế, bấm hối dọn gấp khi khách đến sớm hoặc gọi đồ ăn/thức uống/tiện ích lên phòng ghi nợ trực tiếp vào Booking." : "Receptionists can easily track real-time room status, expedite cleaning when guests arrive early, or order food/drinks/amenities to the room, charging directly to the Booking."}
           </p>
         </div>
 
@@ -365,7 +369,7 @@ export default function ReceptionistServiceHub() {
             }`}
           >
             <Home className="w-4 h-4" />
-            Rooms & Services ({rooms.length})
+            {isVN ? "Sơ Đồ Phòng & Phục Vụ" : "Room Map & Service"} ({rooms.length})
           </button>
           <button
             onClick={() => setActiveSubTab("ORDERS")}
@@ -376,7 +380,7 @@ export default function ReceptionistServiceHub() {
             }`}
           >
             <Clock className="w-4 h-4" />
-            Pending Orders ({activeOrders.length})
+            {isVN ? "Đơn Dịch Vụ Đang Xử Lý" : "Active Service Orders"} ({activeOrders.length})
           </button>
           <button
             onClick={() => setActiveSubTab("CAR_RENTALS")}
@@ -387,31 +391,9 @@ export default function ReceptionistServiceHub() {
             }`}
           >
             <Car className="w-4 h-4" />
-            Car Rentals ({carRentals.length})
+            {isVN ? "Dịch Vụ Thuê Xe" : "Car Rental Services"} ({carRentals.length})
           </button>
-          <button
-            onClick={() => setActiveSubTab("EXPERIENCES")}
-            className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
-              activeSubTab === "EXPERIENCES"
-                ? "bg-white text-primary-700 shadow-lg scale-105"
-                : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            Experiences Dashboard
-          </button>
-          <button
-            onClick={() => setActiveSubTab("CHECKOUTS")}
-            className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
-              activeSubTab === "CHECKOUTS"
-                ? "bg-white text-primary-700 shadow-lg scale-105"
-                : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            Checkout Requests
-          </button>
-          <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title="Refresh">
+          <button onClick={fetchAllData} className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors" title={isVN ? "Làm mới" : "Refresh"}>
             <RefreshCw className="w-5 h-5" />
           </button>
         </div>
@@ -649,7 +631,7 @@ export default function ReceptionistServiceHub() {
                         <div className="flex flex-wrap gap-2 pt-1">
                           {order.items?.map((it: any, i: number) => (
                             <span key={i} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1.5 rounded-xl font-bold text-sm text-neutral-800 dark:text-neutral-200">
-                              {it.service_name} <strong className="text-primary-6000">x{it.quantity}</strong>
+                              {translateService(it.service_name, undefined, isVN).name} <strong className="text-primary-600">x{it.quantity}</strong>
                             </span>
                           ))}
                         </div>
@@ -663,8 +645,8 @@ export default function ReceptionistServiceHub() {
 
                       <div className="text-right">
                         <div className="text-xs text-neutral-400">Tổng tiền ghi nợ phòng</div>
-                        <div className="text-xl font-black text-primary-6000 dark:text-primary-400">
-                          {order.total_amount.toLocaleString("vi-VN")} VND
+                        <div className="text-xl font-black text-primary-600 dark:text-primary-400">
+                           {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.total_amount)}
                         </div>
                         <div className="text-xs text-neutral-400 mt-1">Ordered at: {new Date(order.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</div>
                       </div>
@@ -1125,7 +1107,7 @@ export default function ReceptionistServiceHub() {
                   <div key={srv.id} className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between">
                     <div>
                       <div className="font-extrabold text-sm text-neutral-900 dark:text-white">{srv.name}</div>
-                      <div className="text-xs font-bold text-primary-6000 mt-0.5">{srv.price.toLocaleString("vi-VN")} VND</div>
+                      <div className="text-xs font-bold text-primary-600 mt-0.5">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(srv.price)}</div>
                     </div>
                     <button
                       type="button"
@@ -1142,7 +1124,7 @@ export default function ReceptionistServiceHub() {
               <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
                 <h4 className="font-bold text-sm text-neutral-900 dark:text-white flex items-center justify-between">
                   <span>🛒 Các Món / Dịch Vụ Đã Chọn ({orderItems.length})</span>
-                  <span className="text-primary-6000 font-extrabold">{totalOrderAmount.toLocaleString("vi-VN")} VND</span>
+                  <span className="text-primary-600 font-extrabold">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(totalOrderAmount)}</span>
                 </h4>
 
                 {orderItems.length === 0 ? (
@@ -1155,7 +1137,7 @@ export default function ReceptionistServiceHub() {
                       <div key={item.service.id} className="flex items-center justify-between bg-white dark:bg-neutral-800 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
                         <div>
                           <span className="font-bold text-sm">{item.service.name}</span>
-                          <span className="text-xs text-neutral-400 block">{item.service.price.toLocaleString("vi-VN")} VND / VNDơn vị</span>
+                          <span className="text-xs text-neutral-400 block">{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.service.price)} / đơn vị</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <button
@@ -1197,8 +1179,8 @@ export default function ReceptionistServiceHub() {
             <div className="p-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
               <div>
                 <span className="text-xs text-neutral-400">Tổng cộng thanh toán</span>
-                <div className="text-2xl font-black text-primary-6000 dark:text-primary-400">
-                  {totalOrderAmount.toLocaleString("vi-VN")} VND
+                <div className="text-2xl font-black text-primary-600 dark:text-primary-400">
+                  {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(totalOrderAmount)}
                 </div>
               </div>
 
