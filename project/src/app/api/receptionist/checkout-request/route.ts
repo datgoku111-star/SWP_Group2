@@ -28,6 +28,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
+    if (action === "DIRECT_CHECKOUT") {
+      // 1. Fetch booking to get the room_id
+      const { data: booking, error: bError } = await supabaseServer
+        .from("bookings")
+        .select("room_id")
+        .eq("id", bookingId)
+        .single();
+
+      if (bError || !booking) {
+        throw new Error("Booking not found");
+      }
+
+      // 2. Update booking status to CHECKED_OUT and reset checkout_step
+      const { error: ubError } = await supabaseServer
+        .from("bookings")
+        .update({
+          status: "CHECKED_OUT",
+          checkout_step: "COMPLETED",
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", bookingId);
+
+      if (ubError) throw ubError;
+
+      // 3. Update room status to DIRTY
+      const nowIso = new Date().toISOString();
+      const { error: urError } = await supabaseServer
+        .from("rooms")
+        .update({
+          status: "DIRTY",
+          updated_at: nowIso,
+          status_updated_at: nowIso
+        })
+        .eq("id", booking.room_id);
+
+      if (urError) throw urError;
+
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
     console.error("POST /api/receptionist/checkout-request error:", error);

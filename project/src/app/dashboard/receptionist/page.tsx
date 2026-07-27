@@ -165,6 +165,30 @@ export default function ReceptionistDashboard() {
     }
   };
 
+  const handleDirectCheckout = async (bookingId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn cho khách Checkout Nhanh và chuyển phòng này sang trạng thái DIRTY không?")) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/receptionist/checkout-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, action: "DIRECT_CHECKOUT" }),
+      });
+      if (res.ok) {
+        fetchDashboardData();
+        alert("Đã hoàn tất Checkout nhanh. Trạng thái phòng đã chuyển sang DIRTY!");
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi thực hiện Checkout nhanh");
+    }
+  };
+
+
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val || 0);
 
@@ -330,28 +354,53 @@ export default function ReceptionistDashboard() {
                   Requested at: {new Date(req.checkout_requested_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </div>
 
+
                 <div className="flex gap-2 mt-auto pt-2">
                   {req.checkout_step === "REQUESTED" && (
-                    <ButtonPrimary
-                      sizeClass="py-2 px-3"
-                      className="w-full text-xs font-bold bg-amber-600 hover:bg-amber-700 shadow-sm"
-                      onClick={() => handleSendCleaner(req.id)}
-                    >
-                      Báo nhân viên kiểm tra
-                    </ButtonPrimary>
+                    <>
+                      <ButtonPrimary
+                        sizeClass="py-2 px-3"
+                        className="flex-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 shadow-sm"
+                        onClick={() => handleSendCleaner(req.id)}
+                      >
+                        Báo kiểm tra
+                      </ButtonPrimary>
+                      <button
+                        onClick={() => handleDirectCheckout(req.id)}
+                        className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800/40 transition-colors"
+                      >
+                        ⚡ Bỏ qua (DIRTY)
+                      </button>
+                    </>
                   )}
                   {req.checkout_step === "INSPECTING" && (
-                    <button disabled className="w-full py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-500 rounded-xl text-xs font-bold">
-                      Đang đợi kiểm tra...
-                    </button>
+                    <>
+                      <button disabled className="flex-1 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-500 rounded-xl text-xs font-bold">
+                        Đang kiểm tra...
+                      </button>
+                      <button
+                        onClick={() => handleDirectCheckout(req.id)}
+                        className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800/40 transition-colors"
+                      >
+                        ⚡ Checkout nhanh
+                      </button>
+                    </>
                   )}
                   {req.checkout_step === "INSPECTED" && (
-                    <Link
-                      href={`/checkin?bookingId=${req.id}&mode=checkout`}
-                      className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold text-center block"
-                    >
-                      Tiến hành Checkout
-                    </Link>
+                    <>
+                      <Link
+                        href={`/checkin?bookingId=${req.id}&mode=checkout`}
+                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold text-center block"
+                      >
+                        Tiến hành Checkout
+                      </Link>
+                      <button
+                        onClick={() => handleDirectCheckout(req.id)}
+                        className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800/40 transition-colors animate-pulse"
+                      >
+                        ⚡ Checkout nhanh
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
