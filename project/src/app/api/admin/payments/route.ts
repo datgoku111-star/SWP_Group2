@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth-server";
+import { sendEmail, buildBookingConfirmationEmailTemplate } from "@/lib/mail-sender";
 
 export async function GET() {
   try {
@@ -154,6 +155,59 @@ export async function POST(request: Request) {
           .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
           .eq("id", payment.booking_id);
         if (bookError) throw bookError;
+
+        // Fetch detailed booking info for sending confirmation email
+        try {
+          const { data: booking, error: bError } = await supabaseServer
+            .from("bookings")
+            .select("*, room:rooms(*, room_type:room_types(*)), user:users(id, email, full_name, role), guest:guests(*)")
+            .eq("id", payment.booking_id)
+            .single();
+
+          if (!bError && booking) {
+            // Get completed payments to compute total deposit paid
+            const { data: existingPayment } = await supabaseServer
+              .from("payments")
+              .select("*")
+              .eq("booking_id", payment.booking_id)
+              .eq("status", "COMPLETED");
+
+            const depositPaidAmount = existingPayment
+              ? existingPayment.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0)
+              : Number(payment.amount || 0);
+
+            const recipientEmail = booking.guest?.email || booking.user?.email;
+            if (recipientEmail) {
+              const customerName = booking.guest?.full_name || booking.user?.full_name || "Quý khách";
+              const phone = booking.guest?.phone || booking.user?.phone || "";
+
+              const emailHtml = buildBookingConfirmationEmailTemplate({
+                bookingId: booking.id,
+                customerName,
+                email: recipientEmail,
+                phone,
+                roomNumber: booking.room?.room_number || "N/A",
+                roomTypeName: booking.room?.room_type?.name || "N/A",
+                checkInDate: booking.check_in_date,
+                checkOutDate: booking.check_out_date,
+                numGuests: booking.num_guests,
+                totalPrice: booking.total_amount,
+                depositAmount: depositPaidAmount,
+                specialRequests: booking.special_requests || ""
+              });
+
+              sendEmail({
+                to: recipientEmail,
+                subject: `[HSRM Resort] Xác nhận Đặt phòng & Thanh toán Cọc - Mã: ${booking.id}`,
+                html: emailHtml
+              }).catch((err: any) => {
+                console.error("Failed to send booking confirmation email:", err);
+              });
+            }
+          }
+        } catch (mailErr) {
+          console.error("Error in booking confirm email flow:", mailErr);
+        }
 
         // Decrement available room
         const roomName = (payment.booking as any)?.room?.room_type?.name;

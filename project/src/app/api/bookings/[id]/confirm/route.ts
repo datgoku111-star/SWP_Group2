@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth-server";
+import { sendEmail, buildBookingConfirmationEmailTemplate } from "@/lib/mail-sender";
 
 export async function POST(
   request: Request,
@@ -19,7 +20,7 @@ export async function POST(
     // 1. Confirm room booking
     const { data: booking, error: bError } = await supabaseServer
       .from("bookings")
-      .select("*")
+      .select("*, room:rooms(*, room_type:room_types(*)), user:users(id, email, full_name, role), guest:guests(*)")
       .eq("id", bookingId)
       .single();
 
@@ -41,6 +42,7 @@ export async function POST(
         .eq("booking_id", bookingId)
         .eq("status", "COMPLETED");
 
+      let depositPaidAmount = booking.total_amount;
       if (!existingPayment || existingPayment.length === 0) {
         await supabaseServer
           .from("payments")
@@ -51,6 +53,38 @@ export async function POST(
             status: "COMPLETED",
             transaction_ref: `CONFIRM_FALLBACK_${Math.floor(100000 + Math.random() * 900000)}`
           });
+      } else {
+        depositPaidAmount = existingPayment.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+      }
+
+      // Send booking confirmation email to customer
+      const recipientEmail = booking.guest?.email || booking.user?.email;
+      if (recipientEmail) {
+        const customerName = booking.guest?.full_name || booking.user?.full_name || "Quý khách";
+        const phone = booking.guest?.phone || booking.user?.phone || "";
+
+        const emailHtml = buildBookingConfirmationEmailTemplate({
+          bookingId: booking.id,
+          customerName,
+          email: recipientEmail,
+          phone,
+          roomNumber: booking.room?.room_number || "N/A",
+          roomTypeName: booking.room?.room_type?.name || "N/A",
+          checkInDate: booking.check_in_date,
+          checkOutDate: booking.check_out_date,
+          numGuests: booking.num_guests,
+          totalPrice: booking.total_amount,
+          depositAmount: depositPaidAmount,
+          specialRequests: booking.special_requests || ""
+        });
+
+        sendEmail({
+          to: recipientEmail,
+          subject: `[HSRM Resort] Xác nhận Đặt phòng & Thanh toán Cọc - Mã: ${booking.id}`,
+          html: emailHtml
+        }).catch((err: any) => {
+          console.error("Failed to send booking confirmation email:", err);
+        });
       }
     }
 
