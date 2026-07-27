@@ -337,7 +337,8 @@ export default function HousekeepingDashboardHub() {
         </div>
       </div>
 
-      {/* Navigation Tabs Bar */}
+      {/* Navigation Tabs Bar — only for HOUSEKEEPING & ADMIN */}
+      {user?.role !== "RECEPTIONIST" && (
       <div className="flex items-center gap-3 overflow-x-auto border-b border-neutral-200 dark:border-neutral-700 pb-4">
         <button
           onClick={() => setActiveWorkflow("DIRTY_FLOW")}
@@ -399,9 +400,93 @@ export default function HousekeepingDashboardHub() {
           {isVN ? "Luồng 5: Dịch Vụ Giặt Là" : "Flow 5: Laundry Services"} (Laundry Orders) ({laundryOrders.filter(o => ["assigned", "washing", "ready_to_receive", "delivering"].includes(o.status_text)).length})
         </button>
       </div>
+      )}
 
-      {/* WORKFLOW 5: CHECKOUT INSPECTION FLOW */}
-      {activeWorkflow === "CHECKOUT_FLOW" && (
+      {/* RECEPTIONIST VIEW — Simplified Room Status Grid */}
+      {user?.role === "RECEPTIONIST" && (
+        <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
+          <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              🏨 Tổng Quan Trạng Thái Phòng
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
+                Lễ Tân — Có thể thay đổi trạng thái
+              </span>
+            </h2>
+            <p className="text-xs text-neutral-500 mt-1">
+              Xem và cập nhật trạng thái phòng khi cần thiết. Màu sắc biểu thị trạng thái hiện tại của từng phòng.
+            </p>
+          </div>
+
+          {/* Status legend */}
+          <div className="flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300">🟢 AVAILABLE</span>
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">🔵 IN_USE</span>
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">🟡 DIRTY</span>
+            <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300">🟣 CLEANING</span>
+            <span className="px-3 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300">🔴 MAINTENANCE</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {rooms.map((room) => {
+              const statusColors: Record<string, string> = {
+                AVAILABLE: "border-green-300 dark:border-green-800/60 bg-green-50/50 dark:bg-green-950/20",
+                IN_USE: "border-blue-300 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/20",
+                DIRTY: "border-amber-300 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20",
+                CLEANING: "border-indigo-300 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/20",
+                MAINTENANCE: "border-red-300 dark:border-red-800/60 bg-red-50/50 dark:bg-red-950/20",
+              };
+              const badgeColors: Record<string, string> = {
+                AVAILABLE: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+                IN_USE: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+                DIRTY: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
+                CLEANING: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300",
+                MAINTENANCE: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+              };
+              return (
+                <div
+                  key={room.id}
+                  className={`border-2 rounded-2xl p-4 flex flex-col gap-3 transition-all ${statusColors[room.status] || "border-neutral-200 bg-white dark:bg-neutral-800"}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-lg font-extrabold text-neutral-900 dark:text-white">
+                        Phòng {room.room_number}
+                      </span>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        {room.room_type?.name || "—"} · Tầng {room.floor}
+                      </p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${badgeColors[room.status] || ""}`}>
+                      {room.status}
+                    </span>
+                  </div>
+
+                  <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3">
+                    <label className="block text-[11px] font-semibold text-neutral-500 mb-1.5">Thay đổi trạng thái:</label>
+                    <select
+                      value={room.status}
+                      onChange={(e) => changeStatus(room.id, e.target.value as any)}
+                      className="block w-full text-xs rounded-xl border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 dark:text-white py-2 px-2 font-medium focus:ring-2 focus:ring-primary-500/30"
+                    >
+                      <option value="AVAILABLE">AVAILABLE (Sẵn sàng)</option>
+                      <option value="IN_USE">IN_USE (Đang có khách)</option>
+                      <option value="DIRTY">DIRTY (Chưa dọn)</option>
+                      <option value="CLEANING">CLEANING (Đang dọn)</option>
+                      <option value="MAINTENANCE">MAINTENANCE (Bảo trì)</option>
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* All Workflow flows — only for HOUSEKEEPING & ADMIN */}
+      {user?.role !== "RECEPTIONIST" && (
+        <>
+        {/* WORKFLOW 5: CHECKOUT INSPECTION FLOW */}
+        {activeWorkflow === "CHECKOUT_FLOW" && (
         <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
           <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
@@ -950,6 +1035,9 @@ export default function HousekeepingDashboardHub() {
           )}
         </div>
       )}
+      </>
+      )}
+
 
       {/* MODAL BÁO HỎNG / BẢO TRÌ */}
       {reportingRoomId && (

@@ -110,7 +110,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (pathname.startsWith("/housekeeping") && !["ADMIN", "HOUSEKEEPING"].includes(payload.role)) {
+  if (pathname.startsWith("/housekeeping") && !["ADMIN", "HOUSEKEEPING", "RECEPTIONIST"].includes(payload.role)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
