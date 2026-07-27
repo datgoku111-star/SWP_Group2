@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Route } from "@/routers/types";
 import { 
-  LayoutDashboard, 
+  Compass, LayoutDashboard, 
   BedDouble, 
   Users, 
   UtensilsCrossed, 
@@ -15,7 +15,10 @@ import {
   CreditCard,
   Settings,
   LogOut,
-  CalendarCheck
+  CalendarCheck,
+  CalendarDays,
+  Car,
+  Shirt
 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -39,11 +42,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Check-In / Out", href: "/checkin", icon: CalendarCheck, roles: ["ADMIN", "RECEPTIONIST"] },
     { name: "All Bookings", href: "/bookings", icon: ClipboardList, roles: ["ADMIN", "RECEPTIONIST"] },
     { name: "Service Orders", href: "/orders", icon: UtensilsCrossed, roles: ["ADMIN", "KITCHEN", "RECEPTIONIST"] },
+    { name: "Car Orders", href: "/car-orders", icon: Car, roles: ["ADMIN", "RECEPTIONIST"] },
+    { name: "Laundry Services", href: "/laundry-orders", icon: Shirt, roles: ["ADMIN", "RECEPTIONIST", "HOUSEKEEPING"] },
     { name: "Housekeeping", href: "/housekeeping", icon: SprayCan, roles: ["ADMIN", "HOUSEKEEPING", "RECEPTIONIST"] },
     
     // Customer
     { name: "My Bookings", href: "/bookings", icon: CalendarCheck, roles: ["CUSTOMER"] },
-    { name: "Order Service", href: "/services", icon: UtensilsCrossed, roles: ["CUSTOMER"] },
+    { name: "Booked Experiences", href: "/booked-experiences", icon: Compass, roles: ["CUSTOMER"] },
+    { name: "Lịch trình trải nghiệm", href: "/experience-schedule", icon: CalendarDays, roles: ["CUSTOMER"] },
+    { name: "Order Foods", href: "/services", icon: UtensilsCrossed, roles: ["CUSTOMER"] },
+    { name: "Car Bookings", href: "/car-bookings", icon: Car, roles: ["CUSTOMER"] },
+    { name: "Laundry Services", href: "/laundry-bookings", icon: Shirt, roles: ["CUSTOMER"] },
   ];
 
   const allowedNav = navItems.filter(item => item.roles.includes(user.role));

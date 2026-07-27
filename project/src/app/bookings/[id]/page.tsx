@@ -8,7 +8,7 @@ import ButtonPrimary from "@/shared/ButtonPrimary";
 import type { InvoiceData } from "@/types/hotel";
 import { Dialog, Transition } from "@headlessui/react";
 import ButtonSecondary from "@/shared/ButtonSecondary";
-import { Printer, CreditCard, XCircle } from "lucide-react";
+import { Printer, CreditCard, XCircle, AlertTriangle } from "lucide-react";
 
 export default function BookingDetailPage({ params }: { params: { id: string } }) {
   const { user, isLoading } = useAuth();
@@ -159,6 +159,14 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   
   const canRequestCheckout = !isStaff && b.status === "CHECKED_IN" && (!b.checkout_step || b.checkout_step === "NONE");
   
+  let cancelReasonText = null;
+  if (b.special_requests) {
+    const match = b.special_requests.match(/\[CANCEL_REASON:\s*(.*?)\]/);
+    if (match && match[1]) {
+      cancelReasonText = match[1];
+    }
+  }
+
   const formatMoney = (amount: number) => 
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 
@@ -176,7 +184,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 disabled={isConfirming}
                 className="flex items-center text-white font-medium bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
               >
-                {isConfirming ? "Đang xác nhận..." : "Xác nhận phòng"}
+                {isConfirming ? "Confirming..." : "Confirm Booking"}
               </button>
             )}
             {canCancel && (
@@ -184,7 +192,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 onClick={() => setCancelModalOpen(true)}
                 className="flex items-center text-red-600 hover:text-red-700 font-medium bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition-colors"
               >
-                <XCircle className="w-5 h-5 mr-2" /> Hủy phòng
+                <XCircle className="w-5 h-5 mr-2" /> Cancel Booking
               </button>
             )}
             {canRequestCheckout && (
@@ -193,7 +201,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 disabled={isRequestingCheckout}
                 className="flex items-center text-white font-medium bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
               >
-                {isRequestingCheckout ? "Đang gửi..." : "Yêu cầu Trả phòng (Checkout)"}
+                {isRequestingCheckout ? "Sending..." : "Request Checkout"}
               </button>
             )}
             <button className="flex items-center text-primary-6000 hover:text-primary-700 font-medium bg-primary-50 px-4 py-2 rounded-lg" onClick={() => window.print()}>
@@ -205,28 +213,139 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
         {error && <div className="p-4 bg-red-100 text-red-800 rounded-xl">{error}</div>}
         {success && <div className="p-4 bg-green-100 text-green-800 rounded-xl">{success}</div>}
 
+        {isStaff && invoice.incident_charges && invoice.incident_charges.incidents.length > 0 && (
+          <div className="p-6 bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800/60 rounded-3xl space-y-4 shadow-sm">
+            <h3 className="font-extrabold text-red-800 dark:text-red-400 text-lg flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Phê Duyệt Đền Bù Sự Cố / Thiệt Hại Phòng
+            </h3>
+            <p className="text-xs text-neutral-500">
+              Nhân viên buồng phòng đã báo cáo thiệt hại. Bạn hãy kiểm tra ảnh hiện trường, điều chỉnh số tiền đền bù thực tế (nếu cần) rồi xác nhận để cộng vào tổng tiền thanh toán check-out.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {invoice.incident_charges.incidents.map((incident: any) => {
+                const estimatedUSD = Math.round(Number(incident.estimated_charge) / 26320);
+                const approvedUSD = incident.approved_charge ? Math.round(Number(incident.approved_charge) / 26320) : estimatedUSD;
+                
+                return (
+                  <div key={incident.id} className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-red-150 dark:border-red-800/40 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <span className="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          Mã: {incident.incident_code}
+                        </span>
+                        <span className="text-xs font-semibold text-neutral-500 uppercase">
+                          {incident.status}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-neutral-900 dark:text-white mt-1">
+                        Sự cố: {incident.description}
+                      </h4>
+                      {incident.detailed_note && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 italic">
+                          " {incident.detailed_note} "
+                        </p>
+                      )}
+
+                      {incident.incident_evidence && incident.incident_evidence.length > 0 && (
+                        <div className="mt-2.5">
+                          <p className="text-[10px] font-bold text-neutral-400 mb-1">Ảnh hiện trường:</p>
+                          <img
+                            src={incident.incident_evidence[0].file_url}
+                            alt="Evidence photo"
+                            className="w-full max-h-32 object-cover rounded-xl border border-neutral-100 dark:border-neutral-800"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
+                      <div className="flex justify-between items-center text-xs text-neutral-500">
+                        <span>Ước tính đền bù:</span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                          {formatMoney(incident.estimated_charge)} (${estimatedUSD})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 justify-between">
+                        <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                          Tiền đền bù duyệt:
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-neutral-400">$</span>
+                          <input
+                            type="number"
+                            defaultValue={approvedUSD}
+                            id={`app-charge-${incident.id}`}
+                            className="w-20 text-xs text-right bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 text-neutral-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const inputEl = document.getElementById(`app-charge-${incident.id}`) as HTMLInputElement;
+                          const chargeUSD = Number(inputEl?.value || 0);
+                          if (isNaN(chargeUSD) || chargeUSD < 0) {
+                            alert("Vui lòng nhập số tiền đền bù hợp lệ.");
+                            return;
+                          }
+
+                          try {
+                            const res = await fetch(`/api/incidents/${incident.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                approved_charge: chargeUSD,
+                                status: 'APPROVED_CHARGE',
+                                note: `Lễ tân xác nhận số tiền đền bù thiệt hại phòng là $${chargeUSD}`
+                              })
+                            });
+                            if (res.ok) {
+                              setSuccess("Đã cập nhật tiền đền bù sự cố!");
+                              fetchInvoice();
+                            } else {
+                              const err = await res.json();
+                              setError(err.error || "Failed to update charge.");
+                            }
+                          } catch (e: any) {
+                            setError(e.message);
+                          }
+                        }}
+                        className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors shadow"
+                      >
+                        Duyệt số tiền này
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {!isStaff && b.checkout_step && b.checkout_step !== "NONE" && (
           <div className="p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl">
-            <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-2">Trạng thái Yêu cầu Trả phòng:</h3>
+            <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-2">Checkout Request Status:</h3>
             <div className="flex items-center gap-3 mb-2">
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                 b.checkout_step === "REQUESTED" ? "bg-amber-200 text-amber-900" :
                 b.checkout_step === "INSPECTING" ? "bg-blue-200 text-blue-900" :
                 "bg-green-200 text-green-900"
               }`}>
-                {b.checkout_step === "REQUESTED" ? "Đang chờ Lễ tân" :
-                 b.checkout_step === "INSPECTING" ? "Đang kiểm tra phòng" :
-                 "Đã kiểm tra xong"}
+                {b.checkout_step === "REQUESTED" ? "Waiting for Receptionist" :
+                 b.checkout_step === "INSPECTING" ? "Inspecting Room" :
+                 "Inspection Complete"}
               </span>
             </div>
             {b.checkout_message && (
               <p className="text-sm text-amber-900 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 p-3 rounded-lg mt-3">
-                <span className="font-bold">Lễ tân:</span> {b.checkout_message}
+                <span className="font-bold">Receptionist:</span> {b.checkout_message}
               </p>
             )}
             {b.checkout_step === "INSPECTED" && (
               <p className="text-sm font-medium mt-3 text-green-700 dark:text-green-400">
-                Phòng đã được kiểm tra xong. Vui lòng xuống quầy Lễ tân để hoàn tất thanh toán.
+                Room inspection is complete. Please go to the reception desk to finalize your payment.
               </p>
             )}
           </div>
@@ -260,6 +379,11 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
               <p className="font-medium">Room {b.room?.room_number} ({b.room?.room_type?.name})</p>
               <p className="text-neutral-500 text-sm">{b.check_in_date} — {b.check_out_date}</p>
               <p className="text-neutral-500 text-sm">Status: <span className="font-semibold">{b.status}</span></p>
+              {b.status === "CANCELLED" && cancelReasonText && (
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-1 font-medium italic break-words">
+                    Lý do hủy: {cancelReasonText}
+                  </p>
+                )}
             </div>
           </div>
 

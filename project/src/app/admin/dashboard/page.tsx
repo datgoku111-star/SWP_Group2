@@ -213,6 +213,26 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Live Service & Food Orders (Admin View) */}
+        <a href="/orders" className="bg-white dark:bg-neutral-800 border border-amber-500/30 p-6 rounded-3xl shadow-sm relative overflow-hidden group hover:shadow-md transition-all block">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-amber-500 dark:text-amber-400">
+                🍿 Quản Lý Đơn Đồ Ăn & Dịch Vụ
+              </span>
+              <h3 className="text-2xl font-extrabold text-neutral-900 dark:text-white">
+                Live Queue ➔
+              </h3>
+              <div className="flex items-center text-xs font-bold text-amber-600 dark:text-amber-300 space-x-1">
+                <span>Xem trạng thái đơn real-time & quản lý</span>
+              </div>
+            </div>
+            <div className="bg-amber-500/10 text-amber-600 dark:text-amber-400 p-4 rounded-2xl">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+          </div>
+        </a>
       </div>
 
       {/* Charts Grid */}

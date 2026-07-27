@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth-server";
+import { sendEmail, buildBookingConfirmationEmailTemplate } from "@/lib/mail-sender";
 
 export async function POST(
   request: Request,
@@ -19,7 +20,7 @@ export async function POST(
     // 1. Confirm room booking
     const { data: booking, error: bError } = await supabaseServer
       .from("bookings")
-      .select("*")
+      .select("*, room:rooms(*, room_type:room_types(*)), user:users(id, email, full_name, role), guest:guests(*)")
       .eq("id", bookingId)
       .single();
 
@@ -34,23 +35,95 @@ export async function POST(
         .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
         .eq("id", bookingId);
 
-      // Upsert payment record to COMPLETED
+      // Check if this is an experience booking
+      let isExperience = false;
+      let expTitle = "Experience";
+      try {
+        if (booking.special_requests) {
+          const parsed = JSON.parse(booking.special_requests);
+          if (parsed.isExperience) {
+            isExperience = true;
+            expTitle = parsed.title || expTitle;
+          }
+        }
+      } catch (e) {}
+
+      // Get existing payment
       const { data: existingPayment } = await supabaseServer
         .from("payments")
         .select("*")
         .eq("booking_id", bookingId)
         .eq("status", "COMPLETED");
 
-      if (!existingPayment || existingPayment.length === 0) {
-        await supabaseServer
-          .from("payments")
-          .insert({
-            booking_id: bookingId,
-            amount: booking.total_amount,
-            method: "TRANSFER",
-            status: "COMPLETED",
-            transaction_ref: `CONFIRM_FALLBACK_${Math.floor(100000 + Math.random() * 900000)}`
+      let depositPaidAmount = booking.total_amount;
+
+      // Upsert payment record to COMPLETED (skip for Experience since it requires NO deposit)
+      if (!isExperience) {
+        if (!existingPayment || existingPayment.length === 0) {
+          await supabaseServer
+            .from("payments")
+            .insert({
+              booking_id: bookingId,
+              amount: booking.total_amount * 0.1, // Only 10% deposit is paid when confirming
+              method: "TRANSFER",
+              status: "COMPLETED",
+              transaction_ref: `CONFIRM_FALLBACK_${Math.floor(100000 + Math.random() * 900000)}`
+            });
+          depositPaidAmount = booking.total_amount * 0.1;
+        } else {
+          depositPaidAmount = existingPayment.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+        }
+      }
+
+      // Send Emails
+      if (!isExperience) {
+        // Send normal room booking confirmation email to customer
+        const recipientEmail = booking.guest?.email || booking.user?.email;
+        if (recipientEmail) {
+          const customerName = booking.guest?.full_name || booking.user?.full_name || "Quý khách";
+          const phone = booking.guest?.phone || booking.user?.phone || "";
+
+          const emailHtml = buildBookingConfirmationEmailTemplate({
+            bookingId: booking.id,
+            customerName,
+            email: recipientEmail,
+            phone,
+            roomNumber: booking.room?.room_number || "N/A",
+            roomTypeName: booking.room?.room_type?.name || "N/A",
+            checkInDate: booking.check_in_date,
+            checkOutDate: booking.check_out_date,
+            numGuests: booking.num_guests,
+            totalPrice: booking.total_amount,
+            depositAmount: depositPaidAmount,
+            specialRequests: booking.special_requests || ""
           });
+
+          sendEmail({
+            to: recipientEmail,
+            subject: `[HSRM Resort] Xác nhận Đặt phòng & Thanh toán Cọc - Mã: ${booking.id}`,
+            html: emailHtml
+          }).catch((err: any) => {
+            console.error("Failed to send booking confirmation email:", err);
+          });
+        }
+      } else {
+        // Send Experience Confirmation Email
+        if (booking.user?.email) {
+          const protocol = request.headers.get("x-forwarded-proto") || "http";
+          const host = request.headers.get("host") || "localhost:3000";
+          
+          fetch(`${protocol}://${host}/api/mail/send-experience-confirmation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: booking.user.email,
+              customerName: booking.user.full_name || "Customer",
+              title: expTitle,
+              checkInDate: booking.check_in_date,
+              checkOutDate: booking.check_out_date,
+            }),
+          }).catch(err => console.error("Failed to trigger experience email:", err));
+        }
       }
     }
 

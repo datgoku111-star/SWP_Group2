@@ -28,26 +28,31 @@ export async function PATCH(
         return NextResponse.json({ error: "Room not found" }, { status: 404 });
       }
 
-      // Housekeeping can ONLY change DIRTY -> CLEANING, or CLEANING -> AVAILABLE
-      if (currentRoom.status === "DIRTY" && status !== "CLEANING") {
-        return NextResponse.json(
-          { error: "Housekeeping can only update DIRTY rooms to CLEANING." },
-          { status: 403 }
-        );
-      }
-      if (currentRoom.status === "CLEANING" && status !== "AVAILABLE") {
-        return NextResponse.json(
-          { error: "Housekeeping can only update CLEANING rooms to AVAILABLE." },
-          { status: 403 }
-        );
-      }
-      if (currentRoom.status !== "DIRTY" && currentRoom.status !== "CLEANING") {
-        // Allow if housekeeping is only updating notes/stayover without changing status
-        if (status !== currentRoom.status) {
+      // Housekeeping can change status to MAINTENANCE for any room (e.g. reporting damage)
+      if (status === "MAINTENANCE") {
+        // Allowed
+      } else {
+        // Housekeeping can change DIRTY -> CLEANING or AVAILABLE directly
+        if (currentRoom.status === "DIRTY" && status !== "CLEANING" && status !== "AVAILABLE") {
           return NextResponse.json(
-            { error: `Housekeeping cannot update rooms with status ${currentRoom.status}. Only DIRTY or CLEANING rooms can be processed.` },
+            { error: "Housekeeping can only update DIRTY rooms to CLEANING or AVAILABLE." },
             { status: 403 }
           );
+        }
+        if (currentRoom.status === "CLEANING" && status !== "AVAILABLE") {
+          return NextResponse.json(
+            { error: "Housekeeping can only update CLEANING rooms to AVAILABLE." },
+            { status: 403 }
+          );
+        }
+        if (currentRoom.status !== "DIRTY" && currentRoom.status !== "CLEANING") {
+          // Allow if housekeeping is only updating notes/stayover without changing status
+          if (status !== currentRoom.status) {
+            return NextResponse.json(
+              { error: `Housekeeping cannot update rooms with status ${currentRoom.status}. Only DIRTY or CLEANING rooms can be processed.` },
+              { status: 403 }
+            );
+          }
         }
       }
     }

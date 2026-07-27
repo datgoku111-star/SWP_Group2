@@ -23,17 +23,8 @@ export async function sendReceptionistInvoiceEmail(bookingId: string, roomName: 
         },
       });
     } else {
-      // Fallback to Ethereal mock email for safe dev testing
-      const testAccount = await nodemailer.createTestAccount();
-      transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-          user: testAccount.user, // generated ethereal user
-          pass: testAccount.pass, // generated ethereal password
-        },
-      });
+      console.log("No SMTP credentials configured. Email sending is skipped in dev environment.");
+      return;
     }
 
     const htmlContent = `

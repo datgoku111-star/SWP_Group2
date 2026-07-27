@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { FC, useState, useEffect, Suspense } from "react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
@@ -37,6 +37,11 @@ const ListingExperiencesDetailPage: FC<
   const categoryParam = searchParams.get("category") || "Specific Tour";
   const addressParam = searchParams.get("address") || "Tokyo, Jappan";
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
   const [guests, setGuests] = useState<GuestsObject>({
@@ -53,6 +58,9 @@ const ListingExperiencesDetailPage: FC<
   const [commentInput, setCommentInput] = useState("");
   const [ratingInput, setRatingInput] = useState(5);
   const [submitLoading, setSubmitLoading] = useState(false);
+  
+  const [reserveLoading, setReserveLoading] = useState(false);
+  const [reserveError, setReserveError] = useState("");
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
@@ -71,11 +79,11 @@ const ListingExperiencesDetailPage: FC<
 
   const handleSubmitFeedback = async () => {
     if (!user) {
-      alert("Vui lòng đăng nhập để gửi nhận xét!");
+      alert("Please login to submit a review!");
       return;
     }
     if (!commentInput.trim()) {
-      alert("Vui lòng nhập nội dung nhận xét!");
+      alert("Please enter your review content!");
       return;
     }
 
@@ -85,24 +93,66 @@ const ListingExperiencesDetailPage: FC<
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          comment: commentInput,
+          title: titleParam,
           rating: ratingInput,
-          listing_title: titleParam,
+          comment: commentInput,
+        }),
+      });
+      if (res.ok) {
+        setCommentInput("");
+        setRatingInput(5);
+        // re-fetch
+        const res2 = await fetch(`/api/feedbacks?title=${encodeURIComponent(titleParam)}`);
+        const data = await res2.json();
+        setFeedbacks(data);
+      } else {
+        const err = await res.json();
+        alert(err.message || "An error occurred while submitting your review.");
+      }
+    } catch (err: any) {
+      alert(err.message || "An error occurred while submitting your review.");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const handleReserve = async () => {
+    if (!user) {
+      alert("Please login to book this experience!");
+      router.push("/login");
+      return;
+    }
+    setReserveLoading(true);
+    setReserveError("");
+
+    try {
+      const priceVal = Number(priceParam) || 199;
+      const totalGuests = (guests.guestAdults || 0) + (guests.guestChildren || 0);
+      const subtotal = priceVal * Math.max(1, totalGuests);
+
+      const bookingRes = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          check_in_date: startDate ? startDate.toISOString().split("T")[0] : "",
+          check_out_date: startDate ? startDate.toISOString().split("T")[0] : "",
+          num_guests: Math.max(1, totalGuests),
+          total_amount: subtotal,
+          special_requests: JSON.stringify({ isExperience: true, title: titleParam }),
         }),
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Gửi nhận xét thất bại.");
+      const data = await bookingRes.json();
+      if (!bookingRes.ok) {
+        throw new Error(data.error || "An error occurred while booking experience");
       }
-
-      const newFeedback = await res.json();
-      setFeedbacks((prev) => [newFeedback, ...prev]);
-      setCommentInput("");
+      
+      alert("Experience booking request sent successfully! Please wait for receptionist confirmation.");
+      router.push("/dashboard/customer");
     } catch (err: any) {
-      alert(err.message || "Đã xảy ra lỗi khi gửi nhận xét.");
+      setReserveError(err.message);
     } finally {
-      setSubmitLoading(false);
+      setReserveLoading(false);
     }
   };
 
@@ -127,7 +177,7 @@ const ListingExperiencesDetailPage: FC<
         {/* 3 */}
         <div className="flex items-center space-x-4">
           <StartRating />
-          <span>·</span>
+          <span>Ă‚Â·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
             <span className="ml-1"> {addressParam}</span>
@@ -331,7 +381,7 @@ const ListingExperiencesDetailPage: FC<
             </a>
             <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
               <StartRating />
-              <span className="mx-2">·</span>
+              <span className="mx-2">Ă‚Â·</span>
               <span> 12 places</span>
             </div>
           </div>
@@ -429,7 +479,7 @@ const ListingExperiencesDetailPage: FC<
               fontClass=""
               sizeClass="h-16 px-4 py-3"
               rounded="rounded-3xl"
-              placeholder={user ? "Share your thoughts ..." : "Đăng nhập để viết đánh giá..."}
+              placeholder={user ? "Share your thoughts ..." : "Ă„ÂĂ„Æ’ng nhĂ¡ÂºÂ­p Ă„â€˜Ă¡Â»Æ’ viĂ¡ÂºÂ¿t Ă„â€˜Ä‚Â¡nh giÄ‚Â¡..."}
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
               disabled={!user || submitLoading}
@@ -453,7 +503,7 @@ const ListingExperiencesDetailPage: FC<
                 key={item.id}
                 className="py-8"
                 data={{
-                  name: item.user?.full_name || item.user?.email?.split("@")[0] || "Người dùng",
+                  name: item.user?.full_name || item.user?.email?.split("@")[0] || "NgĂ†Â°Ă¡Â»Âi dÄ‚Â¹ng",
                   avatar: "",
                   date: new Date(item.created_at).toLocaleDateString("vi-VN", {
                     day: "numeric",
@@ -466,7 +516,7 @@ const ListingExperiencesDetailPage: FC<
               />
             ))
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của bạn!</p>
+            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">ChĂ†Â°a cÄ‚Â³ Ă„â€˜Ä‚Â¡nh giÄ‚Â¡ nÄ‚Â o. HÄ‚Â£y lÄ‚Â  ngĂ†Â°Ă¡Â»Âi Ă„â€˜Ă¡ÂºÂ§u tiÄ‚Âªn chia sĂ¡ÂºÂ» cĂ¡ÂºÂ£m nghĂ„Â© cĂ¡Â»Â§a bĂ¡ÂºÂ¡n!</p>
           )}
         </div>
       </div>
@@ -547,8 +597,8 @@ const ListingExperiencesDetailPage: FC<
 
   const renderSidebar = () => {
     const priceVal = Number(priceParam) || 199;
-    const nights = startDate && endDate ? Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))) : 1;
-    const subtotal = priceVal * nights;
+    const totalGuests = (guests.guestAdults || 0) + (guests.guestChildren || 0);
+    const subtotal = priceVal * Math.max(1, totalGuests);
     const total = subtotal;
 
     return (
@@ -581,7 +631,7 @@ const ListingExperiencesDetailPage: FC<
         {/* SUM */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>{formatPrice(priceVal, "USD")} x {nights} day{nights > 1 ? "s" : ""}</span>
+            <span>{formatPrice(priceVal, "USD")} x {Math.max(1, totalGuests)} person{Math.max(1, totalGuests) > 1 ? "s" : ""}</span>
             <span>{formatPrice(subtotal, "USD")}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
@@ -595,8 +645,14 @@ const ListingExperiencesDetailPage: FC<
           </div>
         </div>
 
+        {reserveError && (
+          <div className="text-red-500 text-sm font-semibold">{reserveError}</div>
+        )}
+
         {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${encodeURIComponent(priceParam)}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent(categoryParam)}&address=${encodeURIComponent(addressParam)}&checkIn=${startDate ? startDate.toISOString().split('T')[0] : ''}&checkOut=${endDate ? endDate.toISOString().split('T')[0] : ''}&adults=${guests.guestAdults}&children=${guests.guestChildren}&infants=${guests.guestInfants}` as any}>Reserve</ButtonPrimary>
+        <ButtonPrimary onClick={handleReserve} disabled={reserveLoading}>
+          {reserveLoading ? "Processing..." : "Reserve"}
+        </ButtonPrimary>
       </div>
     );
   };
@@ -689,3 +745,8 @@ const ListingExperiencesDetailPageWrapper = () => {
 };
 
 export default ListingExperiencesDetailPageWrapper;
+
+
+
+
+

@@ -68,7 +68,7 @@ export default function KitchenDashboardHub() {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/orders?status=PENDING,IN_PROGRESS&category=FOOD,BEVERAGE");
+      const res = await fetch("/api/orders?status=PENDING,IN_PROGRESS,COMPLETED&category=FOOD,BEVERAGE");
       if (!res.ok) throw new Error("Lỗi tải danh sách đơn món");
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -114,15 +114,13 @@ export default function KitchenDashboardHub() {
   }, [fetchOrders]);
 
   const updateStatus = async (orderId: string, newStatus: KitchenOrder["status"], notesTag?: string) => {
-    // Optimistic UI update
+    // Optimistic UI update — retain order in list with COMPLETED status
     setOrders((prev) =>
-      newStatus === "COMPLETED"
-        ? prev.filter((o) => o.id !== orderId)
-        : prev.map((o) => {
-            if (o.id !== orderId) return o;
-            const updatedNotes = notesTag ? ((o.notes || "") + " " + notesTag).trim() : o.notes;
-            return { ...o, status: newStatus, notes: updatedNotes };
-          })
+      prev.map((o) => {
+        if (o.id !== orderId) return o;
+        const updatedNotes = notesTag ? ((o.notes || "") + " " + notesTag).trim() : o.notes;
+        return { ...o, status: newStatus, notes: updatedNotes };
+      })
     );
 
     if (!orderId.startsWith("ORDER-K")) {
@@ -142,6 +140,7 @@ export default function KitchenDashboardHub() {
 
   const pendingOrders = orders.filter((o) => o.status === "PENDING");
   const inProgressOrders = orders.filter((o) => o.status === "IN_PROGRESS");
+  const completedOrders = orders.filter((o) => o.status === "COMPLETED");
 
   return (
     <div className="p-6 md:p-8 space-y-8 bg-neutral-900 min-h-screen text-white rounded-2xl">
@@ -333,6 +332,44 @@ export default function KitchenDashboardHub() {
           )}
         </div>
       </div>
+
+      {/* COMPLETED ORDERS HISTORY SECTION */}
+      {completedOrders.length > 0 && (
+        <div className="bg-neutral-800 p-6 rounded-3xl border border-emerald-500/30 space-y-4">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-emerald-400">
+            <CheckCircle2 className="w-5 h-5" />
+            ✅ Danh Sách Đơn Đã Hoàn Thành & Đã Giao Lên Phòng ({completedOrders.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {completedOrders.map((order) => (
+              <div key={order.id} className="p-4 rounded-2xl bg-neutral-900/80 border border-emerald-500/40 flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-extrabold text-sm text-white">
+                      Phòng {order.booking?.room?.room_number || "P101"}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      ✅ COMPLETED
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    {order.items?.map((it: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-neutral-300 font-medium">
+                        <span>• {it.service?.name || "Món dịch vụ"}</span>
+                        <span className="font-bold text-emerald-400">x{it.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="text-[11px] text-neutral-400 border-t border-neutral-800 pt-2 flex justify-between">
+                  <span>Mã đơn: #{order.id.slice(-6)}</span>
+                  <span className="font-bold text-emerald-400">{order.total_amount.toLocaleString("vi-VN")} đ</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ESTIMATED PREP TIME SELECTION MODAL */}
       {selectedOrderForPrep && (

@@ -111,7 +111,20 @@ const LoginPageContent = () => {
         return;
       }
 
-      // Successful Supabase login - AuthContext subscription will handle updating state
+      // Successful Supabase login - Sync session to cookie first to prevent race conditions on redirect
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        if (session) {
+          await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session }),
+          });
+        }
+      } catch (syncErr) {
+        console.error("Failed to sync session on login:", syncErr);
+      }
+
       router.push(callbackUrl as Route);
     } catch (err: any) {
       console.error("Login failed:", err);
@@ -128,7 +141,7 @@ const LoginPageContent = () => {
   return (
     <div className={`nc-PageLogin`}>
       <div className="container mb-24 lg:mb-32">
-        <h2 className="my-20 flex items-center text-3xl leading-[115%] md:text-5xl md:leading-[115%] font-semibold text-neutral-900 dark:text-neutral-100 justify-center">
+        <h2 suppressHydrationWarning className="my-20 flex items-center text-3xl leading-[115%] md:text-5xl md:leading-[115%] font-semibold text-neutral-900 dark:text-neutral-100 justify-center">
           {t("Login")}
         </h2>
         <div className="max-w-md mx-auto space-y-6">
@@ -144,7 +157,7 @@ const LoginPageContent = () => {
                   src={item.icon}
                   alt={t(item.nameKey)}
                 />
-                <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
+                <h3 suppressHydrationWarning className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
                   {t(item.nameKey)}
                 </h3>
               </a>
@@ -152,7 +165,7 @@ const LoginPageContent = () => {
           </div>
           {/* OR */}
           <div className="relative text-center">
-            <span className="relative z-10 inline-block px-4 font-medium text-sm bg-white dark:text-neutral-400 dark:bg-neutral-900">
+            <span suppressHydrationWarning className="relative z-10 inline-block px-4 font-medium text-sm bg-white dark:text-neutral-400 dark:bg-neutral-900">
               {t("loginOr")}
             </span>
             <div className="absolute left-0 w-full top-1/2 transform -translate-y-1/2 border border-neutral-100 dark:border-neutral-800"></div>
@@ -165,7 +178,7 @@ const LoginPageContent = () => {
               </div>
             )}
             <label className="block">
-              <span className="text-neutral-800 dark:text-neutral-200">
+              <span suppressHydrationWarning className="text-neutral-800 dark:text-neutral-200">
                 {t("loginEmailAddress")}
               </span>
               <Input
@@ -178,7 +191,7 @@ const LoginPageContent = () => {
               />
             </label>
             <label className="block">
-              <span className="flex justify-between items-center text-neutral-800 dark:text-neutral-200">
+              <span suppressHydrationWarning className="flex justify-between items-center text-neutral-800 dark:text-neutral-200">
                 {t("loginPassword")}
                 <Link href="/login" className="text-sm underline font-medium">
                   {t("loginForgotPassword")}
@@ -198,7 +211,7 @@ const LoginPageContent = () => {
           </form>
 
           {/* ==== */}
-          <span className="block text-center text-neutral-700 dark:text-neutral-300">
+          <span suppressHydrationWarning className="block text-center text-neutral-700 dark:text-neutral-300">
             {t("loginNewUser")} {` `}
             <Link href="/signup" className="font-semibold underline">
               {t("loginCreateAccount")}

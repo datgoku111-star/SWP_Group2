@@ -109,7 +109,6 @@ export async function getRoomById(id: string) {
     );
     if (currentOrFuture) {
       room.deadline = currentOrFuture.check_out_date;
-      room.status = "IN_USE";
     }
   }
 

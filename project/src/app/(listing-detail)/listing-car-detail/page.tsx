@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { FC, useState, useEffect, Suspense } from "react";
 import { ArrowRightIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
@@ -27,6 +27,11 @@ export interface ListingCarDetailPageProps {}
 const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const { formatPrice } = useCurrency();
   // USE STATE
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [endDate, setEndDate] = useState<Date | null>(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000));
 
@@ -46,6 +51,114 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
   const [ratingInput, setRatingInput] = useState(5);
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  const [activeBookings, setActiveBookings] = useState<any[]>([]);
+  const [selectedBookingId, setSelectedBookingId] = useState<string>("");
+  const [gplxFile, setGplxFile] = useState<any>(null);
+  const [gplxFileName, setGplxFileName] = useState<string>("");
+  const [gplxBase64, setGplxBase64] = useState<string>("");
+  const [gplxCccd, setGplxCccd] = useState<string>("");
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [blockedDates, setBlockedDates] = useState<{ start: Date; end: Date }[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      const fetchBookings = async () => {
+        try {
+          const res = await fetch("/api/bookings");
+          if (res.ok) {
+            const data = await res.json();
+            const active = data.filter((b: any) => 
+              b.user_id === user.id && ["CONFIRMED", "CHECKED_IN"].includes(b.status)
+            );
+            setActiveBookings(active);
+            if (active.length > 0) {
+              setSelectedBookingId(active[0].id);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch bookings:", err);
+        }
+      };
+      fetchBookings();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const fetchBlockedDates = async () => {
+      try {
+        const res = await fetch(`/api/car-bookings`);
+        if (res.ok) {
+          const data = await res.json();
+          const activeRentals = data.filter((cb: any) => 
+            cb.car_type.toLowerCase() === titleParam.toLowerCase() && 
+            ["waiting to return the vehicle", "return requested"].includes(cb.status_text)
+          );
+          const ranges = activeRentals.map((r: any) => ({
+            start: new Date(r.pickup_date),
+            end: new Date(r.dropoff_date),
+          }));
+          setBlockedDates(ranges);
+        }
+      } catch (err) {
+        console.error("Failed to fetch blocked dates:", err);
+      }
+    };
+    fetchBlockedDates();
+  }, [titleParam]);
+
+  const handleConfirmCarBooking = async () => {
+    if (!user) {
+      alert("Vui lĂ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ thuĂª xe!");
+      router.push("/hsrm-login" as any);
+      return;
+    }
+    if (!selectedBookingId) {
+      alert("Báº¡n cáº§n pháº£i cĂ³ má»™t phĂ²ng Ä‘áº·t Ä‘ang hoáº¡t Ä‘á»™ng (ÄĂ£ xĂ¡c nháº­n hoáº·c Äang á»Ÿ) Ä‘á»ƒ sá»­ dá»¥ng dá»‹ch vá»¥ thuĂª xe!");
+      return;
+    }
+    if (!gplxFileName && !gplxFile) {
+      alert("Báº¡n pháº£i cĂ³ GPLX Ä‘á»ƒ thuĂª xe.");
+      return;
+    }
+    if (!gplxCccd.trim()) {
+      alert("Vui lĂ²ng nháº­p sá»‘ CCCD trĂªn GPLX cá»§a báº¡n!");
+      return;
+    }
+    if (!startDate || !endDate) {
+      alert("Vui lĂ²ng chá»n thá»i gian nháº­n xe vĂ  tráº£ xe!");
+      return;
+    }
+
+    setBookingLoading(true);
+    try {
+      const res = await fetch("/api/car-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking_id: selectedBookingId,
+          car_type: titleParam,
+          pickup_date: startDate.toISOString(),
+          dropoff_date: endDate.toISOString(),
+          total_price: priceParam * daysCount + 15,
+          gplx_image: gplxBase64 || gplxFileName || "gplx_manual_upload.png",
+          gplx_cccd: gplxCccd,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Äáº·t xe tháº¥t báº¡i.");
+      }
+
+      alert("đŸ‰ YĂªu cáº§u thuĂª xe Ä‘Ă£ Ä‘Æ°á»£c gá»­i! Lá»… tĂ¢n sáº½ Ä‘á»‘i chiáº¿u CCCD vĂ  phĂª duyá»‡t sá»›m nháº¥t. Báº¡n cĂ³ thá»ƒ kiá»ƒm tra tráº¡ng thĂ¡i trong má»¥c My Bookings.");
+      router.push("/bookings" as any);
+    } catch (err: any) {
+      alert(err.message || "ÄĂ£ xáº£y ra lá»—i khi Ä‘Äƒng kĂ½ thuĂª xe.");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
@@ -63,11 +176,11 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
 
   const handleSubmitFeedback = async () => {
     if (!user) {
-      alert("Vui lòng đăng nhập để gửi nhận xét!");
+      alert("Vui lĂ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ gá»­i nháº­n xĂ©t!");
       return;
     }
     if (!commentInput.trim()) {
-      alert("Vui lòng nhập nội dung nhận xét!");
+      alert("Vui lĂ²ng nháº­p ná»™i dung nháº­n xĂ©t!");
       return;
     }
 
@@ -85,14 +198,14 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || "Gửi nhận xét thất bại.");
+        throw new Error(errData.error || "Gá»­i nháº­n xĂ©t tháº¥t báº¡i.");
       }
 
       const newFeedback = await res.json();
       setFeedbacks((prev) => [newFeedback, ...prev]);
       setCommentInput("");
     } catch (err: any) {
-      alert(err.message || "Đã xảy ra lỗi khi gửi nhận xét.");
+      alert(err.message || "ÄĂ£ xáº£y ra lá»—i khi gá»­i nháº­n xĂ©t.");
     } finally {
       setSubmitLoading(false);
     }
@@ -131,7 +244,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
         {/* 3 */}
         <div className="flex items-center space-x-4">
           <StartRating />
-          <span>·</span>
+          <span>Â·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
             <span className="ml-1"> {currentCar?.address || "Tokyo, Japan"}</span>
@@ -262,7 +375,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
             </a>
             <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
               <StartRating />
-              <span className="mx-2">·</span>
+              <span className="mx-2">Â·</span>
               <span> {currentCar?.author?.count || 12} places</span>
             </div>
           </div>
@@ -358,7 +471,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
               fontClass=""
               sizeClass="h-16 px-4 py-3"
               rounded="rounded-3xl"
-              placeholder={user ? "Share your thoughts ..." : "Đăng nhập để viết đánh giá..."}
+              placeholder={user ? "Share your thoughts ..." : "ÄÄƒng nháº­p Ä‘á»ƒ viáº¿t Ä‘Ă¡nh giĂ¡..."}
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
               disabled={!user || submitLoading}
@@ -382,7 +495,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
                 key={item.id}
                 className="py-8"
                 data={{
-                  name: item.user?.full_name || item.user?.email?.split("@")[0] || "Người dùng",
+                  name: item.user?.full_name || item.user?.email?.split("@")[0] || "NgÆ°á»i dĂ¹ng",
                   avatar: "",
                   date: new Date(item.created_at).toLocaleDateString("vi-VN", {
                     day: "numeric",
@@ -395,7 +508,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
               />
             ))
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nghĩ của bạn!</p>
+            <p className="text-neutral-500 dark:text-neutral-400 py-8 text-sm">ChÆ°a cĂ³ Ä‘Ă¡nh giĂ¡ nĂ o. HĂ£y lĂ  ngÆ°á»i Ä‘áº§u tiĂªn chia sáº» cáº£m nghÄ© cá»§a báº¡n!</p>
           )}
         </div>
       </div>
@@ -461,7 +574,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
 
   const renderSidebarPrice = () => {
     return (
-      <div className="listingSectionSidebar__wrap shadow-xl">
+      <div className="listingSectionSidebar__wrap shadow-xl space-y-6">
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
@@ -478,6 +591,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           <RentalCarDatesRangeInput 
             startDate={startDate}
             endDate={endDate}
+            excludeDateIntervals={blockedDates}
             onChangeDate={(dates) => {
               const [start, end] = dates;
               setStartDate(start);
@@ -486,22 +600,138 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           />
         </form>
 
+        {/* ROOM SELECTION LINK */}
+        <div className="flex flex-col space-y-2">
+          <label className="text-sm font-bold text-neutral-700 dark:text-neutral-300">
+            Chá»n phĂ²ng lÆ°u trĂº liĂªn káº¿t:
+          </label>
+          {activeBookings.length > 0 ? (
+            <select
+              value={selectedBookingId}
+              onChange={(e) => setSelectedBookingId(e.target.value)}
+              className="w-full text-sm rounded-2xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus:ring-primary-500 focus:border-primary-500 py-2.5"
+            >
+              {activeBookings.map((b) => (
+                <option key={b.id} value={b.id}>
+                  PhĂ²ng {b.room?.room_number} ({new Date(b.check_in_date).toLocaleDateString("vi-VN")} - {new Date(b.check_out_date).toLocaleDateString("vi-VN")})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900 rounded-2xl text-xs text-red-600 dark:text-red-400 font-semibold leading-relaxed">
+              â ï¸ Báº¡n cáº§n cĂ³ phĂ²ng Ä‘áº·t hoáº¡t Ä‘á»™ng (ÄĂ£ xĂ¡c nháº­n hoáº·c Äang lÆ°u trĂº) táº¡i khĂ¡ch sáº¡n Ä‘á»ƒ Ä‘Äƒng kĂ½ thuĂª xe!
+            </div>
+          )}
+        </div>
+
+        {/* GPLX UPLOAD */}
+        <div className="flex flex-col space-y-2 border-t border-neutral-100 dark:border-neutral-800 pt-4">
+          <label className="text-sm font-bold text-neutral-700 dark:text-neutral-300">
+            Táº£i lĂªn GPLX (Báº¯t buá»™c):
+          </label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  setGplxFile(file);
+                  setGplxFileName(file.name);
+                  
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    const img = new window.Image();
+                    img.onload = () => {
+                      const canvas = document.createElement("canvas");
+                      let width = img.width;
+                      let height = img.height;
+
+                      const MAX_SIZE = 800;
+                      if (width > height) {
+                        if (width > MAX_SIZE) {
+                          height = Math.round((height * MAX_SIZE) / width);
+                          width = MAX_SIZE;
+                        }
+                      } else {
+                        if (height > MAX_SIZE) {
+                          width = Math.round((width * MAX_SIZE) / height);
+                          height = MAX_SIZE;
+                        }
+                      }
+
+                      canvas.width = width;
+                      canvas.height = height;
+                      const ctx = canvas.getContext("2d");
+                      if (ctx) {
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.6);
+                        setGplxBase64(compressedBase64);
+                      } else {
+                        setGplxBase64(event.target?.result as string);
+                      }
+                    };
+                    img.src = event.target?.result as string;
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="hidden"
+              id="gplx-file-picker"
+            />
+            <label
+              htmlFor="gplx-file-picker"
+              className="cursor-pointer px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold transition-all whitespace-nowrap shadow-sm border border-neutral-200 dark:border-neutral-700"
+            >
+              đŸ“ Chá»n áº£nh GPLX
+            </label>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-[170px]" title={gplxFileName}>
+              {gplxFileName || "ChÆ°a táº£i lĂªn file"}
+            </span>
+          </div>
+        </div>
+
+        {/* CCCD INPUT */}
+        <div className="flex flex-col space-y-2">
+          <label className="text-sm font-bold text-neutral-700 dark:text-neutral-300">
+            Sá»‘ CCCD ghi trĂªn GPLX:
+          </label>
+          <input
+            type="text"
+            value={gplxCccd}
+            onChange={(e) => setGplxCccd(e.target.value)}
+            placeholder="Nháº­p 12 sá»‘ cÄƒn cÆ°á»›c"
+            maxLength={12}
+            className="w-full text-sm rounded-2xl border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 focus:ring-primary-500 focus:border-primary-500 py-2.5 px-4"
+          />
+        </div>
+
         {/* SUM */}
-        <div className="flex flex-col space-y-4 ">
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>{formatPrice(priceParam, "USD")} x {daysCount} day</span>
+        <div className="flex flex-col space-y-3 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+          <div className="flex justify-between text-sm text-neutral-6000 dark:text-neutral-300 font-medium">
+            <span>{formatPrice(priceParam, "USD")} x {daysCount} ngĂ y</span>
             <span>{formatPrice(priceParam * daysCount, "USD")}</span>
           </div>
-
-          <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-          <div className="flex justify-between font-semibold">
-            <span>Total</span>
+          <div className="flex justify-between text-sm text-neutral-500 font-medium">
+            <span>Báº£o hiá»ƒm & PhĂ­ dá»‹ch vá»¥:</span>
+            <span>{formatPrice(15, "USD")}</span>
+          </div>
+          <div className="border-b border-neutral-100 dark:border-neutral-800"></div>
+          <div className="flex justify-between font-bold text-base text-neutral-900 dark:text-white">
+            <span>Tá»•ng cá»™ng:</span>
             <span>{formatPrice(priceParam * daysCount + 15, "USD")}</span>
           </div>
         </div>
 
-        {/* SUBMIT */}
-        <ButtonPrimary href={`/checkout?title=${encodeURIComponent(titleParam)}&price=${priceParam}&img=${encodeURIComponent(imgParam)}&category=${encodeURIComponent("Car Rental")}&address=${encodeURIComponent("Tokyo, Jappan")}&beds=${seatsParam}${startDate ? `&checkIn=${startDate.toISOString().split("T")[0]}` : ""}${endDate ? `&checkOut=${endDate.toISOString().split("T")[0]}` : ""}` as any}>Reserve</ButtonPrimary>
+        {/* SUBMIT BUTTON */}
+        <ButtonPrimary 
+          onClick={handleConfirmCarBooking} 
+          loading={bookingLoading} 
+          disabled={bookingLoading}
+          className="w-full h-12 text-sm font-extrabold shadow-lg"
+        >
+          XĂ¡c nháº­n thuĂª xe
+        </ButtonPrimary>
       </div>
     );
   };
@@ -521,7 +751,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
           <div className="ml-4 space-y-14 text-sm">
             <div className="flex flex-col space-y-2">
               <span className=" text-neutral-500 dark:text-neutral-400">
-                Monday, August 12 · 10:00
+                Monday, August 12 Â· 10:00
               </span>
               <span className=" font-semibold">
                 Saint Petersburg City Center
@@ -529,7 +759,7 @@ const ListingCarDetailPage: FC<ListingCarDetailPageProps> = ({}) => {
             </div>
             <div className="flex flex-col space-y-2">
               <span className=" text-neutral-500 dark:text-neutral-400">
-                Monday, August 16 · 10:00
+                Monday, August 16 Â· 10:00
               </span>
               <span className=" font-semibold">
                 Saint Petersburg City Center
@@ -655,3 +885,4 @@ const ListingCarDetailPageWithSuspense = () => {
 };
 
 export default ListingCarDetailPageWithSuspense;
+

@@ -98,6 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             }
           } else {
             setUser(null);
+            try {
+              await fetch("/api/auth/logout", { method: "POST" });
+            } catch (e) {
+              console.warn("Failed to clear cookie on auth init:", e);
+            }
           }
         }
       } catch (error) {
@@ -127,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           // ✨ Đồng bộ thêm loyalty_points sau mỗi lần đổi session
           await fetchUserData(session.user.id);
-        } else {
+        } else if (event === "SIGNED_OUT") {
           // Clear cookie on sign out
           await fetch("/api/auth/session", {
             method: "POST",
@@ -135,8 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             body: JSON.stringify({ session: null }),
           });
           setUser(null);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 

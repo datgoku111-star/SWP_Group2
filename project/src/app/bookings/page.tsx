@@ -7,7 +7,7 @@ import DashboardLayout from "../dashboard/layout";
 import Link from "next/link";
 import type { Booking } from "@/types/hotel";
 import { Route } from "@/routers/types";
-import { Eye, Calendar, User as UserIcon, Search, ArrowRight, RefreshCw, Filter, CreditCard, Users } from "lucide-react";
+import { Eye, Calendar, User as UserIcon, Search, ArrowRight, RefreshCw, Filter, CreditCard, Users, Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Input from "@/shared/Input";
 import { Dialog, Transition } from "@headlessui/react";
@@ -22,6 +22,30 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+
+  const [carLoading, setCarLoading] = useState(false);
+
+  const handleReturnVehicle = async (cbId: string) => {
+    if (!confirm("Bạn muốn yêu cầu trả chiếc xe này?")) return;
+    try {
+      const res = await fetch(`/api/car-bookings?id=${cbId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "IN_PROGRESS",
+          status_text: "return requested",
+        }),
+      });
+      if (res.ok) {
+        alert("✅ Yêu cầu trả xe đã được gửi tới Lễ tân!");
+        } else {
+        alert("Gửi yêu cầu trả xe thất bại.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Đã xảy ra lỗi.");
+    }
+  };
 
   // Filters
   const [statusTab, setStatusTab] = useState<string>("ALL");
@@ -42,7 +66,7 @@ export default function BookingsPage() {
       router.push("/hsrm-login?callbackUrl=/bookings" as Route);
     } else if (user) {
       fetchBookings();
-    }
+      }
   }, [user, isLoading, router]);
 
   const fetchBookings = async () => {
@@ -51,11 +75,19 @@ export default function BookingsPage() {
       const res = await fetch("/api/bookings");
       if (res.ok) {
         const data = await res.json();
+        let filtered = data.filter((b: any) => {
+          if (b.special_requests) {
+            try {
+              const meta = JSON.parse(b.special_requests);
+              if (meta?.isExperience || meta?.isCar) return false;
+            } catch(e) {}
+          }
+          return true;
+        });
         if (user?.role === "CUSTOMER") {
-          setBookings(data.filter((b: Booking) => b.user_id === user.id));
-        } else {
-          setBookings(data);
+          filtered = filtered.filter((b: any) => b.user_id === user.id);
         }
+        setBookings(filtered);
       }
     } catch (err) {
       console.error(err);
@@ -74,7 +106,20 @@ export default function BookingsPage() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setBookings(Array.isArray(data) ? data : []);
+        let filtered = Array.isArray(data) ? data : [];
+        filtered = filtered.filter((b: any) => {
+          if (b.special_requests) {
+            try {
+              const meta = JSON.parse(b.special_requests);
+              if (meta?.isExperience || meta?.isCar) return false;
+            } catch(e) {}
+          }
+          return true;
+        });
+        if (user?.role === "CUSTOMER") {
+          filtered = filtered.filter((b: any) => b.user_id === user.id);
+        }
+        setBookings(filtered);
       }
     } catch (err) {
       console.error("Search error:", err);
@@ -118,6 +163,8 @@ export default function BookingsPage() {
     }
   };
 
+  const isStaff = ["ADMIN", "RECEPTIONIST"].includes(user?.role || "");
+
   const handleCancelBooking = async () => {
     if (!bookingToCancel) return;
     if (isStaff && !cancelReason.trim()) {
@@ -135,7 +182,7 @@ export default function BookingsPage() {
       if (res.ok) {
         setCancelModalOpen(false);
         setBookingToCancel(null);
-        fetchBookings(); // Refresh the list
+        fetchBookings();
       } else {
         const err = await res.json();
         alert(err.error || "Failed to cancel booking.");
@@ -179,8 +226,6 @@ export default function BookingsPage() {
       </div>
     );
   }
-
-  const isStaff = ["ADMIN", "RECEPTIONIST"].includes(user?.role || "");
 
   return (
     <DashboardLayout>
@@ -283,70 +328,137 @@ export default function BookingsPage() {
                     No reservations found matching your current filter or search criteria.
                   </td>
                 </tr>
-              ) : (
-                bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/50 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-neutral-900 dark:text-white">
-                      {booking.id.split("-")[0].toUpperCase()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-extrabold text-neutral-900 dark:text-white">
-                        Room {booking.room?.room_number}
-                      </div>
-                      <div className="text-xs text-neutral-500">{booking.room?.room_type?.name}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
-                        <UserIcon className="w-3.5 h-3.5 text-neutral-400" />
-                        <span>{booking.user?.full_name || booking.guest?.full_name || "Guest"}</span>
-                      </div>
-                      {booking.user?.phone && (
-                        <div className="text-xs text-neutral-400 font-mono mt-0.5">{booking.user.phone}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 font-semibold text-neutral-800 dark:text-neutral-200">
-                        <Calendar className="w-3.5 h-3.5 text-neutral-400" />
-                        <span>{booking.check_in_date}</span>
-                      </div>
-                      <div className="text-xs text-neutral-400 ml-5">&rarr; {booking.check_out_date}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusBadge(booking.status)}`}
-                      >
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-extrabold text-neutral-900 dark:text-white">
-                      {formatMoney(booking.total_amount)}
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      {isStaff && booking.status === "PENDING" && (
-                        <button
-                          onClick={() => handleConfirmBooking(booking.id)}
-                          disabled={isConfirming === booking.id}
-                          className="inline-flex items-center px-3 py-1.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50"
+              ) : (                bookings.map((booking) => {
+                  // Parse booking type
+                  let isExp = false;
+                  let isCar = false;
+                  let meta: any = null;
+                  let cancelReasonText = null;
+                  
+                  if (booking.special_requests) {
+                    try {
+                      meta = JSON.parse(booking.special_requests);
+                      if (meta) {
+                        if (meta.isExperience) isExp = true;
+                        if (meta.isCar) isCar = true;
+                      }
+                    } catch (e) {}
+                    
+                    const match = booking.special_requests.match(/\[CANCEL_REASON:\s*(.*?)\]/);
+                    if (match && match[1]) {
+                      cancelReasonText = match[1];
+                    }
+                  }
+
+                  const isUSD = isExp || isCar;
+                  const displayPrice = isUSD 
+                    ? `$${Number(booking.total_amount).toFixed(2)}` 
+                    : formatMoney(booking.total_amount);
+
+                  return (
+                    <tr key={booking.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/50 transition-colors">
+                      <td className="px-6 py-4 font-mono font-bold text-neutral-900 dark:text-white">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{booking.id.split("-")[0].toUpperCase()}</span>
+                          {isExp && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                              Trải nghiệm
+                            </span>
+                          )}
+                          {isCar && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                              Thuê xe
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {isExp ? (
+                          <>
+                            <div className="font-extrabold text-neutral-900 dark:text-white capitalize">
+                              🧗 {meta?.title || "Tour Trải nghiệm"}
+                            </div>
+                            <div className="text-xs text-neutral-500">Dịch vụ hoạt động trải nghiệm</div>
+                          </>
+                        ) : isCar ? (
+                          <>
+                            <div className="font-extrabold text-neutral-900 dark:text-white">
+                              🚗 {meta?.title || "Thuê xe"}
+                            </div>
+                            <div className="text-xs text-neutral-500">Dịch vụ phương tiện tự lái</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-extrabold text-neutral-900 dark:text-white">
+                              Room {booking.room?.room_number}
+                            </div>
+                            <div className="text-xs text-neutral-500">{booking.room?.room_type?.name}</div>
+                          </>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                          <UserIcon className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>{booking.user?.full_name || booking.guest?.full_name || "Guest"}</span>
+                        </div>
+                        {booking.user?.phone && (
+                          <div className="text-xs text-neutral-400 font-mono mt-0.5">{booking.user.phone}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1 font-semibold text-neutral-800 dark:text-neutral-200">
+                          <Calendar className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>{booking.check_in_date}</span>
+                        </div>
+                        <div className="text-xs text-neutral-400 ml-5">&rarr; {booking.check_out_date}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusBadge(booking.status)}`}
                         >
-                          <span>{isConfirming === booking.id ? "Đang xác nhận..." : "Xác nhận phòng"}</span>
-                        </button>
-                      )}
-                      {isStaff && booking.status === "CONFIRMED" && (
+                          {booking.status}
+                        </span>
+                        {booking.status === "CANCELLED" && cancelReasonText && (
+                          <div className="text-[10px] text-red-600 dark:text-red-400 mt-2 font-medium italic break-words max-w-[150px]">
+                            Lý do: {cancelReasonText}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 font-extrabold text-neutral-900 dark:text-white">
+                        {displayPrice}
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        {isStaff && booking.status === "PENDING" && (
+                          <button
+                            onClick={() => handleConfirmBooking(booking.id)}
+                            disabled={isConfirming === booking.id}
+                            className="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50"
+                          >
+                            <span>{isConfirming === booking.id ? "Confirming..." : "Confirm Booking"}</span>
+                          </button>
+                        )}
+                        {isStaff && (booking.status === "CONFIRMED" || booking.status === "PENDING") && (
+                          <Link
+                            href={`/checkin?bookingId=${booking.id}`}
+                            className="inline-flex items-center px-3 py-1.5 rounded-xl bg-primary-6000 hover:bg-primary-700 text-white font-bold text-xs shadow-sm transition-all"
+                          >
+                            <span>Check-In</span>
+                          </Link>
+                        )}
+                        {isStaff && booking.status === "CHECKED_IN" && (
+                          <Link
+                            href={`/checkin?bookingId=${booking.id}&mode=checkout`}
+                            className="inline-flex items-center px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition-all"
+                          >
+                            <span>Settle / Check-Out</span>
+                          </Link>
+                        )}
                         <Link
-                          href={`/checkin?bookingId=${booking.id}`}
-                          className="inline-flex items-center px-3 py-1.5 rounded-xl bg-primary-6000 hover:bg-primary-700 text-white font-bold text-xs shadow-sm transition-all"
+                          href={`/bookings/${booking.id}` as Route}
+                          className="inline-flex items-center px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold text-xs transition-all"
                         >
-                          <span>Check-In</span>
+                          <Eye className="w-3.5 h-3.5 mr-1" /> View Details
                         </Link>
-                      )}
-                      {isStaff && booking.status === "CHECKED_IN" && (
-                        <Link
-                          href={`/checkin?bookingId=${booking.id}&mode=checkout`}
-                          className="inline-flex items-center px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition-all"
-                        >
-                          <span>Settle / Check-Out</span>
-                        </Link>
-                      )}
                       {(booking.status === "PENDING" || (!isStaff && booking.status === "CONFIRMED")) && (
                         <button
                           onClick={() => {
@@ -358,20 +470,17 @@ export default function BookingsPage() {
                           <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel booking
                         </button>
                       )}
-                      <Link
-                        href={`/bookings/${booking.id}` as Route}
-                        className="inline-flex items-center px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold text-xs transition-all"
-                      >
-                        <Eye className="w-3.5 h-3.5 mr-1" /> View Details
-                      </Link>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+
       </div>
 
       {/* CANCEL MODAL */}
@@ -444,6 +553,7 @@ export default function BookingsPage() {
           </div>
         </Dialog>
       </Transition>
+
     </DashboardLayout>
   );
 }

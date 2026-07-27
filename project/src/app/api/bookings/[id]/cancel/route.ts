@@ -27,8 +27,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Check authorization: Must be the owner or an admin
-    if (booking.user_id !== user.sub && user.role !== "ADMIN") {
+    // Check authorization: Must be the owner, an admin, or a receptionist
+    if (booking.user_id !== user.sub && user.role !== "ADMIN" && user.role !== "RECEPTIONIST") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

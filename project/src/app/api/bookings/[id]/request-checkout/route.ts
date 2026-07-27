@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
-import { getUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-server";
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
-    const user = await getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -23,7 +23,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     const isStaff = ["ADMIN", "RECEPTIONIST"].includes(user.role);
-    if (!isStaff && booking.user_id !== user.id) {
+    if (!isStaff && booking.user_id !== user.sub) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -97,6 +97,15 @@ const SignUpPageContent = () => {
 
       // Check if user is auto-confirmed or requires email confirmation
       if (data.session) {
+        try {
+          await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session: data.session }),
+          });
+        } catch (syncErr) {
+          console.error("Failed to sync session on signup:", syncErr);
+        }
         setMessage(t("signupSuccessRedirect"));
         setTimeout(() => {
           router.push(callbackUrl as Route);

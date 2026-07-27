@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer as supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth-server";
-import { INCIDENT_STATUS } from "@/contains/incident";
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -10,54 +9,66 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
 
-    const id = params.id;
+    const incidentId = params.id;
+    const roomId = incidentId.startsWith("incident-") ? incidentId.replace("incident-", "") : incidentId;
+
     const body = await request.json();
-    const { status, note } = body;
+    const { status, approved_charge, is_chargeable } = body;
 
-    // Validate status is one of the valid INCIDENT_STATUS keys
-    const validStatuses = Object.values(INCIDENT_STATUS);
-    if (!status || !validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Trạng thái không hợp lệ" }, { status: 400 });
-    }
-
-    // Get current incident to check previous status
-    const { data: currentIncident, error: fetchError } = await supabase
-      .from("room_incidents")
-      .select("status")
-      .eq("id", id)
+    // Fetch original room
+    const { data: room, error: roomError } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('id', roomId)
       .single();
 
-    if (fetchError || !currentIncident) {
-      return NextResponse.json({ error: "Không tìm thấy sự cố" }, { status: 404 });
+    if (roomError || !room) {
+      return NextResponse.json({ error: "Không tìm thấy phòng tương ứng với sự cố" }, { status: 404 });
     }
 
-    const oldStatus = currentIncident.status;
+    if (!room.notes || !room.notes.includes('DAMAGE:')) {
+      return NextResponse.json({ error: "Không tìm thấy sự cố đang hoạt động cho phòng này" }, { status: 404 });
+    }
 
-    // Update status in database
-    const { data, error } = await supabase
-      .from("room_incidents")
+    const parts = room.notes.split('DAMAGE:');
+    const bedConfig = parts[0].trim().replace(/\s*\|\s*$/, '');
+    const jsonStr = parts[1].trim();
+    const damageData = JSON.parse(jsonStr);
+
+    let newNotes = room.notes;
+    let newStatus = room.status;
+
+    // If resolved or closed, clear the damage metadata and restore room to AVAILABLE
+    if (status === 'RESOLVED' || status === 'CLOSED' || status === 'AVAILABLE') {
+      newNotes = bedConfig;
+      newStatus = 'AVAILABLE';
+    } else {
+      // Just update properties inside JSON metadata
+      if (approved_charge !== undefined) {
+        damageData.approved_charge = Number(approved_charge);
+      }
+      if (is_chargeable !== undefined) {
+        damageData.is_chargeable = Boolean(is_chargeable);
+      }
+      newNotes = `${bedConfig} | DAMAGE: ${JSON.stringify(damageData)}`;
+    }
+
+    // Update room
+    const { error: updateError } = await supabase
+      .from('rooms')
       .update({
-        status,
-        resolved_at: (status === INCIDENT_STATUS.RESOLVED || status === INCIDENT_STATUS.CLOSED) ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString()
+        notes: newNotes,
+        status: newStatus,
+        status_updated_at: new Date().toISOString()
       })
-      .eq("id", id)
-      .select()
-      .single();
+      .eq('id', roomId);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (updateError) {
+      console.error("Failed to update virtual incident PATCH:", updateError);
+      return NextResponse.json({ error: "Lỗi server khi cập nhật sự cố" }, { status: 500 });
+    }
 
-    // Write history log to incident_history
-    await supabase.from("incident_history").insert({
-      incident_id: id,
-      action: "STATUS_CHANGE",
-      old_status: oldStatus,
-      new_status: status,
-      note: note || `Chuyển trạng thái từ ${oldStatus} sang ${status}`,
-      changed_by_user_id: user.sub
-    });
-
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: { id: incidentId, status: newStatus } });
   } catch (error: any) {
     console.error("PATCH incident by ID error:", error);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });

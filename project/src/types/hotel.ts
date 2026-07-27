@@ -119,6 +119,9 @@ export interface Booking {
   room?: Room;
   user?: SafeUser;
   guest?: Guest;
+  checkout_step?: string;
+  checkout_message?: string;
+  checkout_requested_at?: string;
 }
 
 export interface Service {

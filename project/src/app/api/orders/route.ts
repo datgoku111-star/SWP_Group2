@@ -13,9 +13,22 @@ export async function GET(request: Request) {
     const statusParams = searchParams.get("status");
 
     // Staff wants pending queue
-    if (statusParams && ["ADMIN", "KITCHEN", "RECEPTIONIST"].includes(user.role)) {
-      const statuses = statusParams.split(",").map((s) => s.trim().toUpperCase());
+    if (["ADMIN", "KITCHEN", "RECEPTIONIST"].includes(user.role)) {
+      const statuses = statusParams
+        ? statusParams.split(",").map((s) => s.trim().toUpperCase())
+        : ["PENDING", "IN_PROGRESS", "COMPLETED"];
       let orders = await getPendingOrders(statuses);
+
+      // Filter out car rental & laundry service orders from regular service orders queue
+      orders = orders.filter((order: any) => {
+        try {
+          if (!order.notes) return true;
+          const notesObj = JSON.parse(order.notes);
+          return notesObj.is_car_rental !== true && notesObj.is_laundry_service !== true;
+        } catch (e) {
+          return true;
+        }
+      });
 
       // Food/Beverage Segmentation for Chef / Kitchen role or explicit query parameter
       const categoryParam = searchParams.get("category");

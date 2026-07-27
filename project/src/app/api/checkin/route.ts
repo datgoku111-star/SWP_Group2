@@ -47,7 +47,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
     // Find if guest with this id_card_number already exists (safe dynamic check-in lookup)
     const { data: existingGuest, error: findError } = await supabaseServer
       .from("guests")

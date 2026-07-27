@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import DashboardLayout from "../dashboard/layout";
 import { Route } from "@/routers/types";
 import Image from "next/image";
 import ButtonPrimary from "@/shared/ButtonPrimary";
@@ -10,10 +11,12 @@ import type { Service, Booking } from "@/types/hotel";
 import { ShoppingCart, Plus, Minus, X, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
+import { translateService } from "@/utils/laundry";
 
 export default function ServicesPage() {
   const { user, isLoading } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n: i18nHook } = useTranslation();
+  const isVN = i18nHook.language === "vn";
   const router = useRouter();
 
   const [services, setServices] = useState<Service[]>([]);
@@ -58,9 +61,10 @@ export default function ServicesPage() {
     try {
       const res = await fetch("/api/services");
       if (res.ok) {
-        const data = await res.json();
-        setServices(data);
-        const cats = Array.from(new Set(data.map((s: Service) => s.category)));
+                const data = await res.json();
+        const foodData = data.filter((s: any) => s.category.toUpperCase() === "FOOD" || s.category.toUpperCase() === "BEVERAGE");
+        setServices(foodData);
+        const cats = Array.from(new Set(foodData.map((s: any) => s.category)));
         setCategories(cats as string[]);
       }
     } catch (err) {
@@ -127,42 +131,45 @@ export default function ServicesPage() {
     return total + (service ? service.price * qty : 0);
   }, 0);
 
-  const placeOrder = async () => {
+  const placeOrderDirect = async () => {
     if (!selectedBookingId) {
       setError(t("servicesSelectRoomError"));
       return;
     }
-    
-    const cartEntries = Object.entries(cart);
-    if (cartEntries.length === 0) return;
-
     setOrderLoading(true);
     setError("");
-
     try {
+      const cartEntries = Object.entries(cart);
+      if (cartEntries.length === 0) return;
       const items = cartEntries.map(([service_id, quantity]) => ({ service_id, quantity }));
-      const payload = {
-        booking_id: selectedBookingId,
-        total_amount: cartTotal,
-        items: items
-      };
+      const selectedB = bookings.find((b) => b.id === selectedBookingId);
+      const roomNum = selectedB?.room?.room_number || "P-VIP";
 
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          booking_id: selectedBookingId,
+          total_amount: cartTotal,
+          items,
+          notes: `Khách đặt từ phòng ${roomNum}`,
+        }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to place order");
+        const errData = await res.json();
+        throw new Error(errData.error || "Không thể gửi yêu cầu đặt món");
       }
 
       setCart({});
       setIsCartOpen(false);
       
-      // Chuyển hướng về dashboard customer sau khi đặt thành công
-      router.push("/dashboard/customer" as Route);
-      
+      if (user?.role === "CUSTOMER") {
+        router.push("/dashboard/customer" as Route);
+      } else {
+        setSuccess("✅ Đã gửi đơn đặt món thành công! Đơn hàng đã gửi tới Lễ Tân để duyệt & chuyển xuống Bếp.");
+        setTimeout(() => setSuccess(""), 6000);
+      }
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -170,21 +177,62 @@ export default function ServicesPage() {
     }
   };
 
-  if (isLoading) return <div className="container py-20">{t("loading")}</div>;
+  const placeOrder = async () => {
+    if (!selectedBookingId) {
+      setError(t("servicesSelectRoomError"));
+      return;
+    }
+    
+    // Determine title, category, and image dynamically based on cart items
+    const cartEntries = Object.entries(cart);
+    let title = "Service Order";
+    let category = "Hotel Service";
+    let img = "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=500"; // neutral service img
+    
+    if (cartEntries.length > 0) {
+      const firstServiceId = cartEntries[0][0];
+      const firstService = services.find((s) => s.id === firstServiceId);
+      if (firstService) {
+        if (firstService.category.toUpperCase() === "LAUNDRY") {
+          title = "Laundry Order";
+          category = "Laundry Service";
+          img = "https://images.unsplash.com/photo-1545173168-9f1947eebd01?w=500"; // laundry service img
+        } else if (firstService.category.toUpperCase() === "FOOD") {
+          title = "Food Order";
+          category = "Food Service";
+          img = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500";
+        } else if (firstService.category.toUpperCase() === "BEVERAGE") {
+          title = "Beverage Order";
+          category = "Beverage Service";
+          img = "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500";
+        }
+      }
+    }
 
+    // Gom các sản phẩm trong giỏ hàng lại
+    const items = cartEntries.map(([service_id, quantity]) => ({ service_id, quantity }));
+    const itemsParam = encodeURIComponent(JSON.stringify(items));
+    // Chuyển hướng tới trang checkout kèm tham số hóa đơn
+    router.push(
+      `/checkout?type=service&bookingId=${selectedBookingId}&items=${itemsParam}&price=${cartTotal}&title=${encodeURIComponent(title)}&category=${encodeURIComponent(category)}&img=${encodeURIComponent(img)}` as Route
+    );
+  };
+
+  if (isLoading) return <div className="container py-20">{t("loading")}</div>;
   const filteredServices =
     activeCategory === "ALL"
       ? services
       : services.filter((s) => s.category === activeCategory);
 
   return (
+    <DashboardLayout>
     <div className="container py-16 mb-24 lg:mb-32 relative">
       <div className="flex justify-between items-center mb-10">
         <div>
           <h2 className="text-3xl font-semibold sm:text-4xl">
-            {t("servicesTitle")}
+            "Order Foods"
           </h2>
-          <p className="text-neutral-500 mt-2">{t("servicesDesc")}</p>
+          <p className="text-neutral-500 mt-2">"Order delicious food and drinks directly to your room."</p>
         </div>
 
         <button
@@ -242,21 +290,21 @@ export default function ServicesPage() {
           >
             <div className="flex-grow">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-lg">{service.name}</h3>
+                <h3 className="font-semibold text-lg">{translateService(service.name, service.description, isVN).name}</h3>
                 <span className="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded text-xs text-neutral-500">
                   {service.category}
                 </span>
               </div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4 line-clamp-2">
-                {service.description || t("noDescription")}
+                {translateService(service.name, service.description, isVN).desc || t("noDescription")}
               </p>
             </div>
 
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800">
               <span className="font-semibold text-primary-6000">
                 {new Intl.NumberFormat(
-                  i18n.language === "vn" ? "vi-VN" : "en-US",
-                  { style: "currency", currency: "VND" },
+                  "en-US",
+                  { style: "currency", currency: "USD" },
                 ).format(service.price)}
               </span>
 
@@ -327,11 +375,11 @@ export default function ServicesPage() {
                         className="flex justify-between items-center"
                       >
                         <div>
-                          <h4 className="font-medium">{service.name}</h4>
+                          <h4 className="font-medium">{translateService(service.name, service.description, isVN).name}</h4>
                           <span className="text-sm text-neutral-500">
                             {new Intl.NumberFormat(
-                              i18n.language === "vn" ? "vi-VN" : "en-US",
-                              { style: "currency", currency: "VND" },
+                              "en-US",
+                              { style: "currency", currency: "USD" },
                             ).format(service.price)}{" "}
                             x {qty}
                           </span>
@@ -339,8 +387,8 @@ export default function ServicesPage() {
                         <div className="flex items-center space-x-4">
                           <span className="font-semibold">
                             {new Intl.NumberFormat(
-                              i18n.language === "vn" ? "vi-VN" : "en-US",
-                              { style: "currency", currency: "VND" },
+                              "en-US",
+                              { style: "currency", currency: "USD" },
                             ).format(service.price * qty)}
                           </span>
                           <button
@@ -384,29 +432,40 @@ export default function ServicesPage() {
                 )}
 
                 <div className="flex justify-between items-center mb-4 text-lg font-semibold">
-                  <span>Total</span>
+                  <span>{isVN ? "Tổng cộng" : "Total"}</span>
 
                   <span className="text-primary-6000">
                     {new Intl.NumberFormat(
-                      i18n.language === "vn" ? "vi-VN" : "en-US",
-                      { style: "currency", currency: "VND" },
+                      "en-US",
+                      { style: "currency", currency: "USD" },
                     ).format(cartTotal)}
                   </span>
                 </div>
 
-                <ButtonPrimary
-                  onClick={placeOrder}
-                  loading={orderLoading}
-                  disabled={orderLoading || !selectedBookingId}
-                  className="w-full h-12"
-                >
-                  {t("servicesPlaceOrder")}
-                </ButtonPrimary>
+                <div className="space-y-2">
+                  <ButtonPrimary
+                    onClick={placeOrderDirect}
+                    loading={orderLoading}
+                    disabled={orderLoading || !selectedBookingId}
+                    className="w-full h-12 text-sm font-extrabold shadow-lg"
+                  >
+                    {isVN ? "⚡ Đặt Món & Chuyển Lên Lễ Tân (Ghi Nợ Phòng)" : "⚡ Order & Forward to Reception (Room Debt)"}
+                  </ButtonPrimary>
+                  <button
+                    type="button"
+                    onClick={placeOrder}
+                    disabled={orderLoading || !selectedBookingId}
+                    className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                  >
+                    {isVN ? "💳 Hoặc Thanh Toán VietQR / PayOS Trực Tuyến" : "💳 Or Pay Online via VietQR / PayOS"}
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
-    </div>
+        </div>
+    </DashboardLayout>
   );
 }

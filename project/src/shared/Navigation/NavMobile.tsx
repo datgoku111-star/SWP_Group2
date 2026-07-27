@@ -32,9 +32,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
         {item.children?.map((i, index) => (
           <Disclosure key={i.href + index} as="li">
             <Link
-              href={{
-                pathname: i.href || undefined,
-              }}
+              href={i.href || ""}
               className="flex px-4 text-neutral-900 dark:text-neutral-200 text-sm font-medium rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 mt-0.5"
             >
               <span
@@ -77,9 +75,7 @@ const NavMobile: React.FC<NavMobileProps> = ({
       >
         <Link
           className="flex w-full px-4 font-medium uppercase tracking-wide text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
-          href={{
-            pathname: item.href || undefined,
-          }}
+          href={item.href || ""}
         >
           <span
             className={`py-2.5 pr-3 ${!item.children ? "block w-full" : ""}`}

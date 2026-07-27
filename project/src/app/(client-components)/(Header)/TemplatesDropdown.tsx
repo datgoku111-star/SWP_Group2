@@ -18,9 +18,7 @@ export default function TemplatesDropdown() {
           target={item.targetBlank ? "_blank" : undefined}
           rel="noopener noreferrer"
           className="font-normal text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-white"
-          href={{
-            pathname: item.href || undefined,
-          }}
+          href={item.href || ""}
           onClick={close}
         >
           {item.name}
@@ -59,7 +57,7 @@ export default function TemplatesDropdown() {
                 <div className="bg-white dark:bg-neutral-900 shadow-lg">
                   <div className="container">
                     <div className="flex text-sm border-t border-slate-200 dark:border-slate-700 py-14">
-                      <div className="flex-1 grid grid-cols-5 gap-6 xl:gap-8 pr-6 xl:pr-8">
+                      <div className="flex-1 grid grid-cols-4 gap-6 xl:gap-8 pr-6 xl:pr-8">
                         {NAVIGATION_DEMO_2.map((item, index) => (
                           <div key={index}>
                             <p className="font-medium text-slate-900 dark:text-neutral-200">

@@ -25,10 +25,13 @@ import {
   DollarSign,
   Utensils
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import DashboardLayout from "../dashboard/layout";
 
 function CheckInContent() {
+  const { t, i18n } = useTranslation();
+  const isVN = i18n.language === "vn";
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -242,11 +245,11 @@ function CheckInContent() {
   const confirmCheckIn = async () => {
     if (!booking) return;
     if (!guestForm.full_name || !guestForm.id_card_number) {
-      setError("Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!");
+      setError(isVN ? "Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!" : "Please enter the full name and ID card/Passport number of the guest!");
       return;
     }
     if (guestForm.id_card_number.length < 12) {
-      setError("Số ID Card (CCCD/CMND) phải chứa tối thiểu 12 số!");
+      setError(isVN ? "Số ID Card (CCCD/CMND) phải chứa tối thiểu 12 số!" : "ID Card number must contain at least 12 digits!");
       return;
     }
     setActionLoading(true);
@@ -298,13 +301,13 @@ function CheckInContent() {
           }),
         });
         const payOSData = await payOSRes.json();
-        if (!payOSRes.ok) throw new Error(payOSData.error || "Lỗi tạo mã PayOS");
+        if (!payOSRes.ok) throw new Error(payOSData.error || (isVN ? "Lỗi tạo mã PayOS" : "Error creating PayOS code"));
         
         setPayosQRUrl(payOSData.qrCode);
         setPayosOrderCode(payOSData.orderCode);
         setShowQR(true);
       } catch (err: any) {
-        setError(err.message || "Không thể tạo mã VietQR từ PayOS");
+        setError(err.message || (isVN ? "Không thể tạo mã VietQR từ PayOS" : "Cannot create VietQR code from PayOS"));
       } finally {
         setActionLoading(false);
       }
@@ -320,12 +323,12 @@ function CheckInContent() {
     setSuccess("");
     try {
       if (paymentMethod === "BANK_TRANSFER") {
-        if (!payosOrderCode) throw new Error("Vui lòng tạo mã QR trước khi thanh toán.");
+        if (!payosOrderCode) throw new Error(isVN ? "Vui lòng tạo mã QR trước khi thanh toán." : "Please generate QR code before paying.");
         const checkRes = await fetch(`/api/payment/check/${payosOrderCode}`);
         const checkData = await checkRes.json();
-        if (!checkRes.ok) throw new Error(checkData.error || "Lỗi kiểm tra trạng thái thanh toán.");
+        if (!checkRes.ok) throw new Error(checkData.error || (isVN ? "Lỗi kiểm tra trạng thái thanh toán." : "Error checking payment status."));
         if (checkData.status !== "PAID") {
-          throw new Error("Khách hàng chưa thanh toán thành công qua mã QR. Vui lòng kiểm tra lại!");
+          throw new Error(isVN ? "Khách hàng chưa thanh toán thành công qua mã QR. Vui lòng kiểm tra lại!" : "Guest has not successfully paid via QR code. Please check again!");
         }
       }
 
@@ -360,15 +363,15 @@ function CheckInContent() {
   // Action 3: Process Instant Walk-In Check-In
   const confirmWalkInCheckIn = async () => {
     if (!selectedRoom) {
-      setError("Please select an available room first.");
+      setError(isVN ? "Vui lòng chọn một phòng trống trước." : "Please select an available room first.");
       return;
     }
     if (!guestForm.full_name || !guestForm.id_card_number) {
-      setError("Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!");
+      setError(isVN ? "Vui lòng nhập đầy đủ Họ và tên và Số CCCD/Hộ chiếu của khách hàng!" : "Please enter the full name and ID card/Passport number of the guest!");
       return;
     }
     if (guestForm.id_card_number.length < 12) {
-      setError("Số ID Card (CCCD/CMND) phải chứa tối thiểu 12 số!");
+      setError(isVN ? "Số ID Card (CCCD/CMND) phải chứa tối thiểu 12 số!" : "ID Card number must contain at least 12 digits!");
       return;
     }
 
@@ -530,7 +533,7 @@ function CheckInContent() {
             }`}
           >
             <Utensils className="w-4 h-4" />
-            <span>Phục Vụ & Dịch Vụ</span>
+            <span>{isVN ? "Phục Vụ & Dịch Vụ" : "Services"}</span>
           </button>
         </div>
       </div>
@@ -807,11 +810,66 @@ function CheckInContent() {
                         <span className="text-neutral-400">Room Charges:</span>
                         <span className="font-bold">{formatMoney(checkoutDetails.room_charges)}</span>
                       </div>
-                      
                       {checkoutDetails.service_charges > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-neutral-400 font-semibold">Service Charges:</span>
-                          <span className="font-bold">{formatMoney(checkoutDetails.service_charges)}</span>
+                          <span className="text-amber-400 font-semibold">Food & Service Orders:</span>
+                          <span className="font-bold text-amber-300">{formatMoney(checkoutDetails.service_charges_detail.total_service)}</span>
+                        </div>
+                      )}
+                      {checkoutDetails.service_charges_detail?.orders?.length > 0 && (
+                        <div className="pl-3 space-y-1 text-xs border-l border-amber-500/30 my-1">
+                          {checkoutDetails.service_charges_detail.orders.map((ord: any) => {
+                            let itemPrice = Number(ord.total_amount || 0);
+                            let displayName = "Service Order";
+                             try {
+                              if (ord.notes && ord.notes.trim().startsWith("{")) {
+                                const notesObj = JSON.parse(ord.notes);
+                                if (notesObj.is_car_rental) {
+                                  const pick = notesObj.pickup_date ? notesObj.pickup_date.split("T")[0] : "";
+                                  const drop = notesObj.dropoff_date ? notesObj.dropoff_date.split("T")[0] : "";
+                                  displayName = isVN 
+                                    ? `Thuê xe ${notesObj.car_type} (${pick} ➔ ${drop})`
+                                    : `Car rental ${notesObj.car_type} (${pick} ➔ ${drop})`;
+                                  itemPrice = itemPrice * 26320;
+                                } else {
+                                  displayName = notesObj.notes || "Service Order";
+                                }
+                              } else {
+                                displayName = ord.notes?.replace(/\[[^\]]+\]/g, "").trim() || "Service Order";
+                              }
+                              
+                              if (!isVN) {
+                                if (displayName.includes("Giặt và ủi áo sơ mi")) {
+                                  displayName = "Laundry - Shirt (Wash & Iron)";
+                                } else if (displayName.includes("Giặt ủi áo thun")) {
+                                  displayName = "Laundry - T-shirt (Wash & Fold)";
+                                } else if (displayName.includes("Giặt hấp/giặt khô áo vest")) {
+                                  displayName = "Laundry - Suit Jacket (Dry Clean)";
+                                } else if (displayName.includes("Giặt và là nếp quần âu")) {
+                                  displayName = "Laundry - Pants (Wash & Press)";
+                                } else if (displayName.includes("Giặt và ủi quần kaki")) {
+                                  displayName = "Laundry - Kaki Pants (Wash & Iron)";
+                                } else if (displayName === "Service Order") {
+                                  displayName = "Service Order";
+                                }
+                              }
+                            } catch (e) {
+                              displayName = ord.notes?.replace(/\[[^\]]+\]/g, "").trim() || "Service Order";
+                            }
+                            return (
+                              <div key={ord.id} className="flex justify-between text-neutral-400">
+                                <span>• {displayName}:</span>
+                                <span>{formatMoney(itemPrice)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {checkoutDetails.experience_charges > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-blue-400 font-semibold">Experience Bookings:</span>
+                          <span className="font-bold text-blue-300">{formatMoney(checkoutDetails.experience_charges)}</span>
                         </div>
                       )}
                       

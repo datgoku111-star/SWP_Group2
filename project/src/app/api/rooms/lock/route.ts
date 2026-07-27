@@ -6,6 +6,12 @@ import { getAvailableRooms } from "@/lib/db/rooms";
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+    const bodyText = await request.clone().text();
+    try {
+      const fs = require("fs");
+      fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] Request: body=${bodyText}, user=${JSON.stringify(user)}\n`);
+    } catch (e) {}
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -26,6 +32,31 @@ export async function POST(request: Request) {
       );
     }
 
+    // Ensure user exists in public.users to prevent foreign key violations (e.g. after database reseeding)
+    const { data: dbUser, error: dbUserErr } = await supabaseServer
+      .from("users")
+      .select("id")
+      .eq("id", user.sub)
+      .maybeSingle();
+
+    if (!dbUser) {
+      console.log(`User ${user.sub} not found in public.users, dynamically inserting...`);
+      const { error: insertErr } = await supabaseServer
+        .from("users")
+        .insert({
+          id: user.sub,
+          email: user.email.toLowerCase(),
+          full_name: user.name || user.email.split("@")[0],
+          phone: "",
+          role: user.role || "CUSTOMER",
+          is_active: true,
+          password_hash: "SUPABASE_AUTH",
+        });
+      if (insertErr) {
+        console.error("Failed to dynamically insert user on lock:", insertErr);
+      }
+    }
+
     // 2. Lock the room for 10 minutes
     const lockedUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
@@ -43,12 +74,20 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("Upsert room lock error:", error);
+      try {
+        const fs = require("fs");
+        fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] Upsert error: ${JSON.stringify(error)} (room_id: ${room_id}, user_id: ${user.sub})\n`);
+      } catch (e) {}
       return NextResponse.json({ error: "Failed to lock room" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, lock: data });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Lock room error:", error);
+    try {
+      const fs = require("fs");
+      fs.appendFileSync("lock_errors.txt", `[${new Date().toISOString()}] Exception: ${error.message || error}\n`);
+    } catch (e) {}
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
