@@ -28,6 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<SafeUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const isInitializedRef = React.useRef(false);
+
   // Helper to map Supabase User to SafeUser structure
   const mapSupabaseUserToSafeUser = (sbUser: any): SafeUser | null => {
     if (!sbUser) return null;
@@ -108,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (error) {
         console.error("Auth initialization failed:", error);
       } finally {
+        isInitializedRef.current = true;
         setIsLoading(false);
       }
     };
@@ -133,6 +136,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           // ✨ Đồng bộ thêm loyalty_points sau mỗi lần đổi session
           await fetchUserData(session.user.id);
         } else if (event === "SIGNED_OUT") {
+          // Ignore initial SIGNED_OUT event on mount before initAuth completes
+          if (!isInitializedRef.current) {
+            return;
+          }
           // Clear cookie on sign out
           await fetch("/api/auth/session", {
             method: "POST",
