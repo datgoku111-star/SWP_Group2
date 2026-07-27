@@ -27,6 +27,7 @@ export default function HousekeepingDashboardHub() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [activeWorkflow, setActiveWorkflow] = useState<"DIRTY_FLOW" | "MAINTENANCE_FLOW" | "IN_USE_FLOW" | "AVAILABLE_FLOW" | "LAUNDRY_FLOW" | "CHECKOUT_FLOW">("DIRTY_FLOW");
+  const [receptFilterStatus, setReceptFilterStatus] = useState<string>("DIRTY");
     const [checkoutRequests, setCheckoutRequests] = useState<any[]>([]);
   const [reportingRoomId, setReportingRoomId] = useState<string | null>(null);
   const [selectedDamages, setSelectedDamages] = useState<{name: string, price: number}[]>([]);
@@ -247,93 +248,93 @@ export default function HousekeepingDashboardHub() {
       {/* KPI Stats Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
         <div
-          onClick={() => setActiveWorkflow("CHECKOUT_FLOW")}
+          onClick={() => { setActiveWorkflow("CHECKOUT_FLOW"); setReceptFilterStatus("CHECKOUT"); }}
           className={`p-6 rounded-3xl border transition-all cursor-pointer ${
-            activeWorkflow === "CHECKOUT_FLOW"
+            (user?.role === "RECEPTIONIST" ? receptFilterStatus === "CHECKOUT" : activeWorkflow === "CHECKOUT_FLOW")
               ? "bg-purple-600 text-white shadow-xl shadow-purple-600/30 scale-[1.02]"
               : "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/40 hover:bg-purple-100/60"
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className={`text-sm font-bold ${activeWorkflow === "CHECKOUT_FLOW" ? "text-white" : "text-purple-800 dark:text-purple-300"}`}>
+            <p className={`text-sm font-bold ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "CHECKOUT" : activeWorkflow === "CHECKOUT_FLOW") ? "text-white" : "text-purple-800 dark:text-purple-300"}`}>
               🟣 CHECKOUT INSPECT
             </p>
             <AlertTriangle className="w-6 h-6" />
           </div>
           <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{checkoutRequests.length}</h3>
-          <p className={`text-xs mt-1 ${activeWorkflow === "CHECKOUT_FLOW" ? "text-purple-100" : "text-neutral-500"}`}>Checkout requests</p>
+          <p className={`text-xs mt-1 ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "CHECKOUT" : activeWorkflow === "CHECKOUT_FLOW") ? "text-purple-100" : "text-neutral-500"}`}>Checkout requests</p>
         </div>
 
         <div
-          onClick={() => setActiveWorkflow("DIRTY_FLOW")}
+          onClick={() => { setActiveWorkflow("DIRTY_FLOW"); setReceptFilterStatus("DIRTY"); }}
           className={`p-6 rounded-3xl border transition-all cursor-pointer ${
-            activeWorkflow === "DIRTY_FLOW"
+            (user?.role === "RECEPTIONIST" ? receptFilterStatus === "DIRTY" : activeWorkflow === "DIRTY_FLOW")
               ? "bg-amber-500 text-white shadow-xl shadow-amber-500/30 scale-[1.02]"
               : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 hover:bg-amber-100/60"
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className={`text-sm font-bold ${activeWorkflow === "DIRTY_FLOW" ? "text-white" : "text-amber-800 dark:text-amber-300"}`}>
+            <p className={`text-sm font-bold ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "DIRTY" : activeWorkflow === "DIRTY_FLOW") ? "text-white" : "text-amber-800 dark:text-amber-300"}`}>
               🟡 Luồng 1: Chờ Dọn (DIRTY)
             </p>
             <Sparkles className="w-6 h-6" />
           </div>
           <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{dirtyRooms.length}</h3>
-          <p className={`text-xs mt-1 ${activeWorkflow === "DIRTY_FLOW" ? "text-amber-100" : "text-neutral-500"}`}>Khách vừa trả phòng</p>
+          <p className={`text-xs mt-1 ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "DIRTY" : activeWorkflow === "DIRTY_FLOW") ? "text-amber-100" : "text-neutral-500"}`}>Khách vừa trả phòng</p>
         </div>
 
         <div
-          onClick={() => setActiveWorkflow("MAINTENANCE_FLOW")}
+          onClick={() => { setActiveWorkflow("MAINTENANCE_FLOW"); setReceptFilterStatus("MAINTENANCE"); }}
           className={`p-6 rounded-3xl border transition-all cursor-pointer ${
-            activeWorkflow === "MAINTENANCE_FLOW"
+            (user?.role === "RECEPTIONIST" ? receptFilterStatus === "MAINTENANCE" : activeWorkflow === "MAINTENANCE_FLOW")
               ? "bg-red-600 text-white shadow-xl shadow-red-600/30 scale-[1.02]"
               : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/40 hover:bg-red-100/60"
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className={`text-sm font-bold ${activeWorkflow === "MAINTENANCE_FLOW" ? "text-white" : "text-red-800 dark:text-red-300"}`}>
+            <p className={`text-sm font-bold ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "MAINTENANCE" : activeWorkflow === "MAINTENANCE_FLOW") ? "text-white" : "text-red-800 dark:text-red-300"}`}>
               🔴 Luồng 2: Bảo Trì (MAINTENANCE)
             </p>
             <Wrench className="w-6 h-6" />
           </div>
           <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{maintenanceRooms.length}</h3>
-          <p className={`text-xs mt-1 ${activeWorkflow === "MAINTENANCE_FLOW" ? "text-red-100" : "text-neutral-500"}`}>Đang sửa chữa kỹ thuật</p>
+          <p className={`text-xs mt-1 ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "MAINTENANCE" : activeWorkflow === "MAINTENANCE_FLOW") ? "text-red-100" : "text-neutral-500"}`}>Đang sửa chữa kỹ thuật</p>
         </div>
 
         <div
-          onClick={() => setActiveWorkflow("IN_USE_FLOW")}
+          onClick={() => { setActiveWorkflow("IN_USE_FLOW"); setReceptFilterStatus("IN_USE"); }}
           className={`p-6 rounded-3xl border transition-all cursor-pointer ${
-            activeWorkflow === "IN_USE_FLOW"
+            (user?.role === "RECEPTIONIST" ? receptFilterStatus === "IN_USE" : activeWorkflow === "IN_USE_FLOW")
               ? "bg-blue-600 text-white shadow-xl shadow-blue-600/30 scale-[1.02]"
               : "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/40 hover:bg-blue-100/60"
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className={`text-sm font-bold ${activeWorkflow === "IN_USE_FLOW" ? "text-white" : "text-blue-800 dark:text-blue-300"}`}>
+            <p className={`text-sm font-bold ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "IN_USE" : activeWorkflow === "IN_USE_FLOW") ? "text-white" : "text-blue-800 dark:text-blue-300"}`}>
               🔵 Luồng 3: Đang Ở (IN_USE)
             </p>
             <Layers className="w-6 h-6" />
           </div>
           <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{inUseRooms.length}</h3>
-          <p className={`text-xs mt-1 ${activeWorkflow === "IN_USE_FLOW" ? "text-blue-100" : "text-neutral-500"}`}>Dọn vệ sinh lưu trú hàng ngày</p>
+          <p className={`text-xs mt-1 ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "IN_USE" : activeWorkflow === "IN_USE_FLOW") ? "text-blue-100" : "text-neutral-500"}`}>Dọn vệ sinh lưu trú hàng ngày</p>
         </div>
 
         <div
-          onClick={() => setActiveWorkflow("AVAILABLE_FLOW")}
+          onClick={() => { setActiveWorkflow("AVAILABLE_FLOW"); setReceptFilterStatus("AVAILABLE"); }}
           className={`p-6 rounded-3xl border transition-all cursor-pointer ${
-            activeWorkflow === "AVAILABLE_FLOW"
+            (user?.role === "RECEPTIONIST" ? receptFilterStatus === "AVAILABLE" : activeWorkflow === "AVAILABLE_FLOW")
               ? "bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 scale-[1.02]"
               : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100/60"
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className={`text-sm font-bold ${activeWorkflow === "AVAILABLE_FLOW" ? "text-white" : "text-emerald-800 dark:text-emerald-300"}`}>
+            <p className={`text-sm font-bold ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "AVAILABLE" : activeWorkflow === "AVAILABLE_FLOW") ? "text-white" : "text-emerald-800 dark:text-emerald-300"}`}>
               🟢 Luồng 4: Sẵn Sàng (AVAILABLE)
             </p>
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <h3 className="text-3xl md:text-4xl font-extrabold mt-2">{availableRooms.length}</h3>
-          <p className={`text-xs mt-1 ${activeWorkflow === "AVAILABLE_FLOW" ? "text-emerald-100" : "text-neutral-500"}`}>Phòng sạch sẵn sàng đón khách</p>
+          <p className={`text-xs mt-1 ${(user?.role === "RECEPTIONIST" ? receptFilterStatus === "AVAILABLE" : activeWorkflow === "AVAILABLE_FLOW") ? "text-emerald-100" : "text-neutral-500"}`}>Phòng sạch sẵn sàng đón khách</p>
         </div>
       </div>
 
@@ -402,85 +403,157 @@ export default function HousekeepingDashboardHub() {
       </div>
       )}
 
-      {/* RECEPTIONIST VIEW — Simplified Room Status Grid */}
-      {user?.role === "RECEPTIONIST" && (
-        <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
-          <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4">
-            <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              🏨 Tổng Quan Trạng Thái Phòng
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
-                Lễ Tân — Có thể thay đổi trạng thái
-              </span>
-            </h2>
-            <p className="text-xs text-neutral-500 mt-1">
-              Xem và cập nhật trạng thái phòng khi cần thiết. Màu sắc biểu thị trạng thái hiện tại của từng phòng.
-            </p>
-          </div>
+      {/* RECEPTIONIST VIEW — Filtered Detail Cards */}
+      {user?.role === "RECEPTIONIST" && (() => {
+        const statusConfig: Record<string, { label: string; emptyText: string; badgeClass: string; cardBorderClass: string; badgeBg: string; btnClass: string; }> = {
+          DIRTY: {
+            label: "🟡 Luồng 1: Chờ Dọn (DIRTY)",
+            emptyText: "🎉 Không có phòng nào đang chờ dọn!",
+            badgeClass: "text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/60",
+            cardBorderClass: "border-amber-300 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20",
+            badgeBg: "bg-amber-500",
+            btnClass: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 hover:bg-amber-200",
+          },
+          MAINTENANCE: {
+            label: "🔴 Luồng 2: Bảo Trì (MAINTENANCE)",
+            emptyText: "✅ Không có phòng nào đang bảo trì!",
+            badgeClass: "text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/60",
+            cardBorderClass: "border-red-300 dark:border-red-800/60 bg-red-50/50 dark:bg-red-950/20",
+            badgeBg: "bg-red-600",
+            btnClass: "bg-red-100 dark:bg-red-900/30 text-red-700 hover:bg-red-200",
+          },
+          IN_USE: {
+            label: "🔵 Luồng 3: Đang Có Khách (IN_USE)",
+            emptyText: "Không có phòng nào đang có khách lưu trú.",
+            badgeClass: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/60",
+            cardBorderClass: "border-blue-300 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/20",
+            badgeBg: "bg-blue-600",
+            btnClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 hover:bg-blue-200",
+          },
+          AVAILABLE: {
+            label: "🟢 Luồng 4: Sẵn Sàng (AVAILABLE)",
+            emptyText: "Không có phòng nào ở trạng thái sẵn sàng.",
+            badgeClass: "text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60",
+            cardBorderClass: "border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20",
+            badgeBg: "bg-emerald-600",
+            btnClass: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 hover:bg-emerald-200",
+          },
+          CLEANING: {
+            label: "🟣 Đang Dọn (CLEANING)",
+            emptyText: "Không có phòng nào đang được dọn dẹp.",
+            badgeClass: "text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60",
+            cardBorderClass: "border-indigo-300 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/20",
+            badgeBg: "bg-indigo-500",
+            btnClass: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 hover:bg-indigo-200",
+          },
+          CHECKOUT: {
+            label: "🟣 Yêu Cầu Checkout (Chờ Kiểm Tra)",
+            emptyText: "Không có yêu cầu checkout nào đang chờ.",
+            badgeClass: "text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60",
+            cardBorderClass: "border-purple-300 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/20",
+            badgeBg: "bg-purple-600",
+            btnClass: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 hover:bg-purple-200",
+          },
+        };
+        const cfg = statusConfig[receptFilterStatus] || statusConfig["DIRTY"];
+        const filteredRooms = receptFilterStatus === "CHECKOUT"
+          ? []
+          : rooms.filter(r => r.status === receptFilterStatus);
 
-          {/* Status legend */}
-          <div className="flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300">🟢 AVAILABLE</span>
-            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">🔵 IN_USE</span>
-            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">🟡 DIRTY</span>
-            <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300">🟣 CLEANING</span>
-            <span className="px-3 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300">🔴 MAINTENANCE</span>
-          </div>
+        return (
+          <div className="bg-white dark:bg-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm border border-neutral-100 dark:border-neutral-700 space-y-6">
+            <div className="border-b border-neutral-100 dark:border-neutral-700 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  {cfg.label}
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${cfg.badgeClass}`}>
+                    {receptFilterStatus === "CHECKOUT" ? checkoutRequests.length : filteredRooms.length} phòng
+                  </span>
+                </h2>
+                <p className="text-xs text-neutral-500 mt-1">Bấm vào ô thống kê ở trên để lọc theo trạng thái. Chọn dropdown trong mỗi phòng để thay đổi trạng thái.</p>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {rooms.map((room) => {
-              const statusColors: Record<string, string> = {
-                AVAILABLE: "border-green-300 dark:border-green-800/60 bg-green-50/50 dark:bg-green-950/20",
-                IN_USE: "border-blue-300 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/20",
-                DIRTY: "border-amber-300 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20",
-                CLEANING: "border-indigo-300 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/20",
-                MAINTENANCE: "border-red-300 dark:border-red-800/60 bg-red-50/50 dark:bg-red-950/20",
-              };
-              const badgeColors: Record<string, string> = {
-                AVAILABLE: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
-                IN_USE: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-                DIRTY: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
-                CLEANING: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300",
-                MAINTENANCE: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
-              };
-              return (
-                <div
-                  key={room.id}
-                  className={`border-2 rounded-2xl p-4 flex flex-col gap-3 transition-all ${statusColors[room.status] || "border-neutral-200 bg-white dark:bg-neutral-800"}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-lg font-extrabold text-neutral-900 dark:text-white">
-                        Phòng {room.room_number}
-                      </span>
-                      <p className="text-xs text-neutral-500 mt-0.5">
-                        {room.room_type?.name || "—"} · Tầng {room.floor}
-                      </p>
-                    </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${badgeColors[room.status] || ""}`}>
-                      {room.status}
-                    </span>
-                  </div>
-
-                  <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3">
-                    <label className="block text-[11px] font-semibold text-neutral-500 mb-1.5">Thay đổi trạng thái:</label>
-                    <select
-                      value={room.status}
-                      onChange={(e) => changeStatus(room.id, e.target.value as any)}
-                      className="block w-full text-xs rounded-xl border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 dark:text-white py-2 px-2 font-medium focus:ring-2 focus:ring-primary-500/30"
-                    >
-                      <option value="AVAILABLE">AVAILABLE (Sẵn sàng)</option>
-                      <option value="IN_USE">IN_USE (Đang có khách)</option>
-                      <option value="DIRTY">DIRTY (Chưa dọn)</option>
-                      <option value="CLEANING">CLEANING (Đang dọn)</option>
-                      <option value="MAINTENANCE">MAINTENANCE (Bảo trì)</option>
-                    </select>
-                  </div>
+            {receptFilterStatus === "CHECKOUT" ? (
+              checkoutRequests.length === 0 ? (
+                <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
+                  {cfg.emptyText}
                 </div>
-              );
-            })}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {checkoutRequests.map((req: any) => (
+                    <div key={req.id} className={`border-2 ${cfg.cardBorderClass} p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm`}>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <span className={`${cfg.badgeBg} text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow`}>
+                            Phòng {req.room?.room_number}
+                          </span>
+                          <h4 className="text-lg font-bold text-neutral-900 dark:text-white mt-2">
+                            {req.user?.full_name || req.guest?.full_name || "Khách"}
+                          </h4>
+                        </div>
+                        <span className={`text-xs font-bold ${cfg.badgeClass} px-3 py-1 rounded-full uppercase`}>
+                          Chờ Kiểm Tra
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : filteredRooms.length === 0 ? (
+              <div className="p-12 text-center text-neutral-500 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-700">
+                {cfg.emptyText}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredRooms.map((room) => (
+                  <div key={room.id} className={`border-2 ${cfg.cardBorderClass} p-6 rounded-3xl flex flex-col justify-between space-y-4 shadow-sm`}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className={`${cfg.badgeBg} text-white font-extrabold px-3.5 py-1.5 rounded-2xl text-base shadow`}>
+                          Phòng {room.room_number}
+                        </span>
+                        <h4 className="text-lg font-bold text-neutral-900 dark:text-white mt-2">
+                          {room.room_type?.name || "—"} — Tầng {room.floor}
+                        </h4>
+                      </div>
+                      <span className={`text-xs font-bold ${cfg.badgeClass} px-3 py-1 rounded-full uppercase`}>
+                        {room.status}
+                      </span>
+                    </div>
+
+                    {room.notes && (
+                      <div className="bg-white dark:bg-neutral-900 p-3 rounded-2xl text-xs text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 flex items-start gap-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div><strong>Ghi chú:</strong> {room.notes.includes("DAMAGE:") ? room.notes.split("|")[0] : room.notes}</div>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-neutral-400 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" /> Lần dọn gần nhất: {room.last_cleaned || "—"}
+                    </div>
+
+                    <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3">
+                      <label className="block text-[11px] font-semibold text-neutral-500 mb-1.5">Thay đổi trạng thái:</label>
+                      <select
+                        value={room.status}
+                        onChange={(e) => changeStatus(room.id, e.target.value as any)}
+                        className="block w-full text-xs rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 dark:text-white py-2.5 px-3 font-semibold focus:ring-2 focus:ring-primary-500/30"
+                      >
+                        <option value="AVAILABLE">✅ AVAILABLE — Sẵn sàng đón khách</option>
+                        <option value="IN_USE">🔵 IN_USE — Đang có khách</option>
+                        <option value="DIRTY">🟡 DIRTY — Chưa dọn</option>
+                        <option value="CLEANING">🟣 CLEANING — Đang dọn</option>
+                        <option value="MAINTENANCE">🔴 MAINTENANCE — Đang bảo trì</option>
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* All Workflow flows — only for HOUSEKEEPING & ADMIN */}
       {user?.role !== "RECEPTIONIST" && (
