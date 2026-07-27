@@ -29,8 +29,11 @@ export async function PATCH(
       }
 
       // Housekeeping can change status to MAINTENANCE for any room (e.g. reporting damage)
+      // They can also transition MAINTENANCE -> AVAILABLE (confirming repair is done)
       if (status === "MAINTENANCE") {
         // Allowed
+      } else if (currentRoom.status === "MAINTENANCE" && status === "AVAILABLE") {
+        // Allowed (releasing room from maintenance)
       } else {
         // Housekeeping can change DIRTY -> CLEANING or AVAILABLE directly
         if (currentRoom.status === "DIRTY" && status !== "CLEANING" && status !== "AVAILABLE") {
@@ -45,7 +48,7 @@ export async function PATCH(
             { status: 403 }
           );
         }
-        if (currentRoom.status !== "DIRTY" && currentRoom.status !== "CLEANING") {
+        if (currentRoom.status !== "DIRTY" && currentRoom.status !== "CLEANING" && currentRoom.status !== "MAINTENANCE") {
           // Allow if housekeeping is only updating notes/stayover without changing status
           if (status !== currentRoom.status) {
             return NextResponse.json(
