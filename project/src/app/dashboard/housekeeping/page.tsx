@@ -1373,8 +1373,8 @@ export default function HousekeepingDashboardHub() {
                       throw new Error(errMsg);
                     }
 
-                    // 2. Change room status to MAINTENANCE
-                    await changeStatus(reportingRoomId!, "MAINTENANCE", `Báo hỏng: ${description}. ${damageNote}`);
+                    // 2. Refresh local incident records
+                    await fetchIncidents();
 
                     // 3. If targetBookingId is present, mark the checkout inspection completed with damage
                     if (targetBookingId) {
